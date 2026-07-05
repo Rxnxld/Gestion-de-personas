@@ -13,17 +13,33 @@ html{font-size:14px}
 body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
 /* LOGIN */
-.login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0f172a 0,#1e293b 100%)}
-.login-box{background:var(--card);border-radius:var(--radius);padding:40px 36px;width:92%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.login-box h1{font-size:20px;font-weight:800;margin-bottom:4px}
-.login-box p{font-size:13px;color:var(--text2);margin-bottom:20px}
-.login-box .lbl{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:3px}
-.login-box input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--rs);font-size:14px;font-family:inherit;margin-bottom:14px}
-.login-box input:focus{outline:none;border-color:var(--accent)}
-.login-box .btn{width:100%;padding:10px;border:none;border-radius:var(--rs);background:var(--accent);color:#fff;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
-.login-box .btn:hover{background:var(--accent-h)}
-.login-box .err{color:var(--danger);font-size:12px;margin-top:8px;text-align:center}
-.login-box .info{font-size:12px;color:var(--text2);text-align:center;margin-top:12px}
+@keyframes loginBg{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes loginFade{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(-45deg,#0f172a,#1e293b,#1e3a5f,#0f172a);background-size:400% 400%;animation:loginBg 15s ease infinite;position:relative;overflow:hidden}
+.login-page::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(79,70,229,.1) 0,transparent 70%);top:-200px;right:-200px;pointer-events:none}
+.login-page::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(5,150,105,.08) 0,transparent 70%);bottom:-100px;left:-100px;pointer-events:none}
+.login-box{background:rgba(255,255,255,.98);backdrop-filter:blur(20px);border-radius:16px;padding:40px 36px;width:92%;max-width:400px;box-shadow:0 25px 80px rgba(0,0,0,.4);animation:loginFade .6s ease;position:relative;z-index:1}
+.login-brand{text-align:center;margin-bottom:28px}
+.login-icon{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 4px 12px rgba(79,70,229,.3)}
+.login-brand h1{font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-.3px}
+.login-sub{font-size:13px;color:#64748b;margin-top:2px}
+.login-field{margin-bottom:16px}
+.login-field label{display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:5px}
+.input-wrap{position:relative;display:flex;align-items:center}
+.input-icon{position:absolute;left:12px;font-size:14px;color:#94a3b8;pointer-events:none}
+.input-wrap input{width:100%;padding:11px 12px 11px 38px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:inherit;background:#f8fafc;transition:.15s;color:#1e293b;outline:none}
+.input-wrap input::placeholder{color:#94a3b8;font-size:13px}
+.input-wrap input:focus{border-color:#4f46e5;background:#fff;box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.login-btn{width:100%;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;gap:8px;position:relative}
+.login-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(79,70,229,.35)}
+.login-btn:active{transform:translateY(0)}
+.login-btn.loading .btn-text{visibility:hidden}
+.login-btn.loading .btn-spinner{display:block}
+.btn-spinner{display:none;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;position:absolute}
+.login-err{color:#dc2626;font-size:12px;margin-top:10px;text-align:center;min-height:18px}
+.setup-info{font-size:13px;color:#64748b;text-align:center;margin-bottom:16px;padding:10px 14px;background:#f1f5f9;border-radius:8px}
+.login-footer{text-align:center;margin-top:20px;font-size:11px;color:#94a3b8;border-top:1px solid #f1f5f9;padding-top:16px}
 
 /* APP */
 .app-page{display:none}
@@ -95,7 +111,7 @@ tbody tr:hover{background:#f8fafc}
 .modal .fr input:focus,.modal .fr select:focus{outline:none;border-color:var(--accent)}
 .modal .ma{display:flex;gap:8px;margin-top:14px;justify-content:end}
 
-.tb{display:none}.tb.show{display:block}
+
 .bdg{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:10px;font-size:10px;font-weight:700;background:#f1f5f9;color:#64748b}
 .bdg-g{background:#ecfdf5;color:#059669}
 .tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;background:#f1f5f9;color:#64748b}
@@ -109,6 +125,17 @@ tbody tr:hover{background:#f8fafc}
 .toast.s{background:var(--success)}.toast.e{background:var(--danger)}.toast.i{background:var(--accent)}
 @keyframes ti{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
 
+/* UI refinements */
+.tb{display:none;animation:fadeIn .25s ease}.tb.show{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+tbody tr:nth-child(even){background:#f8fafc}
+.card{transition:box-shadow .2s}
+.card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+.btn{transition:.15s}
 @media(max-width:900px){
   .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
@@ -124,21 +151,41 @@ tbody tr:hover{background:#f8fafc}
 <!-- LOGIN -->
 <div id="loginPage" class="login-page" style="display:flex">
   <div class="login-box">
-    <h1>Grupo Calle Portoviejo</h1>
-    <p>Ingresá tu contraseña para acceder</p>
+    <div class="login-brand">
+      <div class="login-icon">◉</div>
+      <h1>Grupo Calle Portoviejo</h1>
+      <p class="login-sub">Sistema de Gestión 2026</p>
+    </div>
     <div id="loginForm">
-      <label class="lbl">Contraseña</label>
-      <input type="password" id="loginPass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')login()">
-      <button class="btn" onclick="login()">Ingresar</button>
-      <div id="loginErr" class="err"></div>
+      <div class="login-field">
+        <label>Contraseña</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔑</span>
+          <input type="password" id="loginPass" placeholder="Ingresá tu contraseña" autofocus onkeydown="if(event.key==='Enter')login()">
+        </div>
+      </div>
+      <button class="login-btn" id="loginBtn" onclick="login()">
+        <span class="btn-text">Ingresar</span>
+        <span class="btn-spinner"></span>
+      </button>
+      <div id="loginErr" class="login-err"></div>
     </div>
     <div id="setupForm" style="display:none">
-      <p class="info">Primer inicio — creá una contraseña</p>
-      <label class="lbl">Nueva contraseña (mín. 4 caracteres)</label>
-      <input type="password" id="setupPass" placeholder="Crear contraseña" onkeydown="if(event.key==='Enter')setup()">
-      <button class="btn" onclick="setup()">Configurar</button>
-      <div id="setupErr" class="err"></div>
+      <p class="setup-info">🔐 Primer inicio — creá una contraseña</p>
+      <div class="login-field">
+        <label>Nueva contraseña (mín. 4 caracteres)</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔑</span>
+          <input type="password" id="setupPass" placeholder="Crear contraseña" onkeydown="if(event.key==='Enter')setup()">
+        </div>
+      </div>
+      <button class="login-btn" id="setupBtn" onclick="setup()">
+        <span class="btn-text">Configurar</span>
+        <span class="btn-spinner"></span>
+      </button>
+      <div id="setupErr" class="login-err"></div>
     </div>
+    <div class="login-footer">v1.0 · Grupo de Ahorro Solidario</div>
   </div>
 </div>
 
@@ -147,7 +194,7 @@ tbody tr:hover{background:#f8fafc}
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <h1>Grupo Calle Portoviejo</h1>
-      <small>Gestión 2026 · SQLite</small>
+      <small>Gestión 2026 · PostgreSQL</small>
     </div>
     <nav class="sidebar-nav">
       <button class="active" data-t="dashboard"><span class="ico">◉</span> Dashboard</button>
@@ -185,33 +232,33 @@ tbody tr:hover{background:#f8fafc}
 
       <!-- MIEMBROS -->
       <div id="tb-miembros" class="tb">
-        <div class="page-h"><h3>Miembros</h3><button class="btn btn-p btn-sm" onclick="modalMiembro()">+ Nuevo</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/miembros')">⬇ CSV</button></div>
+        <div class="page-h"><h3>Miembros</h3><button class="btn btn-p btn-sm" onclick="modalMiembro()">+ Nuevo</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/miembros')">⬇ CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/miembros')">⬇ Excel</button></div>
         <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>ID</th><th class="tl">Nombre</th><th>Apodo</th><th>Acción</th></tr></thead><tbody id="miembrosBody"></tbody></table></div></div></div>
       </div>
 
       <!-- ASISTENCIAS -->
       <div id="tb-tablas" class="tb">
-        <div class="page-h"><h3>Asistencias</h3><button class="btn btn-p btn-sm" onclick="modalAsistencia()">+ Registrar</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/asistencias')">⬇ CSV</button></div>
+        <div class="page-h"><h3>Asistencias</h3><button class="btn btn-p btn-sm" onclick="modalAsistencia()">+ Registrar</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/asistencias')">⬇ CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/asistencias')">⬇ Excel</button></div>
         <div class="card"><div class="card-t">Historial</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="tablasHead"></thead><tbody id="tablasBody"></tbody></table></div></div></div>
       </div>
 
       <!-- BINGO -->
       <div id="tb-bingo" class="tb">
-        <div class="page-h"><h3>Bingo</h3><button class="btn btn-p btn-sm" onclick="modalBingo()">+ Registrar</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/bingos')">⬇ CSV</button></div>
+        <div class="page-h"><h3>Bingo</h3><button class="btn btn-p btn-sm" onclick="modalBingo()">+ Registrar</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/bingos')">⬇ CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/bingos')">⬇ Excel</button></div>
         <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>Fecha</th><th class="tr">Monto</th><th class="tr">Coge c/u</th><th>Asist.</th><th>Acción</th></tr></thead><tbody id="bingoBody"></tbody></table></div></div></div>
         <div class="card" style="background:#ecfdf5;border-color:var(--success)"><div style="font-size:15px;font-weight:700;color:var(--success)">Total Bingo: $<span id="bingoTotal">0.00</span></div></div>
       </div>
 
       <!-- RIFA -->
       <div id="tb-rifa" class="tb">
-        <div class="page-h"><h3>Rifa Grupal</h3><button class="btn btn-p btn-sm" onclick="modalRifa()">+ Registrar</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/rifas')">⬇ CSV</button></div>
+        <div class="page-h"><h3>Rifa Grupal</h3><button class="btn btn-p btn-sm" onclick="modalRifa()">+ Registrar</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/rifas')">⬇ CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/rifas')">⬇ Excel</button></div>
         <div class="card"><div class="card-t">Registros</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="rifaHead"></thead><tbody id="rifaBody"></tbody></table></div></div></div>
         <div class="card" style="background:#fffbeb;border-color:var(--warning)"><div style="font-size:15px;font-weight:700;color:var(--warning)">Total Rifa: $<span id="rifaTotal">0.00</span></div></div>
       </div>
 
       <!-- AHORROS -->
       <div id="tb-ahorros" class="tb">
-        <div class="page-h"><h3>Ahorros</h3><button class="btn btn-p btn-sm" onclick="modalAhorro('normal')">+ Normal</button><button class="btn btn-g btn-sm" onclick="modalAhorro('cumple')">+ Cumpleaños</button><button class="btn btn-o btn-sm" onclick="modalAhorro('rifa')">+ Rifa</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/ahorro_normal')">⬇ Normal</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/ahorro_cumple')">⬇ Cumple</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/ahorro_rifa')">⬇ Rifa</button></div>
+        <div class="page-h"><h3>Ahorros</h3><button class="btn btn-p btn-sm" onclick="modalAhorro('normal')">+ Normal</button><button class="btn btn-g btn-sm" onclick="modalAhorro('cumple')">+ Cumpleaños</button><button class="btn btn-o btn-sm" onclick="modalAhorro('rifa')">+ Rifa</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/ahorro_normal')">⬇ Normal CSV</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/ahorro_cumple')">⬇ Cumple CSV</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/ahorro_rifa')">⬇ Rifa CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_normal')">⬇ Normal Excel</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_cumple')">⬇ Cumple Excel</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_rifa')">⬇ Rifa Excel</button></div>
         <div class="g2">
           <div class="card"><div class="card-t">Ahorro Normal</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="ahNHead"></thead><tbody id="ahNBody"></tbody></table></div></div></div>
           <div class="card"><div class="card-t">Ahorro Cumpleaños</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="ahCHead"></thead><tbody id="ahCBody"></tbody></table></div></div></div>
@@ -222,7 +269,7 @@ tbody tr:hover{background:#f8fafc}
 
       <!-- CUMPLEAÑOS -->
       <div id="tb-cumpleanos" class="tb">
-        <div class="page-h"><h3>Cumpleaños</h3><button class="btn btn-p btn-sm" onclick="modalCumpleAporte()">+ Aporte</button><button class="btn btn-g btn-sm" onclick="modalCumpleFecha()">+ Fecha</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/cumple_aportes')">⬇ Aportes</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/cumple_fechas')">⬇ Fechas</button></div>
+        <div class="page-h"><h3>Cumpleaños</h3><button class="btn btn-p btn-sm" onclick="modalCumpleAporte()">+ Aporte</button><button class="btn btn-g btn-sm" onclick="modalCumpleFecha()">+ Fecha</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/cumple_aportes')">⬇ Aportes CSV</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/cumple_fechas')">⬇ Fechas CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/cumple_aportes')">⬇ Aportes Excel</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/cumple_fechas')">⬇ Fechas Excel</button></div>
         <div class="g2">
           <div class="card"><div class="card-t">Aportes por Mes</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="cumpleHead"></thead><tbody id="cumpleBody"></tbody></table></div></div></div>
           <div class="card"><div class="card-t">Fechas de Cumpleaños</div><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th>Fecha</th><th>Acción</th></tr></thead><tbody id="cumpleFBody"></tbody></table></div></div></div>
@@ -231,7 +278,7 @@ tbody tr:hover{background:#f8fafc}
 
       <!-- PRÉSTAMOS -->
       <div id="tb-prestamos" class="tb">
-        <div class="page-h"><h3>Préstamos</h3><button class="btn btn-p btn-sm" onclick="modalPrestamo()">+ Nuevo</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/prestamos')">⬇ CSV</button></div>
+        <div class="page-h"><h3>Préstamos</h3><button class="btn btn-p btn-sm" onclick="modalPrestamo()">+ Nuevo</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/prestamos')">⬇ CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/prestamos')">⬇ Excel</button></div>
         <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th class="tr">Monto</th><th class="tl">Obs</th><th>Acción</th></tr></thead><tbody id="prestamosBody"></tbody></table></div></div></div>
         <div class="card" style="background:#fef2f2;border-color:var(--danger)"><div style="font-size:15px;font-weight:700;color:var(--danger)">Total Prestado: $<span id="prestamosTotal">0.00</span></div></div>
       </div>
@@ -251,12 +298,15 @@ tbody tr:hover{background:#f8fafc}
         <div class="card">
           <div class="card-t">Exportar todo</div>
           <div class="card-b">
-            <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Descargá todas las tablas como CSV comprimidas en un ZIP.</p>
-            <a href="/api/export/todo" class="btn btn-g btn-sm">⬇ Descargar todo (ZIP)</a>
+            <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Descargá todas las tablas como CSV o Excel comprimidas en un ZIP.</p>
+            <div class="grup">
+              <a href="/api/export/todo" class="btn btn-g btn-sm">⬇ Todo en CSV (ZIP)</a>
+              <a href="/api/export/xlsx/todo" class="btn btn-p btn-sm">⬇ Todo en Excel (ZIP)</a>
+            </div>
           </div>
         </div>
         <div class="card">
-          <div class="card-t">Exportar tabla individual</div>
+          <div class="card-t">Exportar tabla individual — CSV</div>
           <div class="card-b">
             <div class="grup">
               <a href="/api/export/csv/miembros" class="btn btn-gh btn-sm">⬇ Miembros</a>
@@ -269,6 +319,23 @@ tbody tr:hover{background:#f8fafc}
               <a href="/api/export/csv/cumple_aportes" class="btn btn-gh btn-sm">⬇ Aportes Cumple</a>
               <a href="/api/export/csv/cumple_fechas" class="btn btn-gh btn-sm">⬇ Fechas Cumple</a>
               <a href="/api/export/csv/prestamos" class="btn btn-gh btn-sm">⬇ Préstamos</a>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-t">Exportar tabla individual — Excel</div>
+          <div class="card-b">
+            <div class="grup">
+              <a href="/api/export/xlsx/miembros" class="btn btn-g btn-sm">⬇ Miembros</a>
+              <a href="/api/export/xlsx/asistencias" class="btn btn-g btn-sm">⬇ Asistencias</a>
+              <a href="/api/export/xlsx/bingos" class="btn btn-g btn-sm">⬇ Bingo</a>
+              <a href="/api/export/xlsx/rifas" class="btn btn-g btn-sm">⬇ Rifa</a>
+              <a href="/api/export/xlsx/ahorro_normal" class="btn btn-g btn-sm">⬇ Ahorro Normal</a>
+              <a href="/api/export/xlsx/ahorro_cumple" class="btn btn-g btn-sm">⬇ Ahorro Cumple</a>
+              <a href="/api/export/xlsx/ahorro_rifa" class="btn btn-g btn-sm">⬇ Ahorro Rifa</a>
+              <a href="/api/export/xlsx/cumple_aportes" class="btn btn-g btn-sm">⬇ Aportes Cumple</a>
+              <a href="/api/export/xlsx/cumple_fechas" class="btn btn-g btn-sm">⬇ Fechas Cumple</a>
+              <a href="/api/export/xlsx/prestamos" class="btn btn-g btn-sm">⬇ Préstamos</a>
             </div>
           </div>
         </div>
@@ -297,20 +364,24 @@ async function checkAuth(){
 }
 async function login(){
   const pw=document.getElementById('loginPass').value;document.getElementById('loginErr').textContent='';
+  const btn=document.getElementById('loginBtn');btn.classList.add('loading');
   try{
     const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+    btn.classList.remove('loading');
     if(r.ok){checkAuth();return}
     const e=await r.json();document.getElementById('loginErr').textContent=e.error||'Error'
-  }catch(e){document.getElementById('loginErr').textContent='Error de conexión'}
+  }catch(e){btn.classList.remove('loading');document.getElementById('loginErr').textContent='Error de conexión'}
 }
 async function setup(){
   const pw=document.getElementById('setupPass').value;document.getElementById('setupErr').textContent='';
   if(pw.length<4){document.getElementById('setupErr').textContent='Mínimo 4 caracteres';return}
+  const btn=document.getElementById('setupBtn');btn.classList.add('loading');
   try{
     const r=await fetch('/api/auth/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+    btn.classList.remove('loading');
     if(r.ok){checkAuth();return}
     const e=await r.json();document.getElementById('setupErr').textContent=e.error||'Error'
-  }catch(e){document.getElementById('setupErr').textContent='Error de conexión'}
+  }catch(e){btn.classList.remove('loading');document.getElementById('setupErr').textContent='Error de conexión'}
 }
 async function logout(){
   await fetch('/api/auth/logout',{method:'POST'});
