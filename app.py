@@ -589,6 +589,75 @@ def export_todo():
     return send_file(buf, mimetype='application/zip', as_attachment=True, download_name='grupo_portoviejo_completo.zip')
 
 # ═══════════════════════════════════════════
+#  EXPORTAR EXCEL
+# ═══════════════════════════════════════════
+
+def _rows_to_xlsx(rows, cols):
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Datos"
+    hf = Font(bold=True, color='FFFFFF', size=11)
+    hfill = PatternFill(start_color='0F172A', end_color='0F172A', fill_type='solid')
+    for j, col in enumerate(cols, 1):
+        c = ws.cell(row=1, column=j, value=col)
+        c.font = hf; c.fill = hfill
+        c.alignment = Alignment(horizontal='center', vertical='center')
+    for i, row in enumerate(rows, 2):
+        for j, val in enumerate(row, 1):
+            c = ws.cell(row=i, column=j, value=val)
+            c.alignment = Alignment(horizontal='center', vertical='center')
+    for col in ws.columns:
+        ml = max((len(str(c.value or '')) for c in col), default=0)
+        ws.column_dimensions[col[0].column_letter].width = min(ml + 4, 45)
+    return wb
+
+_TABLA_MAPPING = {
+    'miembros': ("SELECT nombre, apodo FROM miembros ORDER BY id", ['Nombre','Apodo']),
+    'asistencias': ("SELECT m.nombre, a.fecha, CASE WHEN a.valor=1 THEN 'Si' ELSE 'No' END FROM asistencias a JOIN miembros m ON a.miembro_id = m.id ORDER BY a.fecha,m.nombre", ['Miembro','Fecha','Asistió']),
+    'bingos': ("SELECT fecha, monto FROM bingos ORDER BY fecha", ['Fecha','Monto']),
+    'rifas': ("SELECT m.nombre, r.fecha, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id ORDER BY r.fecha,m.nombre", ['Miembro','Fecha','Cantidad']),
+    'ahorro_normal': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='normal' ORDER BY ma.orden,m.nombre", ['Miembro','Mes','Monto']),
+    'ahorro_cumple': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='cumple' ORDER BY ma.orden,m.nombre", ['Miembro','Mes','Monto']),
+    'ahorro_rifa': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='rifa' ORDER BY ma.orden,m.nombre", ['Miembro','Mes','Monto']),
+    'cumple_aportes': ("SELECT cm.clave, m.nombre, ca.valor FROM cumple_aportes ca JOIN cumple_meses cm ON ca.cumple_mes_id = cm.id JOIN miembros m ON ca.miembro_id = m.id ORDER BY cm.orden,m.nombre", ['Mes','Miembro','Cantidad']),
+    'cumple_fechas': ("SELECT m.nombre, cf.fecha FROM cumple_fechas cf JOIN miembros m ON cf.miembro_id = m.id ORDER BY cf.fecha", ['Miembro','Fecha']),
+    'prestamos': ("SELECT m.nombre, p.monto, p.obs FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id", ['Miembro','Monto','Observación']),
+}
+
+@app.route('/api/export/xlsx/<tabla>')
+@login_required
+def export_xlsx(tabla):
+    if tabla not in _TABLA_MAPPING:
+        return jsonify({'error':'Tabla no encontrada'}), 404
+    q, cols = _TABLA_MAPPING[tabla]
+    rows = get_db().execute(q).fetchall()
+    wb = _rows_to_xlsx([tuple(r.values()) for r in rows], cols)
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(buf, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                     as_attachment=True, download_name=f'{tabla}.xlsx')
+
+@app.route('/api/export/xlsx/todo')
+@login_required
+def export_xlsx_todo():
+    import zipfile
+    db = get_db()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for key, (q, cols) in _TABLA_MAPPING.items():
+            rows = db.execute(q).fetchall()
+            wb = _rows_to_xlsx([tuple(r.values()) for r in rows], cols)
+            xl_buf = io.BytesIO()
+            wb.save(xl_buf)
+            xl_buf.seek(0)
+            zf.writestr(f'{key}.xlsx', xl_buf.getvalue())
+    buf.seek(0)
+    return send_file(buf, mimetype='application/zip', as_attachment=True, download_name='grupo_portoviejo_completo_xlsx.zip')
+
+# ═══════════════════════════════════════════
 #  IMPORTAR DESDE EXCEL
 # ═══════════════════════════════════════════
 
@@ -771,3 +840,4 @@ if __name__ == '__main__':
     # debug=False siempre en producción (Render). Para desarrollo local
     # puedes cambiarlo temporalmente a True.
     app.run(host='0.0.0.0', port=port, debug=False)
+
