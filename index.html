@@ -616,7 +616,11 @@ async function importExcel(){
     const d=await r.json();
     if(d.ok){
       const rs=d.resumen;
-      document.getElementById('importResult').innerHTML=`<span style="color:var(--success);font-weight:600">✓ Importado:</span> ${rs.miembros} miembros, ${rs.asistencias} asistencias, ${rs.bingos} bingos, ${rs.rifas} rifas, ${rs.ahorros} ahorros, ${rs.cumple} cumpleaños, ${rs.prestamos} préstamos.`;
+      const hojas=(d.hojas||[]).join(', ')||'ninguna';
+      document.getElementById('importResult').innerHTML=
+        `<div><span style="color:var(--success);font-weight:600">✓ Importado:</span></div>
+         <div style="font-size:11px;color:var(--text2);margin-top:4px">Hojas detectadas: ${hojas}</div>
+         <div style="font-size:12px;margin-top:6px">${rs.miembros} miembros · ${rs.asistencias} asistencias · ${rs.bingos} bingos · ${rs.rifas} rifas · ${rs.ahorros} ahorros · ${rs.cumple} cumpleaños · ${rs.prestamos} préstamos</div>`;
       toast('Importación completada');await loadAll()
     }else{document.getElementById('importResult').innerHTML=`<span style="color:var(--danger)">✕ Error: ${d.error}</span>`;toast('Error al importar','e')}
   }catch(e){document.getElementById('importResult').innerHTML=`<span style="color:var(--danger)">✕ ${e.message}</span>`;toast('Error de conexión','e')}

@@ -683,88 +683,150 @@ def import_excel():
     db = get_db()
     resumen = {'miembros':0, 'asistencias':0, 'bingos':0, 'rifas':0, 'ahorros':0, 'cumple':0, 'prestamos':0}
     errores = []
+    hojas_detectadas = []
 
     for ws in wb.worksheets:
         name = ws.title.strip().upper()
-        rows_list = list(ws.iter_rows(values_only=True))
-        if not rows_list: continue
+        rows_raw = list(ws.iter_rows(values_only=True))
+        if not rows_raw: continue
 
-        if 'MIEMBRO' in name or name == 'MIEMBROS':
-            for row in rows_list[1:]:
+        # ── Limpiar filas vacías al inicio y final ──
+        while rows_raw and all(c is None or (isinstance(c, str) and c.strip() == '') for c in rows_raw[0]):
+            rows_raw.pop(0)
+        while rows_raw and all(c is None or (isinstance(c, str) and c.strip() == '') for c in rows_raw[-1]):
+            rows_raw.pop()
+        if not rows_raw: continue
+
+        # ── Detectar y saltar filas de título (texto largo en col A, sin datos en cols siguientes) ──
+        def _es_titulo(row):
+            first = str(row[0]).strip() if row[0] else ''
+            if not first: return False
+            # Si la primera celda es muy larga (>25) y el resto están vacías → título
+            if len(first) > 25:
+                return True
+            # Si coincide con patrones comunes de título
+            if first.upper() in ('GRUPO CALLE PORTOVIEJO', 'GRUPO CALLE PORTOVIEJO 2026', 'GRUPO', 'CALLE', 'PORTOVIEJO'):
+                return True
+            return False
+
+        while rows_raw and _es_titulo(rows_raw[0]):
+            rows_raw.pop(0)
+        while rows_raw and all(c is None or (isinstance(c, str) and c.strip() == '') for c in rows_raw[0]):
+            rows_raw.pop(0)
+        if not rows_raw: continue
+
+        rows_list = rows_raw
+        hojas_detectadas.append(name)
+
+        # ── MIEMBROS ──
+        if 'MIEMBRO' in name:
+            start = 1 if str(rows_list[0][0]).strip().upper() in ('NOMBRE', 'NOMBRE COMPLETO', 'NOMBRE COMPLETO DEL MIEMBRO', 'MIEMBRO', 'APELLIDOS Y NOMBRES') else 0
+            for row in rows_list[start:]:
                 nom = str(row[0]).strip().upper() if row[0] else ''
                 apo = str(row[1]).strip() if len(row)>1 and row[1] else ''
-                if nom:
+                if nom and nom not in ('NOMBRE', 'NOMBRE COMPLETO', 'MIEMBRO', 'APODO', ''):
                     try:
                         db.execute("INSERT INTO miembros (nombre, apodo) VALUES (?, ?)", (nom, apo))
                         resumen['miembros'] += 1
                     except psycopg2.IntegrityError: pass
             db.commit()
+            continue
 
-        elif 'ASISTENCIA' in name or name == 'TABLAS':
-            headers = [str(c) for c in rows_list[0]] if rows_list[0] else []
-            for row in rows_list[1:]:
+        # ── ASISTENCIAS / TABLAS ──
+        if 'ASISTENCIA' in name or name in ('TABLAS', 'ASIST', 'ASIS'):
+            # Buscar fila de encabezados (donde la 1ra col NO Parece nombre de miembro)
+            hdr_idx = 0
+            for i, row in enumerate(rows_list):
+                first = str(row[0]).strip().upper() if row[0] else ''
+                if first in ('NOMBRE', 'NOMBRE COMPLETO', 'MIEMBRO', 'APELLIDOS Y NOMBRES', ''):
+                    hdr_idx = i
+                    break
+            headers = [str(c) for c in rows_list[hdr_idx]] if rows_list[hdr_idx] else []
+            for row in rows_list[hdr_idx+1:]:
                 nom = str(row[0]).strip().upper() if row[0] else ''
-                if not nom: continue
+                if not nom or nom in ('NOMBRE', 'NOMBRE COMPLETO', 'MIEMBRO', ''): continue
                 miembro = db.execute("SELECT id FROM miembros WHERE nombre=?", (nom,)).fetchone()
                 if not miembro: continue
                 for j, fecha_raw in enumerate(headers[1:], 1):
                     if j >= len(row): break
                     fecha = str(fecha_raw).strip() if fecha_raw else ''
-                    val = 1 if row[j] and str(row[j]).strip() in ('1','Si','SI','si','x','X','✓') else 0
-                    if fecha:
-                        try:
-                            db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?) ON CONFLICT (fecha) DO NOTHING", (fecha,))
-                            db.execute("INSERT INTO asistencias (miembro_id, fecha, valor) VALUES (?, ?, ?) ON CONFLICT(miembro_id, fecha) DO UPDATE SET valor=excluded.valor",
-                                       (miembro['id'], fecha, val))
-                            resumen['asistencias'] += 1
-                        except: pass
+                    if not fecha or fecha.upper() in ('NONE', 'NINGUNO', ''): continue
+                    val = 1 if row[j] and str(row[j]).strip() in ('1','Si','SI','si','x','X','✓','✔','SÍ') else 0
+                    try:
+                        db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?) ON CONFLICT (fecha) DO NOTHING", (fecha,))
+                        db.execute("INSERT INTO asistencias (miembro_id, fecha, valor) VALUES (?, ?, ?) ON CONFLICT(miembro_id, fecha) DO UPDATE SET valor=excluded.valor",
+                                   (miembro['id'], fecha, val))
+                        resumen['asistencias'] += 1
+                    except: pass
             db.commit()
+            continue
 
-        elif 'BINGO' in name:
-            for row in rows_list[1:]:
+        # ── BINGO ──
+        if 'BINGO' in name:
+            start = 1 if rows_list[0][0] and str(rows_list[0][0]).strip().upper() in ('FECHA', 'FECHAS') else 0
+            for row in rows_list[start:]:
                 if not row[0] or not row[1]: continue
+                fecha = str(row[0]).strip()
+                if fecha.upper() in ('FECHA', 'FECHAS', 'NONE', ''): continue
                 try:
                     db.execute("INSERT INTO bingos (fecha, monto) VALUES (?, ?) ON CONFLICT (fecha) DO NOTHING",
-                               (str(row[0]).strip(), float(row[1])))
+                               (fecha, float(row[1])))
                     resumen['bingos'] += 1
                 except: pass
             db.commit()
+            continue
 
-        elif 'RIFA' in name:
-            headers = [str(c) for c in rows_list[0]] if rows_list[0] else []
-            for row in rows_list[1:]:
+        # ── RIFA ──
+        if 'RIFA' in name:
+            hdr_idx = 0
+            for i, row in enumerate(rows_list):
+                first = str(row[0]).strip().upper() if row[0] else ''
+                if first in ('NOMBRE', 'NOMBRE COMPLETO', 'MIEMBRO', ''):
+                    hdr_idx = i
+                    break
+            headers = [str(c) for c in rows_list[hdr_idx]] if rows_list[hdr_idx] else []
+            for row in rows_list[hdr_idx+1:]:
                 nom = str(row[0]).strip().upper() if row[0] else ''
-                if not nom: continue
+                if not nom or nom in ('NOMBRE', 'NOMBRE COMPLETO', 'MIEMBRO', ''): continue
                 miembro = db.execute("SELECT id FROM miembros WHERE nombre=?", (nom,)).fetchone()
                 if not miembro: continue
                 for j, fecha_raw in enumerate(headers[1:], 1):
                     if j >= len(row): break
                     fecha = str(fecha_raw).strip() if fecha_raw else ''
+                    if not fecha or fecha.upper() in ('NONE', 'TOTAL', ''): continue
                     try: val = int(float(str(row[j]))) if row[j] else 0
                     except: val = 0
-                    if fecha:
-                        try:
-                            db.execute("INSERT INTO fechas_rifa (fecha) VALUES (?) ON CONFLICT (fecha) DO NOTHING", (fecha,))
-                            db.execute("INSERT INTO rifas (miembro_id, fecha, valor) VALUES (?, ?, ?) ON CONFLICT(miembro_id, fecha) DO UPDATE SET valor=excluded.valor",
-                                       (miembro['id'], fecha, val))
-                            resumen['rifas'] += 1
-                        except: pass
+                    try:
+                        db.execute("INSERT INTO fechas_rifa (fecha) VALUES (?) ON CONFLICT (fecha) DO NOTHING", (fecha,))
+                        db.execute("INSERT INTO rifas (miembro_id, fecha, valor) VALUES (?, ?, ?) ON CONFLICT(miembro_id, fecha) DO UPDATE SET valor=excluded.valor",
+                                   (miembro['id'], fecha, val))
+                        resumen['rifas'] += 1
+                    except: pass
             db.commit()
+            continue
 
-        elif 'AHORRO' in name or 'AHORROS' in name:
-            headers = [str(c).strip().upper() for c in rows_list[0]] if rows_list[0] else []
+        # ── AHORROS ──
+        if 'AHORRO' in name:
+            hdr_idx = 0
+            for i, row in enumerate(rows_list):
+                first = str(row[0]).strip().upper() if row[0] else ''
+                if first in ('NOMBRE', 'NOMBRE COMPLETO', 'MIEMBRO', ''):
+                    hdr_idx = i
+                    break
+            headers = [str(c).strip().upper() for c in rows_list[hdr_idx]] if rows_list[hdr_idx] else []
             tipo = 'normal'
             if 'CUMPLE' in name: tipo = 'cumple'
             if 'RIFA' in name: tipo = 'rifa'
-            for row in rows_list[1:]:
+            for row in rows_list[hdr_idx+1:]:
                 nom = str(row[0]).strip().upper() if row[0] else ''
-                if not nom: continue
+                if not nom or nom in ('NOMBRE', 'NOMBRE COMPLETO', 'MIEMBRO', ''): continue
                 miembro = db.execute("SELECT id FROM miembros WHERE nombre=?", (nom,)).fetchone()
                 if not miembro: continue
                 for j, h in enumerate(headers[1:], 1):
                     if j >= len(row): break
-                    if h in ('TOTAL',''): continue
+                    if h in ('TOTAL', 'SUMA', ''): continue
                     mes = h.capitalize()
+                    if mes not in ('Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'): continue
                     try: val = float(row[j]) if row[j] else 0
                     except: val = 0
                     if val:
@@ -774,17 +836,25 @@ def import_excel():
                                        (tipo, miembro['id'], mes_row['id'], val))
                             resumen['ahorros'] += 1
             db.commit()
+            continue
 
-        elif 'CUMPLE' in name and ('APORTE' in name or 'MES' in name):
-            headers = [str(c).strip() for c in rows_list[0]] if rows_list[0] else []
-            for row in rows_list[1:]:
+        # ── CUMPLEAÑOS (APORTES) ──
+        if 'CUMPLE' in name:
+            hdr_idx = 0
+            for i, row in enumerate(rows_list):
+                first = str(row[0]).strip().upper() if row[0] else ''
+                if first in ('NOMBRE', 'NOMBRE COMPLETO', 'MIEMBRO', ''):
+                    hdr_idx = i
+                    break
+            headers = [str(c).strip() for c in rows_list[hdr_idx]] if rows_list[hdr_idx] else []
+            for row in rows_list[hdr_idx+1:]:
                 nom = str(row[0]).strip().upper() if row[0] else ''
-                if not nom: continue
+                if not nom or nom in ('NOMBRE', 'NOMBRE COMPLETO', 'MIEMBRO', ''): continue
                 miembro = db.execute("SELECT id FROM miembros WHERE nombre=?", (nom,)).fetchone()
                 if not miembro: continue
                 for j, h in enumerate(headers[1:], 1):
                     if j >= len(row): break
-                    if h in ('TOTAL',''): continue
+                    if h.upper() in ('TOTAL', 'SUMA', ''): continue
                     try: val = int(float(str(row[j]))) if row[j] else 0
                     except: val = 0
                     if val:
@@ -794,11 +864,14 @@ def import_excel():
                                        (cm['id'], miembro['id'], val))
                             resumen['cumple'] += 1
             db.commit()
+            continue
 
-        elif 'PRESTAMO' in name:
-            for row in rows_list[1:]:
+        # ── PRESTAMOS ──
+        if 'PRESTAMO' in name:
+            start = 1 if rows_list[0][0] and str(rows_list[0][0]).strip().upper() in ('NOMBRE', 'MIEMBRO') else 0
+            for row in rows_list[start:]:
                 nom = str(row[0]).strip().upper() if row[0] else ''
-                if not nom: continue
+                if not nom or nom in ('NOMBRE', 'NOMBRE COMPLETO', 'MIEMBRO', 'MONTO', 'OBSERVACIÓN', ''): continue
                 try: monto = float(row[1]) if len(row)>1 and row[1] else 0
                 except: monto = 0
                 if not monto: continue
@@ -808,9 +881,10 @@ def import_excel():
                     db.execute("INSERT INTO prestamos (miembro_id, monto, obs) VALUES (?, ?, ?)", (miembro['id'], monto, obs))
                     resumen['prestamos'] += 1
             db.commit()
+            continue
 
     db.commit()
-    return jsonify({'ok': True, 'resumen': resumen, 'errores': errores})
+    return jsonify({'ok': True, 'resumen': resumen, 'errores': errores, 'hojas': hojas_detectadas})
 
 # ═══════════════════════════════════════════
 #  SPA
@@ -840,4 +914,3 @@ if __name__ == '__main__':
     # debug=False siempre en producción (Render). Para desarrollo local
     # puedes cambiarlo temporalmente a True.
     app.run(host='0.0.0.0', port=port, debug=False)
-
