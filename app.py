@@ -159,7 +159,9 @@ def init_db():
             id SERIAL PRIMARY KEY,
             miembro_id INTEGER NOT NULL REFERENCES miembros(id) ON DELETE CASCADE,
             monto REAL NOT NULL,
-            obs TEXT DEFAULT ''
+            obs TEXT DEFAULT '',
+            estado TEXT NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente','pagado')),
+            fecha TEXT DEFAULT NULL
         );
         INSERT INTO meses_ahorro (id, nombre, orden) VALUES
             (1,'ENERO',1),(2,'FEBRERO',2),(3,'MARZO',3),(4,'ABRIL',4),
@@ -171,6 +173,9 @@ def init_db():
             (4,'ABRIL(1)',4),(5,'MAYO(2)',5),(6,'OCTUBRE(4)',6),(7,'DICIEMBRE(3)',7)
         ON CONFLICT (id) DO NOTHING;
     ''')
+    # Migraciones para bases ya existentes (columnas nuevas en prestamos)
+    c.execute("ALTER TABLE prestamos ADD COLUMN IF NOT EXISTS estado TEXT NOT NULL DEFAULT 'pendiente'")
+    c.execute("ALTER TABLE prestamos ADD COLUMN IF NOT EXISTS fecha TEXT DEFAULT NULL")
     conn.close()
 
 # ═══════════════════════════════════════════
@@ -456,7 +461,7 @@ def delete_cumple_fecha(id):
 @app.route('/api/prestamos', methods=['GET'])
 @login_required
 def get_prestamos():
-    return jsonify([dict(r) for r in get_db().execute("SELECT p.id, m.nombre, p.monto, p.obs FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id").fetchall()])
+    return jsonify([dict(r) for r in get_db().execute("SELECT p.id, m.nombre, p.monto, p.obs, p.estado, p.fecha FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id").fetchall()])
 
 @app.route('/api/prestamos', methods=['POST'])
 @login_required
@@ -464,7 +469,8 @@ def add_prestamo():
     data = request.json
     miembro = get_db().execute("SELECT id FROM miembros WHERE nombre=?", (data['nombre'],)).fetchone()
     if not miembro: return jsonify({'error':'Miembro no encontrado'}), 404
-    c = get_db().execute("INSERT INTO prestamos (miembro_id, monto, obs) VALUES (?, ?, ?) RETURNING id", (miembro['id'], float(data['monto']), data.get('obs', '')))
+    c = get_db().execute("INSERT INTO prestamos (miembro_id, monto, obs, fecha) VALUES (?, ?, ?, ?) RETURNING id",
+                          (miembro['id'], float(data['monto']), data.get('obs', ''), data.get('fecha') or None))
     new_id = c.fetchone()['id']
     get_db().commit()
     return jsonify({'id': new_id}), 201
@@ -475,6 +481,17 @@ def delete_prestamo(id):
     get_db().execute("DELETE FROM prestamos WHERE id=?", (id,))
     get_db().commit()
     return jsonify({'ok': True})
+
+@app.route('/api/prestamos/<int:id>/estado', methods=['POST'])
+@login_required
+def toggle_prestamo_estado(id):
+    db = get_db()
+    row = db.execute("SELECT estado FROM prestamos WHERE id=?", (id,)).fetchone()
+    if not row: return jsonify({'error':'Préstamo no encontrado'}), 404
+    nuevo = 'pagado' if row['estado'] == 'pendiente' else 'pendiente'
+    db.execute("UPDATE prestamos SET estado=? WHERE id=?", (nuevo, id))
+    db.commit()
+    return jsonify({'ok': True, 'estado': nuevo})
 
 # ═══════════════════════════════════════════
 #  DATOS COMPLETOS
@@ -518,7 +535,7 @@ def get_datos_completos():
         ca[r['clave']][r['nombre']] = r['valor']
 
     cf = [dict(r) for r in db.execute("SELECT m.nombre, cf.fecha FROM cumple_fechas cf JOIN miembros m ON cf.miembro_id = m.id").fetchall()]
-    prestamos = [dict(r) for r in db.execute("SELECT p.id, m.nombre, p.monto, p.obs FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id").fetchall()]
+    prestamos = [dict(r) for r in db.execute("SELECT p.id, m.nombre, p.monto, p.obs, p.estado, p.fecha FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id").fetchall()]
 
     return jsonify({
         'miembros': miembros, 'fechasTablas': fechas_tablas, 'asistencias': asistencias,
@@ -527,6 +544,111 @@ def get_datos_completos():
         'ahorroRifa': gah('rifa'), 'cumpleMeses': cm,
         'cumpleAportes': ca, 'cumpleFechas': cf, 'prestamos': prestamos
     })
+
+# ═══════════════════════════════════════════
+#  ESTADO DE CUENTA (vista consolidada por miembro)
+# ═══════════════════════════════════════════
+
+def _calcular_estado_cuenta(db):
+    """Cruza TODAS las tablas del grupo (asistencia, rifa, ahorros, cumpleaños,
+    préstamos) para producir un estado de cuenta único por miembro."""
+    miembros = [dict(r) for r in db.execute("SELECT id, nombre, apodo FROM miembros ORDER BY id").fetchall()]
+    total_fechas_tablas = db.execute("SELECT COUNT(*) c FROM fechas_tablas").fetchone()['c']
+    total_fechas_rifa = db.execute("SELECT COUNT(*) c FROM fechas_rifa").fetchone()['c']
+
+    asis = {}
+    for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):
+        asis[r['miembro_id']] = r['s'] or 0
+
+    rifa = {}
+    for r in db.execute("SELECT miembro_id, SUM(valor) s FROM rifas GROUP BY miembro_id"):
+        rifa[r['miembro_id']] = r['s'] or 0
+
+    ahorros = {'normal': {}, 'cumple': {}, 'rifa': {}}
+    for r in db.execute("SELECT tipo, miembro_id, SUM(valor) s FROM ahorros GROUP BY tipo, miembro_id"):
+        ahorros[r['tipo']][r['miembro_id']] = r['s'] or 0
+
+    cumple = {}
+    for r in db.execute("SELECT miembro_id, SUM(valor) s FROM cumple_aportes GROUP BY miembro_id"):
+        cumple[r['miembro_id']] = r['s'] or 0
+
+    cumple_fecha = {}
+    for r in db.execute("SELECT miembro_id, fecha FROM cumple_fechas"):
+        cumple_fecha[r['miembro_id']] = r['fecha']
+
+    prest = {}
+    for r in db.execute("SELECT miembro_id, estado, SUM(monto) s FROM prestamos GROUP BY miembro_id, estado"):
+        prest.setdefault(r['miembro_id'], {'pendiente': 0, 'pagado': 0})[r['estado']] = r['s'] or 0
+
+    resultado = []
+    for m in miembros:
+        mid = m['id']
+        as_ok = asis.get(mid, 0)
+        as_pct = round((as_ok / total_fechas_tablas) * 100, 1) if total_fechas_tablas else 0
+        aN = ahorros['normal'].get(mid, 0)
+        aC = ahorros['cumple'].get(mid, 0)
+        aR = ahorros['rifa'].get(mid, 0)
+        ahorro_total = aN + aC + aR
+        p = prest.get(mid, {'pendiente': 0, 'pagado': 0})
+        saldo_neto = round(ahorro_total - p['pendiente'], 2)
+        estado_general = 'moroso' if p['pendiente'] > 0 and as_pct < 50 else ('con_deuda' if p['pendiente'] > 0 else 'al_dia')
+        resultado.append({
+            'id': mid, 'nombre': m['nombre'], 'apodo': m['apodo'],
+            'asistencia': {'asistidas': as_ok, 'total': total_fechas_tablas, 'pct': as_pct},
+            'rifa': {'participaciones': rifa.get(mid, 0), 'totalFechas': total_fechas_rifa},
+            'ahorros': {'normal': round(aN, 2), 'cumple': round(aC, 2), 'rifa': round(aR, 2), 'total': round(ahorro_total, 2)},
+            'cumpleAportes': cumple.get(mid, 0),
+            'cumpleFecha': cumple_fecha.get(mid),
+            'prestamos': {'pendiente': round(p['pendiente'], 2), 'pagado': round(p['pagado'], 2)},
+            'saldoNeto': saldo_neto,
+            'estadoGeneral': estado_general,
+        })
+    return resultado
+
+@app.route('/api/estado-cuenta', methods=['GET'])
+@login_required
+def get_estado_cuenta():
+    return jsonify(_calcular_estado_cuenta(get_db()))
+
+@app.route('/api/export/xlsx/estado_cuenta')
+@login_required
+def export_estado_cuenta_xlsx():
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill
+    db = get_db()
+    datos = _calcular_estado_cuenta(db)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Estado de Cuenta"
+    cols = ['N°','Nombre','Asist. (Si/Total)','Asist. %','Rifa (Participaciones)',
+            'Ahorro Normal','Ahorro Cumple','Ahorro Rifa','Total Ahorros',
+            'Aportes Cumple','Préstamo Pendiente','Préstamo Pagado','Saldo Neto','Estado']
+    hf = Font(bold=True, color='FFFFFF', size=11)
+    hfill = PatternFill(start_color='0F172A', end_color='0F172A', fill_type='solid')
+    for j, col in enumerate(cols, 1):
+        c = ws.cell(row=1, column=j, value=col)
+        c.font = hf; c.fill = hfill
+        c.alignment = Alignment(horizontal='center', vertical='center')
+    estado_lbl = {'al_dia':'Al día','con_deuda':'Con deuda','moroso':'Moroso'}
+    for i, d in enumerate(datos, 1):
+        row = [
+            i, d['nombre'], f"{d['asistencia']['asistidas']}/{d['asistencia']['total']}", f"{d['asistencia']['pct']}%",
+            d['rifa']['participaciones'], d['ahorros']['normal'], d['ahorros']['cumple'], d['ahorros']['rifa'],
+            d['ahorros']['total'], d['cumpleAportes'], d['prestamos']['pendiente'], d['prestamos']['pagado'],
+            d['saldoNeto'], estado_lbl.get(d['estadoGeneral'], d['estadoGeneral'])
+        ]
+        for j, val in enumerate(row, 2):
+            c = ws.cell(row=i+1, column=j, value=val)
+            c.alignment = Alignment(horizontal='center', vertical='center')
+        ws.cell(row=i+1, column=1, value=i).alignment = Alignment(horizontal='center')
+    for col in ws.columns:
+        ml = max((len(str(c.value or '')) for c in col), default=0)
+        ws.column_dimensions[col[0].column_letter].width = min(ml + 4, 30)
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(buf, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                     as_attachment=True, download_name='estado_cuenta_grupo.xlsx')
 
 # ═══════════════════════════════════════════
 #  EXPORTAR
@@ -554,7 +676,7 @@ def export_csv(tabla):
         'ahorro_rifa': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='rifa' ORDER BY ma.orden,m.nombre", ['miembro','mes','monto']),
         'cumple_aportes': ("SELECT cm.clave, m.nombre, ca.valor FROM cumple_aportes ca JOIN cumple_meses cm ON ca.cumple_mes_id = cm.id JOIN miembros m ON ca.miembro_id = m.id ORDER BY cm.orden,m.nombre", ['mes','miembro','cantidad']),
         'cumple_fechas': ("SELECT m.nombre, cf.fecha FROM cumple_fechas cf JOIN miembros m ON cf.miembro_id = m.id ORDER BY cf.fecha", ['miembro','fecha']),
-        'prestamos': ("SELECT m.nombre, p.monto, p.obs FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id", ['miembro','monto','observacion']),
+        'prestamos': ("SELECT m.nombre, p.monto, p.obs, p.estado FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id", ['miembro','monto','observacion','estado']),
     }
     if tabla not in mapping: return jsonify({'error':'Tabla no encontrada'}), 404
     q, cols = mapping[tabla]
@@ -580,7 +702,7 @@ def export_todo():
             'ahorro_rifa': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='rifa' ORDER BY ma.orden,m.nombre", ['miembro','mes','monto']),
             'cumple_aportes': ("SELECT cm.clave, m.nombre, ca.valor FROM cumple_aportes ca JOIN cumple_meses cm ON ca.cumple_mes_id = cm.id JOIN miembros m ON ca.miembro_id = m.id ORDER BY cm.orden,m.nombre", ['mes','miembro','cantidad']),
             'cumple_fechas': ("SELECT m.nombre, cf.fecha FROM cumple_fechas cf JOIN miembros m ON cf.miembro_id = m.id ORDER BY cf.fecha", ['miembro','fecha']),
-            'prestamos': ("SELECT m.nombre, p.monto, p.obs FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id", ['miembro','monto','observacion']),
+            'prestamos': ("SELECT m.nombre, p.monto, p.obs, p.estado FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id", ['miembro','monto','observacion','estado']),
         }.items():
             rows = db.execute(q).fetchall()
             out = _rows_to_csv([tuple(r.values()) for r in rows], cols)
@@ -623,7 +745,7 @@ _TABLA_MAPPING = {
     'ahorro_rifa': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='rifa' ORDER BY ma.orden,m.nombre", ['Miembro','Mes','Monto']),
     'cumple_aportes': ("SELECT cm.clave, m.nombre, ca.valor FROM cumple_aportes ca JOIN cumple_meses cm ON ca.cumple_mes_id = cm.id JOIN miembros m ON ca.miembro_id = m.id ORDER BY cm.orden,m.nombre", ['Mes','Miembro','Cantidad']),
     'cumple_fechas': ("SELECT m.nombre, cf.fecha FROM cumple_fechas cf JOIN miembros m ON cf.miembro_id = m.id ORDER BY cf.fecha", ['Miembro','Fecha']),
-    'prestamos': ("SELECT m.nombre, p.monto, p.obs FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id", ['Miembro','Monto','Observación']),
+    'prestamos': ("SELECT m.nombre, p.monto, p.obs, p.estado FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id", ['Miembro','Monto','Observación','Estado']),
 }
 
 @app.route('/api/export/xlsx/<tabla>')
