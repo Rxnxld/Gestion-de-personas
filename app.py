@@ -1,22 +1,40 @@
-import sqlite3, os, csv, io, hashlib, secrets
+import os, csv, io, hashlib, secrets
 from datetime import timedelta
 from flask import Flask, g, request, jsonify, send_from_directory, session, Response, send_file
 from flask_cors import CORS
+import psycopg2
+import psycopg2.extras
 
 app = Flask(__name__, static_folder='.')
-app.secret_key = secrets.token_hex(32)
+# Usa una SECRET_KEY fija (variable de entorno en Render) para que las sesiones
+# no se invaliden cada vez que el servidor reinicia o se redespliega.
+app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.permanent_session_lifetime = timedelta(hours=8)
 CORS(app, supports_credentials=True)
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'grupo.db')
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.config')
+# En Render, crea una base de datos PostgreSQL y copia su "Internal Database URL"
+# como variable de entorno DATABASE_URL en este servicio web.
+DATABASE_URL = os.environ['DATABASE_URL']
+
+class DBWrapper:
+    """Envuelve psycopg2 para que el resto del código (escrito para sqlite3)
+    siga funcionando igual: placeholders '?' y filas accesibles por nombre."""
+    def __init__(self, conn):
+        self.conn = conn
+    def execute(self, sql, params=()):
+        cur = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql.replace('?', '%s'), params)
+        return cur
+    def commit(self):
+        self.conn.commit()
+    def close(self):
+        self.conn.close()
 
 def get_db():
     if 'db' not in g:
-        g.db = sqlite3.connect(DB_PATH)
-        g.db.row_factory = sqlite3.Row
-        g.db.execute("PRAGMA journal_mode=WAL")
-        g.db.execute("PRAGMA foreign_keys=ON")
+        conn = psycopg2.connect(DATABASE_URL)
+        conn.autocommit = True
+        g.db = DBWrapper(conn)
     return g.db
 
 def close_db(e=None):
@@ -24,26 +42,43 @@ def close_db(e=None):
     if db: db.close()
 app.teardown_appcontext(close_db)
 
+# ═══════════════════════════════════════════
+#  CONFIG (password) guardada en la BD, no en archivo
+# ═══════════════════════════════════════════
+
+def _config_conn():
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.autocommit = True
+    return conn
+
+def get_config_value(key):
+    conn = _config_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT value FROM app_config WHERE key=%s", (key,))
+    row = cur.fetchone()
+    conn.close()
+    return row[0] if row else None
+
+def set_config_value(key, value):
+    conn = _config_conn()
+    cur = conn.cursor()
+    cur.execute("""INSERT INTO app_config (key, value) VALUES (%s, %s)
+                   ON CONFLICT (key) DO UPDATE SET value = excluded.value""", (key, value))
+    conn.close()
+
 def init_config():
-    if not os.path.exists(CONFIG_PATH):
+    if get_config_value('PASSWORD') is None:
         pw = 'admin123'
-        with open(CONFIG_PATH, 'w') as f:
-            f.write(f'PASSWORD={hashlib.sha256(pw.encode()).hexdigest()}\n')
+        set_config_value('PASSWORD', hashlib.sha256(pw.encode()).hexdigest())
         print(f"  ── Config creada: password por defecto = {pw}")
 
 def check_password(pw):
-    try:
-        with open(CONFIG_PATH) as f:
-            for line in f:
-                if line.startswith('PASSWORD='):
-                    stored = line.strip().split('=', 1)[1]
-                    return stored == hashlib.sha256(pw.encode()).hexdigest()
-    except: return False
-    return False
+    stored = get_config_value('PASSWORD')
+    if not stored: return False
+    return stored == hashlib.sha256(pw.encode()).hexdigest()
 
 def set_password(pw):
-    with open(CONFIG_PATH, 'w') as f:
-        f.write(f'PASSWORD={hashlib.sha256(pw.encode()).hexdigest()}\n')
+    set_config_value('PASSWORD', hashlib.sha256(pw.encode()).hexdigest())
 
 def login_required(fn):
     def wrapper(*a, **kw):
@@ -54,90 +89,89 @@ def login_required(fn):
     return wrapper
 
 def init_db():
-    db = sqlite3.connect(DB_PATH)
-    c = db.cursor()
-    c.executescript('''
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.autocommit = True
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS app_config (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS miembros (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nombre TEXT UNIQUE NOT NULL,
             apodo TEXT DEFAULT ''
         );
         CREATE TABLE IF NOT EXISTS fechas_tablas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             fecha TEXT UNIQUE NOT NULL
         );
         CREATE TABLE IF NOT EXISTS asistencias (
-            miembro_id INTEGER NOT NULL,
+            miembro_id INTEGER NOT NULL REFERENCES miembros(id) ON DELETE CASCADE,
             fecha TEXT NOT NULL,
             valor INTEGER DEFAULT 0,
-            PRIMARY KEY (miembro_id, fecha),
-            FOREIGN KEY (miembro_id) REFERENCES miembros(id) ON DELETE CASCADE
+            PRIMARY KEY (miembro_id, fecha)
         );
         CREATE TABLE IF NOT EXISTS bingos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             fecha TEXT UNIQUE NOT NULL,
             monto REAL NOT NULL
         );
         CREATE TABLE IF NOT EXISTS fechas_rifa (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             fecha TEXT UNIQUE NOT NULL
         );
         CREATE TABLE IF NOT EXISTS rifas (
-            miembro_id INTEGER NOT NULL,
+            miembro_id INTEGER NOT NULL REFERENCES miembros(id) ON DELETE CASCADE,
             fecha TEXT NOT NULL,
             valor INTEGER DEFAULT 0,
-            PRIMARY KEY (miembro_id, fecha),
-            FOREIGN KEY (miembro_id) REFERENCES miembros(id) ON DELETE CASCADE
+            PRIMARY KEY (miembro_id, fecha)
         );
         CREATE TABLE IF NOT EXISTS meses_ahorro (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             nombre TEXT UNIQUE NOT NULL,
             orden INTEGER NOT NULL
         );
         CREATE TABLE IF NOT EXISTS ahorros (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             tipo TEXT NOT NULL CHECK(tipo IN ('normal','cumple','rifa')),
-            miembro_id INTEGER NOT NULL,
-            mes_id INTEGER NOT NULL,
+            miembro_id INTEGER NOT NULL REFERENCES miembros(id) ON DELETE CASCADE,
+            mes_id INTEGER NOT NULL REFERENCES meses_ahorro(id) ON DELETE CASCADE,
             valor REAL DEFAULT 0,
-            UNIQUE(tipo, miembro_id, mes_id),
-            FOREIGN KEY (miembro_id) REFERENCES miembros(id) ON DELETE CASCADE,
-            FOREIGN KEY (mes_id) REFERENCES meses_ahorro(id) ON DELETE CASCADE
+            UNIQUE(tipo, miembro_id, mes_id)
         );
         CREATE TABLE IF NOT EXISTS cumple_meses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             clave TEXT UNIQUE NOT NULL,
             orden INTEGER NOT NULL
         );
         CREATE TABLE IF NOT EXISTS cumple_aportes (
-            cumple_mes_id INTEGER NOT NULL,
-            miembro_id INTEGER NOT NULL,
+            cumple_mes_id INTEGER NOT NULL REFERENCES cumple_meses(id) ON DELETE CASCADE,
+            miembro_id INTEGER NOT NULL REFERENCES miembros(id) ON DELETE CASCADE,
             valor INTEGER DEFAULT 0,
-            PRIMARY KEY (cumple_mes_id, miembro_id),
-            FOREIGN KEY (cumple_mes_id) REFERENCES cumple_meses(id) ON DELETE CASCADE,
-            FOREIGN KEY (miembro_id) REFERENCES miembros(id) ON DELETE CASCADE
+            PRIMARY KEY (cumple_mes_id, miembro_id)
         );
         CREATE TABLE IF NOT EXISTS cumple_fechas (
-            miembro_id INTEGER PRIMARY KEY,
-            fecha TEXT NOT NULL,
-            FOREIGN KEY (miembro_id) REFERENCES miembros(id) ON DELETE CASCADE
+            miembro_id INTEGER PRIMARY KEY REFERENCES miembros(id) ON DELETE CASCADE,
+            fecha TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS prestamos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            miembro_id INTEGER NOT NULL,
+            id SERIAL PRIMARY KEY,
+            miembro_id INTEGER NOT NULL REFERENCES miembros(id) ON DELETE CASCADE,
             monto REAL NOT NULL,
-            obs TEXT DEFAULT '',
-            FOREIGN KEY (miembro_id) REFERENCES miembros(id) ON DELETE CASCADE
+            obs TEXT DEFAULT ''
         );
-        INSERT OR IGNORE INTO meses_ahorro (id, nombre, orden) VALUES
+        INSERT INTO meses_ahorro (id, nombre, orden) VALUES
             (1,'ENERO',1),(2,'FEBRERO',2),(3,'MARZO',3),(4,'ABRIL',4),
             (5,'MAYO',5),(6,'JUNIO',6),(7,'JULIO',7),(8,'AGOSTO',8),
-            (9,'SEPTIEMBRE',9),(10,'OCTUBRE',10),(11,'NOVIEMBRE',11),(12,'DICIEMBRE',12);
-        INSERT OR IGNORE INTO cumple_meses (id, clave, orden) VALUES
+            (9,'SEPTIEMBRE',9),(10,'OCTUBRE',10),(11,'NOVIEMBRE',11),(12,'DICIEMBRE',12)
+        ON CONFLICT (id) DO NOTHING;
+        INSERT INTO cumple_meses (id, clave, orden) VALUES
             (1,'ENERO (2)',1),(2,'FEBRERO (4)',2),(3,'MARZO(2)',3),
-            (4,'ABRIL(1)',4),(5,'MAYO(2)',5),(6,'OCTUBRE(4)',6),(7,'DICIEMBRE(3)',7);
+            (4,'ABRIL(1)',4),(5,'MAYO(2)',5),(6,'OCTUBRE(4)',6),(7,'DICIEMBRE(3)',7)
+        ON CONFLICT (id) DO NOTHING;
     ''')
-    db.commit(); db.close()
+    conn.close()
 
 # ═══════════════════════════════════════════
 #  AUTH
@@ -145,7 +179,7 @@ def init_db():
 
 @app.route('/api/auth/status')
 def auth_status():
-    configurado = os.path.exists(CONFIG_PATH)
+    configurado = get_config_value('PASSWORD') is not None
     return jsonify({'logged_in': session.get('logged_in', False), 'configurado': configurado})
 
 @app.route('/api/auth/login', methods=['POST'])
@@ -159,14 +193,8 @@ def auth_login():
 
 @app.route('/api/auth/setup', methods=['POST'])
 def auth_setup():
-    if os.path.exists(CONFIG_PATH):
-        try:
-            with open(CONFIG_PATH) as f:
-                if 'PASSWORD=' in f.read() and session.get('logged_in'):
-                    pass
-                else:
-                    return jsonify({'error':'Ya configurado. Inicia sesión primero.'}), 400
-        except: pass
+    if get_config_value('PASSWORD') is not None and not session.get('logged_in'):
+        return jsonify({'error':'Ya configurado. Inicia sesión primero.'}), 400
     pw = request.json.get('password', '')
     if len(pw) < 4: return jsonify({'error':'Mínimo 4 caracteres'}), 400
     set_password(pw)
@@ -205,10 +233,11 @@ def add_miembro():
     nombre = data.get('nombre', '').strip().upper()
     if not nombre: return jsonify({'error':'Nombre requerido'}), 400
     try:
-        c = get_db().execute("INSERT INTO miembros (nombre, apodo) VALUES (?, ?)", (nombre, data.get('apodo','').strip()))
+        c = get_db().execute("INSERT INTO miembros (nombre, apodo) VALUES (?, ?) RETURNING id", (nombre, data.get('apodo','').strip()))
+        new_id = c.fetchone()['id']
         get_db().commit()
-        return jsonify({'id': c.lastrowid, 'nombre': nombre}), 201
-    except sqlite3.IntegrityError:
+        return jsonify({'id': new_id, 'nombre': nombre}), 201
+    except psycopg2.IntegrityError:
         return jsonify({'error':'El miembro ya existe'}), 409
 
 @app.route('/api/miembros/<int:id>', methods=['DELETE'])
@@ -236,7 +265,7 @@ def add_fecha_tablas():
         get_db().execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (fecha,))
         get_db().commit()
         return jsonify({'ok': True}), 201
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
         return jsonify({'error':'La fecha ya existe'}), 409
 
 @app.route('/api/tablas/asistencias', methods=['GET'])
@@ -278,7 +307,7 @@ def add_bingo():
         get_db().execute("INSERT INTO bingos (fecha, monto) VALUES (?, ?)", (data['fecha'], float(data['monto'])))
         get_db().commit()
         return jsonify({'ok': True}), 201
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
         return jsonify({'error':'La fecha ya existe'}), 409
 
 @app.route('/api/bingos/<int:id>', methods=['DELETE'])
@@ -306,7 +335,7 @@ def add_fecha_rifa():
         get_db().execute("INSERT INTO fechas_rifa (fecha) VALUES (?)", (fecha,))
         get_db().commit()
         return jsonify({'ok': True}), 201
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
         return jsonify({'error':'La fecha ya existe'}), 409
 
 @app.route('/api/rifa', methods=['GET'])
@@ -410,7 +439,7 @@ def add_cumple_fecha():
         get_db().execute("INSERT INTO cumple_fechas (miembro_id, fecha) VALUES (?, ?)", (miembro['id'], data['fecha']))
         get_db().commit()
         return jsonify({'ok': True}), 201
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
         return jsonify({'error':'El miembro ya tiene fecha'}), 409
 
 @app.route('/api/cumple/fechas/<int:id>', methods=['DELETE'])
@@ -435,9 +464,10 @@ def add_prestamo():
     data = request.json
     miembro = get_db().execute("SELECT id FROM miembros WHERE nombre=?", (data['nombre'],)).fetchone()
     if not miembro: return jsonify({'error':'Miembro no encontrado'}), 404
-    c = get_db().execute("INSERT INTO prestamos (miembro_id, monto, obs) VALUES (?, ?, ?)", (miembro['id'], float(data['monto']), data.get('obs', '')))
+    c = get_db().execute("INSERT INTO prestamos (miembro_id, monto, obs) VALUES (?, ?, ?) RETURNING id", (miembro['id'], float(data['monto']), data.get('obs', '')))
+    new_id = c.fetchone()['id']
     get_db().commit()
-    return jsonify({'id': c.lastrowid}), 201
+    return jsonify({'id': new_id}), 201
 
 @app.route('/api/prestamos/<int:id>', methods=['DELETE'])
 @login_required
@@ -529,7 +559,7 @@ def export_csv(tabla):
     if tabla not in mapping: return jsonify({'error':'Tabla no encontrada'}), 404
     q, cols = mapping[tabla]
     rows = db.execute(q).fetchall()
-    out = _rows_to_csv([tuple(r) for r in rows], cols)
+    out = _rows_to_csv([tuple(r.values()) for r in rows], cols)
     return Response(out.getvalue(), mimetype='text/csv; charset=utf-8',
                     headers={'Content-Disposition': f'attachment; filename={tabla}.csv'})
 
@@ -545,15 +575,15 @@ def export_todo():
             'asistencias': ("SELECT m.nombre, a.fecha, CASE WHEN a.valor=1 THEN 'Si' ELSE 'No' END FROM asistencias a JOIN miembros m ON a.miembro_id = m.id ORDER BY a.fecha,m.nombre", ['miembro','fecha','asistio']),
             'bingos': ("SELECT fecha, monto FROM bingos ORDER BY fecha", ['fecha','monto']),
             'rifas': ("SELECT m.nombre, r.fecha, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id ORDER BY r.fecha,m.nombre", ['miembro','fecha','cantidad']),
-            'ahorro_normal': ("SELECT m.nombre, ma.nombre, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='normal' ORDER BY ma.orden,m.nombre", ['miembro','mes','monto']),
-            'ahorro_cumple': ("SELECT m.nombre, ma.nombre, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='cumple' ORDER BY ma.orden,m.nombre", ['miembro','mes','monto']),
-            'ahorro_rifa': ("SELECT m.nombre, ma.nombre, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='rifa' ORDER BY ma.orden,m.nombre", ['miembro','mes','monto']),
+            'ahorro_normal': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='normal' ORDER BY ma.orden,m.nombre", ['miembro','mes','monto']),
+            'ahorro_cumple': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='cumple' ORDER BY ma.orden,m.nombre", ['miembro','mes','monto']),
+            'ahorro_rifa': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='rifa' ORDER BY ma.orden,m.nombre", ['miembro','mes','monto']),
             'cumple_aportes': ("SELECT cm.clave, m.nombre, ca.valor FROM cumple_aportes ca JOIN cumple_meses cm ON ca.cumple_mes_id = cm.id JOIN miembros m ON ca.miembro_id = m.id ORDER BY cm.orden,m.nombre", ['mes','miembro','cantidad']),
             'cumple_fechas': ("SELECT m.nombre, cf.fecha FROM cumple_fechas cf JOIN miembros m ON cf.miembro_id = m.id ORDER BY cf.fecha", ['miembro','fecha']),
             'prestamos': ("SELECT m.nombre, p.monto, p.obs FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id", ['miembro','monto','observacion']),
         }.items():
             rows = db.execute(q).fetchall()
-            out = _rows_to_csv([tuple(r) for r in rows], cols)
+            out = _rows_to_csv([tuple(r.values()) for r in rows], cols)
             zf.writestr(f'{key}.csv', out.getvalue())
     buf.seek(0)
     return send_file(buf, mimetype='application/zip', as_attachment=True, download_name='grupo_portoviejo_completo.zip')
@@ -598,7 +628,7 @@ def import_excel():
                     try:
                         db.execute("INSERT INTO miembros (nombre, apodo) VALUES (?, ?)", (nom, apo))
                         resumen['miembros'] += 1
-                    except sqlite3.IntegrityError: pass
+                    except psycopg2.IntegrityError: pass
             db.commit()
 
         elif 'ASISTENCIA' in name or name == 'TABLAS':
@@ -614,7 +644,7 @@ def import_excel():
                     val = 1 if row[j] and str(row[j]).strip() in ('1','Si','SI','si','x','X','✓') else 0
                     if fecha:
                         try:
-                            db.execute("INSERT OR IGNORE INTO fechas_tablas (fecha) VALUES (?)", (fecha,))
+                            db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?) ON CONFLICT (fecha) DO NOTHING", (fecha,))
                             db.execute("INSERT INTO asistencias (miembro_id, fecha, valor) VALUES (?, ?, ?) ON CONFLICT(miembro_id, fecha) DO UPDATE SET valor=excluded.valor",
                                        (miembro['id'], fecha, val))
                             resumen['asistencias'] += 1
@@ -625,7 +655,7 @@ def import_excel():
             for row in rows_list[1:]:
                 if not row[0] or not row[1]: continue
                 try:
-                    db.execute("INSERT OR IGNORE INTO bingos (fecha, monto) VALUES (?, ?)",
+                    db.execute("INSERT INTO bingos (fecha, monto) VALUES (?, ?) ON CONFLICT (fecha) DO NOTHING",
                                (str(row[0]).strip(), float(row[1])))
                     resumen['bingos'] += 1
                 except: pass
@@ -645,7 +675,7 @@ def import_excel():
                     except: val = 0
                     if fecha:
                         try:
-                            db.execute("INSERT OR IGNORE INTO fechas_rifa (fecha) VALUES (?)", (fecha,))
+                            db.execute("INSERT INTO fechas_rifa (fecha) VALUES (?) ON CONFLICT (fecha) DO NOTHING", (fecha,))
                             db.execute("INSERT INTO rifas (miembro_id, fecha, valor) VALUES (?, ?, ?) ON CONFLICT(miembro_id, fecha) DO UPDATE SET valor=excluded.valor",
                                        (miembro['id'], fecha, val))
                             resumen['rifas'] += 1
@@ -725,13 +755,19 @@ def index():
 #  INIT
 # ═══════════════════════════════════════════
 
+# Se ejecuta siempre al importar el módulo (tanto con "python app.py" como
+# con Gunicorn en Render), para asegurar que la BD y la config existan.
+init_db()
+init_config()
+
 if __name__ == '__main__':
-    init_db()
-    init_config()
+    port = int(os.environ.get('PORT', 5000))
     print("=" * 50)
     print("  Grupo Calle Portoviejo - Servidor SQL")
-    print(f"  DB: {DB_PATH}")
-    print("  http://localhost:5000")
+    print("  DB: PostgreSQL (DATABASE_URL)")
+    print(f"  http://localhost:{port}")
     print("  Password default: admin123")
     print("=" * 50)
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # debug=False siempre en producción (Render). Para desarrollo local
+    # puedes cambiarlo temporalmente a True.
+    app.run(host='0.0.0.0', port=port, debug=False)
