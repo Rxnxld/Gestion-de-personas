@@ -622,7 +622,6 @@ function renderTablas(){
 async function toggleTabla(miembroId, fecha, valActual){
   const m=S.miembros.find(x=>x.id===miembroId);if(!m)return;
   try{
-    await api('POST','/api/tablas/fechas',{fecha:fecha});
     await api('POST','/api/tablas/asistencias',{nombre:m.nombre,fecha:fecha,valor:valActual?0:1});
     await loadAll()
   }catch(e){toast(e.message,'e')}
