@@ -842,7 +842,7 @@ def export_bingo_reporte():
     ws1.row_dimensions[2].height = 18
 
     # Encabezados
-    headers1 = ['#', 'Fecha', 'Monto Total', 'Asistentes', 'Monto por Persona']
+    headers1 = ['#', 'Fecha', 'Monto Total', 'Total Miembros', 'Monto por Persona']
     for j, h in enumerate(headers1, 1):
         c = ws1.cell(row=4, column=j, value=h)
         c.font = header_font; c.fill = header_fill
@@ -853,12 +853,12 @@ def export_bingo_reporte():
     gran_total = 0
     for i, b in enumerate(bingos, 1):
         row_num = i + 4
-        asistentes = len(asist_map.get(b['fecha'], set()))
-        denom = asistentes if asistentes > 0 else 1
+        total_miembros = len(miembros)
+        denom = total_miembros if total_miembros > 0 else 1
         por_persona = round(b['monto'] / denom, 2)
         gran_total += b['monto']
 
-        vals = [i, b['fecha'], b['monto'], asistentes, por_persona]
+        vals = [i, b['fecha'], b['monto'], total_miembros, por_persona]
         for j, v in enumerate(vals, 1):
             c = ws1.cell(row=row_num, column=j, value=v)
             c.font = data_font; c.alignment = center; c.border = thin_border
@@ -898,7 +898,7 @@ def export_bingo_reporte():
     ws2.row_dimensions[1].height = 30
 
     ws2.merge_cells(f'A2:{get_column_letter(len(bingos)+2)}2')
-    c = ws2.cell(row=2, column=1, value='Monto que le corresponde a cada miembro por cada bingo (asistencia requerida)')
+    c = ws2.cell(row=2, column=1, value='Monto distribuido equitativamente entre todos los miembros registrados')
     c.font = subtitle_font
 
     # Encabezados: #, Nombre, [fechas...], Total
@@ -909,19 +909,16 @@ def export_bingo_reporte():
         c.alignment = center; c.border = thin_border
 
     # Matriz de montos por miembro por bingo
+    total_miembros = len(miembros)
+    denom = total_miembros if total_miembros > 0 else 1
     montos_por_miembro = {}
     for m in miembros:
         montos_por_miembro[m['nombre']] = {}
         total_miembro = 0
         for b in bingos:
-            asistentes = len(asist_map.get(b['fecha'], set()))
-            denom = asistentes if asistentes > 0 else 1
             por_persona = round(b['monto'] / denom, 2)
-            if m['id'] in asist_map.get(b['fecha'], set()):
-                montos_por_miembro[m['nombre']][b['fecha']] = por_persona
-                total_miembro += por_persona
-            else:
-                montos_por_miembro[m['nombre']][b['fecha']] = 0
+            montos_por_miembro[m['nombre']][b['fecha']] = por_persona
+            total_miembro += por_persona
         montos_por_miembro[m['nombre']]['_total'] = round(total_miembro, 2)
 
     for i, m in enumerate(miembros, 1):

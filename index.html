@@ -620,7 +620,7 @@ async function saveAsistencia(){
 
 function renderBingos(){
   document.getElementById('bingoBody').innerHTML=S.bingos.map(b=>{
-    const a=S.miembros.filter(m=>S.asistencias[m.nombre]?.[b.fecha]).length||1;
+    const a=S.miembros.length||1;
     return `<tr><td>${fd(b.fecha)}</td><td class="tr fw6">$${b.monto.toFixed(2)}</td><td class="tr">$${(b.monto/a).toFixed(2)}</td><td><span class="bdg bdg-g">${a}</span></td><td><button class="btn btn-r btn-xs" onclick="delBingo(${b.id})">✕</button></td></tr>`
   }).join('')||'<tr><td colspan="5" class="emp"><div class="big">⊟</div>Sin bingos</td></tr>';
   document.getElementById('bingoTotal').textContent=S.bingos.reduce((s,b)=>s+b.monto,0).toFixed(2)
