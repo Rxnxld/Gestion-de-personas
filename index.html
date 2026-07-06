@@ -603,10 +603,9 @@ function renderTablas(){
   const fs=S.fechasTablas;
   document.getElementById('tablasHead').innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+fs.map(f=>`<th>${fd(f)}<br><span style="font-weight:400;font-size:9px">(\$1 c/u)</span></th>`).join('')+'<th style="width:50px"></th></tr>';
   document.getElementById('tablasBody').innerHTML=S.miembros.map((m,i)=>{
-    const c=fs.map(f=>{const v=(S.asistencias[m.nombre]?.[f])||0;return `<td>${v?'✓':'—'}</td>`}).join('');
+    const c=fs.map(f=>{const v=(S.asistencias[m.nombre]?.[f])||0;return `<td onclick="toggleTabla(${m.id},'${f}',${v})" style="cursor:pointer;user-select:none" title="Click: ${v?'marcar no pagado':'marcar pagado'}">${v?'✓':'—'}</td>`}).join('');
     return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${c}<td><button class="btn btn-gh btn-xs" onclick="editarTabla(${m.id})" title="Editar pagos">✎</button></td></tr>`
   }).join('')||'<tr><td colspan="20" class="emp"><div class="big">⊞</div>Sin registros</td></tr>';
-  // Fila de totales por fecha
   if(fs.length){
     const footer='<tr style="background:#f1f5f9;font-weight:700"><td></td><td class="tl">Total Pagos</td>'+fs.map(f=>{
       const total=S.miembros.reduce((s,m)=>s+((S.asistencias[m.nombre]?.[f])||0),0);
@@ -618,6 +617,15 @@ function renderTablas(){
     }).join('')+'<td></td></tr>';
     document.getElementById('tablasBody').insertAdjacentHTML('beforeend', footer);
   }
+}
+
+async function toggleTabla(miembroId, fecha, valActual){
+  const m=S.miembros.find(x=>x.id===miembroId);if(!m)return;
+  try{
+    await api('POST','/api/tablas/fechas',{fecha:fecha});
+    await api('POST','/api/tablas/asistencias',{nombre:m.nombre,fecha:fecha,valor:valActual?0:1});
+    await loadAll()
+  }catch(e){toast(e.message,'e')}
 }
 
 function editarTabla(miembroId){
