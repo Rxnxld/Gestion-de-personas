@@ -284,7 +284,7 @@ tbody tr:nth-child(even){background:#f8fafc}
       <!-- BINGO -->
       <div id="tb-bingo" class="tb">
         <div class="page-h"><h3>Bingo</h3><button class="btn btn-p btn-sm" onclick="modalBingo()">+ Registrar</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/bingos')">⬇ Excel</button><button class="btn btn-o btn-sm" onclick="window.open('/api/export/xlsx/bingo_reporte')">📊 Reporte Completo</button></div>
-        <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>Fecha</th><th class="tr">Tablas Bingo</th><th class="tr">Adicional</th><th class="tr" style="color:var(--accent)">Total</th><th class="tr">Repartido</th><th class="tr">Coge c/u</th><th>Asist.</th><th>Acción</th></tr></thead><tbody id="bingoBody"></tbody></table></div></div></div>
+        <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>Fecha</th><th class="tr">Tablas Bingo</th><th class="tr">Adicional</th><th class="tr" style="color:var(--accent)">Total</th><th class="tr">Coge c/u</th><th>Asist.</th><th>Acción</th></tr></thead><tbody id="bingoBody"></tbody></table></div></div></div>
         <div class="card" style="background:#ecfdf5;border-color:var(--success)"><div style="font-size:15px;font-weight:700;color:var(--success)">Total Bingo: $<span id="bingoTotal">0.00</span></div></div>
       </div>
 
@@ -692,14 +692,10 @@ async function saveAsistencia(){
 function renderBingos(){
   document.getElementById('bingoBody').innerHTML=S.bingos.map(b=>{
     const a=b.asistentes||S.miembros.length||1, ad=parseFloat(b.adicional||0), total=b.monto+ad;
-    const dist=b.distribucion||[];
-    const repartido=dist.some(d=>d.recibe);
-    const repText=repartido?'$'+dist.filter(d=>d.recibe).reduce((s,d)=>s+d.monto_asignado,0).toFixed(2):'—';
     return `<tr><td><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarFechaBingo(${b.id},'${b.fecha}')" title="Click para cambiar fecha">${fd(b.fecha)} ✎</span></td>
       <td class="tr fw6">$${b.monto.toFixed(2)}</td>
       <td class="tr"><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarAdicional(${b.id},${ad})" title="Click para editar">$${ad.toFixed(2)} ✎</span></td>
       <td class="tr fw6" style="color:var(--accent)">$${total.toFixed(2)}</td>
-      <td class="tr">${repText}</td>
       <td class="tr">$${(total/a).toFixed(2)}</td>
       <td><span class="bdg" style="cursor:pointer;background:#f1f5f9;color:var(--text);padding:2px 8px" onclick="editarAsistentes(${b.id},${a})" title="Click para cambiar">${a} ✎</span></td>
       <td><button class="btn btn-gh btn-xs" onclick="modalReparto(${b.id})" title="Distribuir">⊞ Reparto</button> <button class="btn btn-r btn-xs" onclick="delBingo(${b.id})">✕</button></td></tr>`
