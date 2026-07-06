@@ -153,6 +153,12 @@ tbody tr:hover{background:#f8fafc}
 tbody tr:nth-child(even){background:#f8fafc}
 .card{transition:box-shadow .2s}
 .card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.tb-cell{cursor:pointer;text-align:center;padding:6px 10px;border-bottom:1px solid var(--border);transition:all .15s;font-size:15px;font-weight:700;user-select:none}
+.tb-cell:hover{background:#eef2ff;transform:scale(1.08)}
+.tb-cell.pagado{color:#059669;background:#ecfdf5}
+.tb-cell.pagado:hover{background:#d1fae5}
+.tb-cell.nopagado{color:#94a3b8}
+.tb-cell.nopagado:hover{color:#4f46e5;background:#eef2ff}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
@@ -603,7 +609,7 @@ function renderTablas(){
   const fs=S.fechasTablas;
   document.getElementById('tablasHead').innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+fs.map(f=>`<th>${fd(f)}<br><span style="font-weight:400;font-size:9px">(\$1 c/u)</span></th>`).join('')+'<th style="width:50px"></th></tr>';
   document.getElementById('tablasBody').innerHTML=S.miembros.map((m,i)=>{
-    const c=fs.map(f=>{const v=(S.asistencias[m.nombre]?.[f])||0;return `<td onclick="toggleTabla(${m.id},'${f}',${v})" style="cursor:pointer;user-select:none" title="Click: ${v?'marcar no pagado':'marcar pagado'}">${v?'✓':'—'}</td>`}).join('');
+    const c=fs.map(f=>{const v=(S.asistencias[m.nombre]?.[f])||0;return `<td class="tb-cell ${v?'pagado':'nopagado'}" onclick="toggleTabla(${m.id},'${f}',${v})" title="${v?'Marcar no pagado':'Marcar pagado'}">${v?'✓':'○'}</td>`}).join('');
     return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${c}<td><button class="btn btn-gh btn-xs" onclick="editarTabla(${m.id})" title="Editar pagos">✎</button></td></tr>`
   }).join('')||'<tr><td colspan="20" class="emp"><div class="big">⊞</div>Sin registros</td></tr>';
   if(fs.length){
