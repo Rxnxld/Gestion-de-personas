@@ -221,7 +221,7 @@ tbody tr:nth-child(even){background:#f8fafc}
     <nav class="sidebar-nav">
       <button class="active" data-t="dashboard"><span class="ico">◉</span> Dashboard</button>
       <button data-t="miembros"><span class="ico">⊙</span> Miembros</button>
-      <button data-t="tablas"><span class="ico">⊞</span> Asistencias</button>
+      <button data-t="tablas"><span class="ico">⊞</span> Tablas de Bingo</button>
       <button data-t="bingo"><span class="ico">⊟</span> Bingo</button>
       <button data-t="rifa"><span class="ico">⊡</span> Rifa</button>
       <button data-t="ahorros"><span class="ico">⊠</span> Ahorros</button>
@@ -249,7 +249,7 @@ tbody tr:nth-child(even){background:#f8fafc}
         <div class="stats" id="statsGrid"></div>
         <div class="card">
           <div class="card-t">Resumen por Miembro</div>
-          <div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th>Asist.</th><th>Rifa</th><th>A.Normal</th><th>A.Cumple</th><th>A.Rifa</th><th>Total Ahorros</th><th>Préstamo Pend.</th><th>Saldo Neto</th><th>Estado</th></tr></thead><tbody id="dashBody"></tbody></table></div></div>
+          <div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th>Tablas</th><th>Rifa</th><th>A.Normal</th><th>A.Cumple</th><th>A.Rifa</th><th>Total Ahorros</th><th>Préstamo Pend.</th><th>Saldo Neto</th><th>Estado</th></tr></thead><tbody id="dashBody"></tbody></table></div></div>
         </div>
       </div>
 
@@ -261,8 +261,8 @@ tbody tr:nth-child(even){background:#f8fafc}
 
       <!-- ASISTENCIAS -->
       <div id="tb-tablas" class="tb">
-        <div class="page-h"><h3>Asistencias</h3><button class="btn btn-p btn-sm" onclick="modalAsistencia()">+ Registrar</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/asistencias')">⬇ Excel</button></div>
-        <div class="card"><div class="card-t">Historial</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="tablasHead"></thead><tbody id="tablasBody"></tbody></table></div></div></div>
+        <div class="page-h"><h3>Tablas de Bingo</h3><button class="btn btn-p btn-sm" onclick="modalAsistencia()">+ Pagar Tabla</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/asistencias')">⬇ Excel</button></div>
+        <div class="card"><div class="card-t">Historial de Pagos</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="tablasHead"></thead><tbody id="tablasBody"></tbody></table></div></div></div>
       </div>
 
       <!-- BINGO -->
@@ -329,7 +329,7 @@ tbody tr:nth-child(even){background:#f8fafc}
           <div class="card-b" style="padding:0">
             <div class="tw">
               <table>
-                <thead><tr><th>#</th><th class="tl">Nombre</th><th>Asistencia</th><th>Rifa</th><th class="tr">Ahorros</th><th class="tr">Aportes Cumple</th><th class="tr">Préstamo Pend.</th><th class="tr">Saldo Neto</th><th>Estado</th></tr></thead>
+                <thead><tr><th>#</th><th class="tl">Nombre</th><th>Tablas</th><th>Rifa</th><th class="tr">Ahorros</th><th class="tr">Aportes Cumple</th><th class="tr">Préstamo Pend.</th><th class="tr">Saldo Neto</th><th>Estado</th></tr></thead>
                 <tbody id="ecBody"></tbody>
               </table>
             </div>
@@ -343,7 +343,7 @@ tbody tr:nth-child(even){background:#f8fafc}
         <div class="card">
           <div class="card-t">Importar desde Excel</div>
           <div class="card-b">
-            <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Subí un archivo .xlsx con hojas nombradas como: Miembros, Asistencias, Bingo, Rifa, Ahorro, Ahorro Cumpleaños, Ahorro Rifa, Prestamos.</p>
+            <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Subí un archivo .xlsx con hojas nombradas como: Miembros, Tablas, Bingo, Rifa, Ahorro, Ahorro Cumpleaños, Ahorro Rifa, Prestamos.</p>
             <input type="file" id="importFile" accept=".xlsx" style="font-size:12px;margin-bottom:10px;display:block">
             <button class="btn btn-p btn-sm" onclick="importExcel()">⇧ Importar Excel</button>
             <div id="importResult" style="font-size:12px;margin-top:10px"></div>
@@ -363,7 +363,7 @@ tbody tr:nth-child(even){background:#f8fafc}
           <div class="card-b">
             <div class="grup">
               <a href="/api/export/xlsx/miembros" class="btn btn-g btn-sm">⬇ Miembros</a>
-              <a href="/api/export/xlsx/asistencias" class="btn btn-g btn-sm">⬇ Asistencias</a>
+              <a href="/api/export/xlsx/asistencias" class="btn btn-g btn-sm">⬇ Tablas Bingo</a>
               <a href="/api/export/xlsx/bingos" class="btn btn-g btn-sm">⬇ Bingo</a>
               <a href="/api/export/xlsx/rifas" class="btn btn-g btn-sm">⬇ Rifa</a>
               <a href="/api/export/xlsx/ahorro_normal" class="btn btn-g btn-sm">⬇ Ahorro Normal</a>
@@ -510,7 +510,7 @@ function renderEstadoCuenta(){
   const totalAhorros=data.reduce((s,d)=>s+d.ahorros.total,0);
   const morosos=data.filter(d=>d.estadoGeneral==='moroso').length;
   document.getElementById('ecStatsGrid').innerHTML=
-    `<div class="stat blue"><div class="l">Asistencia Promedio</div><div class="v">${avgAsis}%</div></div>
+    `<div class="stat blue"><div class="l">Tablas Pagadas</div><div class="v">${avgAsis}%</div></div>
      <div class="stat gr"><div class="l">Ahorros Totales</div><div class="v">$${totalAhorros.toFixed(2)}</div></div>
      <div class="stat re"><div class="l">Préstamos Pendientes</div><div class="v">$${totalPend.toFixed(2)}</div></div>
      <div class="stat ${morosos>0?'re':'gr'}"><div class="l">Miembros en Mora</div><div class="v">${morosos}</div></div>`;
@@ -546,7 +546,7 @@ function renderEstadoIndividual(){
         <span class="pill ${pclass}" style="font-size:13px;padding:6px 14px">${plabel}</span>
       </div>
       <div class="ec-grid">
-        <div class="ec-item"><div class="l">Asistencia</div><div class="v">${d.asistencia.asistidas}/${d.asistencia.total}</div><div class="ec-bar"><div class="ec-bar-fill" style="width:${d.asistencia.pct}%"></div></div><div style="font-size:11px;color:var(--text2);margin-top:3px">${d.asistencia.pct}%</div></div>
+        <div class="ec-item"><div class="l">Tablas Pagadas</div><div class="v">${d.asistencia.asistidas}/${d.asistencia.total}</div><div class="ec-bar"><div class="ec-bar-fill" style="width:${d.asistencia.pct}%"></div></div><div style="font-size:11px;color:var(--text2);margin-top:3px">${d.asistencia.pct}%</div></div>
         <div class="ec-item"><div class="l">Rifa Grupal</div><div class="v">${d.rifa.participaciones}</div><div style="font-size:11px;color:var(--text2)">participaciones de ${d.rifa.totalFechas}</div></div>
         <div class="ec-item"><div class="l">Ahorro Normal</div><div class="v">$${d.ahorros.normal.toFixed(2)}</div></div>
         <div class="ec-item"><div class="l">Ahorro Cumpleaños</div><div class="v">$${d.ahorros.cumple.toFixed(2)}</div></div>
@@ -570,7 +570,7 @@ function renderDashboard(){
   const tp=S.prestamos.filter(p=>p.estado!=='pagado').reduce((s,p)=>s+p.monto,0);
   document.getElementById('statsGrid').innerHTML=
     `<div class="stat blue"><div class="l">Miembros</div><div class="v">${m.length}</div></div>
-     <div class="stat gr"><div class="l">Asistencias</div><div class="v">${S.fechasTablas.length}</div></div>
+     <div class="stat gr"><div class="l">Tablas</div><div class="v">${S.fechasTablas.length}</div></div>
      <div class="stat"><div class="l">Bingo</div><div class="v">$${tb.toFixed(2)}</div></div>
      <div class="stat or"><div class="l">Rifa</div><div class="v">$${tr.toFixed(2)}</div></div>
      <div class="stat gr"><div class="l">Ahorros</div><div class="v">$${ta.toFixed(2)}</div></div>
@@ -609,7 +609,7 @@ function renderTablas(){
 }
 
 function modalAsistencia(){
-  modal(`<h3>Registrar Asistencia</h3><div class="fr"><label>Fecha</label><input type="date" id="fAsFecha"></div><div class="fr"><label>Miembro</label><select id="fAsMiembro"><option value="">Seleccionar...</option>${selMi()}</select></div><div class="fr"><label>Asistió</label><select id="fAsVal"><option value="1">Sí</option><option value="0">No</option></select></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveAsistencia()">Guardar</button></div>`)
+  modal(`<h3>Registrar Pago de Tabla</h3><div class="fr"><label>Fecha</label><input type="date" id="fAsFecha"></div><div class="fr"><label>Miembro</label><select id="fAsMiembro"><option value="">Seleccionar...</option>${selMi()}</select></div><div class="fr"><label>Pagó</label><select id="fAsVal"><option value="1">Sí</option><option value="0">No</option></select></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveAsistencia()">Guardar</button></div>`)
 }
 async function saveAsistencia(){
   const f=document.getElementById('fAsFecha').value,n=document.getElementById('fAsMiembro').value,v=parseInt(document.getElementById('fAsVal').value);
@@ -747,7 +747,7 @@ async function importExcel(){
       document.getElementById('importResult').innerHTML=
         `<div><span style="color:var(--success);font-weight:600">✓ Importado:</span></div>
          <div style="font-size:11px;color:var(--text2);margin-top:4px">Hojas detectadas: ${hojas}</div>
-         <div style="font-size:12px;margin-top:6px">${rs.miembros} miembros · ${rs.asistencias} asistencias · ${rs.bingos} bingos · ${rs.rifas} rifas · ${rs.ahorros} ahorros · ${rs.cumple} cumpleaños · ${rs.prestamos} préstamos</div>`;
+         <div style="font-size:12px;margin-top:6px">${rs.miembros} miembros · ${rs.asistencias} tablas pagadas · ${rs.bingos} bingos · ${rs.rifas} rifas · ${rs.ahorros} ahorros · ${rs.cumple} cumpleaños · ${rs.prestamos} préstamos</div>`;
       toast('Importación completada');await loadAll()
     }else{document.getElementById('importResult').innerHTML=`<span style="color:var(--danger)">✕ Error: ${d.error}</span>`;toast('Error al importar','e')}
   }catch(e){document.getElementById('importResult').innerHTML=`<span style="color:var(--danger)">✕ ${e.message}</span>`;toast('Error de conexión','e')}
