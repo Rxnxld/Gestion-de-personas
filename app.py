@@ -116,9 +116,11 @@ def init_db():
             id SERIAL PRIMARY KEY,
             fecha TEXT UNIQUE NOT NULL,
             monto REAL NOT NULL,
+            adicional REAL DEFAULT 0,
             asistentes INTEGER DEFAULT 0
         );
         ALTER TABLE bingos ADD COLUMN IF NOT EXISTS asistentes INTEGER DEFAULT 0;
+        ALTER TABLE bingos ADD COLUMN IF NOT EXISTS adicional REAL DEFAULT 0;
         CREATE TABLE IF NOT EXISTS fechas_rifa (
             id SERIAL PRIMARY KEY,
             fecha TEXT UNIQUE NOT NULL
@@ -309,7 +311,7 @@ def set_asistencia():
 @app.route('/api/bingos', methods=['GET'])
 @login_required
 def get_bingos():
-    return jsonify([dict(r) for r in get_db().execute("SELECT id, fecha, monto, asistentes FROM bingos ORDER BY fecha").fetchall()])
+    return jsonify([dict(r) for r in get_db().execute("SELECT id, fecha, monto, adicional, asistentes FROM bingos ORDER BY fecha").fetchall()])
 
 @app.route('/api/bingos', methods=['POST'])
 @login_required
@@ -318,8 +320,9 @@ def add_bingo():
     db = get_db()
     total_miembros = len(db.execute("SELECT id FROM miembros").fetchall())
     asistentes = data.get('asistentes', total_miembros) or total_miembros
+    adicional = float(data.get('adicional', 0) or 0)
     try:
-        db.execute("INSERT INTO bingos (fecha, monto, asistentes) VALUES (?, ?, ?)", (data['fecha'], float(data['monto']), int(asistentes)))
+        db.execute("INSERT INTO bingos (fecha, monto, adicional, asistentes) VALUES (?, ?, ?, ?)", (data['fecha'], float(data['monto']), adicional, int(asistentes)))
         try:
             db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (data['fecha'],))
         except psycopg2.IntegrityError:
@@ -338,6 +341,8 @@ def update_bingo(id):
         db.execute("UPDATE bingos SET asistentes=? WHERE id=?", (int(data['asistentes']), id))
     if 'monto' in data:
         db.execute("UPDATE bingos SET monto=? WHERE id=?", (float(data['monto']), id))
+    if 'adicional' in data:
+        db.execute("UPDATE bingos SET adicional=? WHERE id=?", (float(data['adicional']), id))
     db.commit()
     return jsonify({'ok': True})
 
@@ -536,7 +541,7 @@ def get_datos_completos():
         if r['nombre'] not in asistencias: asistencias[r['nombre']] = {}
         asistencias[r['nombre']][r['fecha']] = r['valor']
 
-    bingos = [dict(r) for r in db.execute("SELECT id, fecha, monto, asistentes FROM bingos ORDER BY fecha").fetchall()]
+    bingos = [dict(r) for r in db.execute("SELECT id, fecha, monto, adicional, asistentes FROM bingos ORDER BY fecha").fetchall()]
     fechas_rifa = [r['fecha'] for r in db.execute("SELECT fecha FROM fechas_rifa ORDER BY fecha").fetchall()]
 
     ri_raw = db.execute("SELECT m.nombre, r.fecha, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id").fetchall()
@@ -818,7 +823,7 @@ def export_bingo_reporte():
     from datetime import datetime
 
     db = get_db()
-    bingos = [dict(r) for r in db.execute("SELECT id, fecha, monto, asistentes FROM bingos ORDER BY fecha").fetchall()]
+    bingos = [dict(r) for r in db.execute("SELECT id, fecha, monto, adicional, asistentes FROM bingos ORDER BY fecha").fetchall()]
     miembros = [dict(r) for r in db.execute("SELECT id, nombre FROM miembros ORDER BY id").fetchall()]
     asistencias_raw = [dict(r) for r in db.execute("SELECT miembro_id, fecha FROM asistencias WHERE valor=1").fetchall()]
 

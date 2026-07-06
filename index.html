@@ -268,7 +268,7 @@ tbody tr:nth-child(even){background:#f8fafc}
       <!-- BINGO -->
       <div id="tb-bingo" class="tb">
         <div class="page-h"><h3>Bingo</h3><button class="btn btn-p btn-sm" onclick="modalBingo()">+ Registrar</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/bingos')">⬇ Excel</button><button class="btn btn-o btn-sm" onclick="window.open('/api/export/xlsx/bingo_reporte')">📊 Reporte Completo</button></div>
-        <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>Fecha</th><th class="tr">Monto</th><th class="tr">Coge c/u</th><th>Asist.</th><th>Acción</th></tr></thead><tbody id="bingoBody"></tbody></table></div></div></div>
+        <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>Fecha</th><th class="tr">Tablas Bingo</th><th class="tr">Adicional</th><th class="tr" style="color:var(--accent)">Total</th><th class="tr">Coge c/u</th><th>Asist.</th><th>Acción</th></tr></thead><tbody id="bingoBody"></tbody></table></div></div></div>
         <div class="card" style="background:#ecfdf5;border-color:var(--success)"><div style="font-size:15px;font-weight:700;color:var(--success)">Total Bingo: $<span id="bingoTotal">0.00</span></div></div>
       </div>
 
@@ -660,10 +660,16 @@ async function saveAsistencia(){
 
 function renderBingos(){
   document.getElementById('bingoBody').innerHTML=S.bingos.map(b=>{
-    const a=b.asistentes||S.miembros.length||1;
-    return `<tr><td>${fd(b.fecha)}</td><td class="tr fw6"><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarMonto(${b.id},${b.monto})" title="Click para editar">$${b.monto.toFixed(2)} ✎</span></td><td class="tr">$${(b.monto/a).toFixed(2)}</td><td><span class="bdg" style="cursor:pointer;background:#f1f5f9;color:var(--text);padding:2px 8px" onclick="editarAsistentes(${b.id},${a})" title="Click para cambiar cantidad">${a} ✎</span></td><td><button class="btn btn-r btn-xs" onclick="delBingo(${b.id})">✕</button></td></tr>`
-  }).join('')||'<tr><td colspan="5" class="emp"><div class="big">⊟</div>Sin bingos</td></tr>';
-  document.getElementById('bingoTotal').textContent=S.bingos.reduce((s,b)=>s+b.monto,0).toFixed(2)
+    const a=b.asistentes||S.miembros.length||1, ad=parseFloat(b.adicional||0), total=b.monto+ad;
+    return `<tr><td>${fd(b.fecha)}</td>
+      <td class="tr fw6">$${b.monto.toFixed(2)}</td>
+      <td class="tr"><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarAdicional(${b.id},${ad})" title="Click para editar">$${ad.toFixed(2)} ✎</span></td>
+      <td class="tr fw6" style="color:var(--accent)">$${total.toFixed(2)}</td>
+      <td class="tr">$${(total/a).toFixed(2)}</td>
+      <td><span class="bdg" style="cursor:pointer;background:#f1f5f9;color:var(--text);padding:2px 8px" onclick="editarAsistentes(${b.id},${a})" title="Click para cambiar">${a} ✎</span></td>
+      <td><button class="btn btn-r btn-xs" onclick="delBingo(${b.id})">✕</button></td></tr>`
+  }).join('')||'<tr><td colspan="7" class="emp"><div class="big">⊟</div>Sin bingos</td></tr>';
+  document.getElementById('bingoTotal').textContent=S.bingos.reduce((s,b)=>s+b.monto+(parseFloat(b.adicional||0)),0).toFixed(2)
 }
 
 function editarAsistentes(id, actual){
@@ -689,12 +695,23 @@ async function guardarMonto(id){
 }
 function modalBingo(){
   const defAsist=S.miembros.length||1;
-  modal(`<h3>Registrar Bingo</h3><div class="fr"><label>Fecha</label><input type="date" id="fBiFecha"></div><div class="fr"><label>Monto ($) — se auto-calcula desde pagos</label><input type="number" id="fBiMonto" step="0.01" placeholder="0.00" value="0"></div><div class="fr"><label>Asistentes</label><input type="number" id="fBiAsist" min="1" value="${defAsist}"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveBingo()">Guardar</button></div>`)
+  modal(`<h3>Registrar Bingo</h3><div class="fr"><label>Fecha</label><input type="date" id="fBiFecha"></div><div class="fr"><label>Tablas Bingo ($) — se auto-calcula desde pagos</label><input type="number" id="fBiMonto" step="0.01" placeholder="0.00" value="0"></div><div class="fr"><label>Adicional ($)</label><input type="number" id="fBiAdicional" step="0.01" placeholder="0.00" value="0"></div><div class="fr"><label>Asistentes</label><input type="number" id="fBiAsist" min="1" value="${defAsist}"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveBingo()">Guardar</button></div>`)
 }
 async function saveBingo(){
-  const f=document.getElementById('fBiFecha').value,a=parseInt(document.getElementById('fBiAsist').value);
+  const f=document.getElementById('fBiFecha').value,a=parseInt(document.getElementById('fBiAsist').value),ad=parseFloat(document.getElementById('fBiAdicional').value);
   if(!f){toast('Completa campos','e');return}
-  try{await api('POST','/api/bingos',{fecha:f,monto:0,asistentes:a||undefined});toast('Registrado');closeModal();await loadAll()}catch(e){toast(e.message,'e')}
+  try{await api('POST','/api/bingos',{fecha:f,monto:0,adicional:ad||0,asistentes:a||undefined});toast('Registrado');closeModal();await loadAll()}catch(e){toast(e.message,'e')}
+}
+
+function editarAdicional(id, actual){
+  modal(`<h3>Editar Adicional</h3><p style="font-size:13px;color:var(--text2);margin-bottom:14px">Monto extra que se suma a las tablas de bingo para obtener el total.</p><div class="fr"><label>Adicional ($)</label><input type="number" id="fAdicNum" step="0.01" min="0" value="${actual}" autofocus></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="guardarAdicional(${id})">Guardar</button></div>`)
+}
+
+async function guardarAdicional(id){
+  const v=parseFloat(document.getElementById('fAdicNum').value);
+  if(isNaN(v)||v<0){toast('Ingresá un valor válido','e');return}
+  try{await api('PUT',`/api/bingos/${id}`,{adicional:v});toast('Actualizado');closeModal();await loadAll()}
+  catch(e){toast(e.message,'e')}
 }
 async function delBingo(id){if(!confirm('¿Eliminar?'))return;try{await api('DELETE',`/api/bingos/${id}`);toast('Eliminado');await loadAll()}catch(e){toast(e.message,'e')}}
 
