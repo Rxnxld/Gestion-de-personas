@@ -512,12 +512,17 @@ function computeEstadoCuenta(){
     const prestamosM=S.prestamos.filter(p=>p.nombre===m.nombre);
     const pendiente=prestamosM.filter(p=>p.estado!=='pagado').reduce((s,p)=>s+p.monto,0);
     const pagado=prestamosM.filter(p=>p.estado==='pagado').reduce((s,p)=>s+p.monto,0);
+    const bingoTotal=S.bingos.reduce((s,b)=>{
+      const d=(b.distribucion||[]).find(x=>x.miembro_id===m.id);
+      return s+(d&&d.recibe?d.monto_asignado:0)
+    },0);
     const saldoNeto=ahorroTotal-pendiente;
     let estadoGeneral='al_dia';
     if(pendiente>0&&asPct<50)estadoGeneral='moroso';else if(pendiente>0)estadoGeneral='con_deuda';
     return {id:m.id,nombre:m.nombre,apodo:m.apodo,
       asistencia:{asistidas:asOk,total:totalFechas,pct:asPct},
       rifa:{participaciones:riParticip,totalFechas:S.fechasRifa.length},
+      bingo:bingoTotal,
       ahorros:{normal:aN,cumple:aC,rifa:aR,total:ahorroTotal},
       cumpleAportes:cumpleTotal,cumpleFecha:cumpleFechaObj?cumpleFechaObj.fecha:null,
       prestamos:{pendiente,pagado},saldoNeto,estadoGeneral,prestamosDetalle:prestamosM}

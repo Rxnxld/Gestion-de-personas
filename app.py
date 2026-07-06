@@ -129,6 +129,12 @@ def init_db():
             monto_asignado REAL DEFAULT 0,
             UNIQUE(bingo_id, miembro_id)
         );
+        -- backfill distribucion para bingos existentes sin distribucion
+        INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado)
+        SELECT b.id, m.id, TRUE, ROUND((b.monto + COALESCE(b.adicional,0)) / NULLIF(b.asistentes,0), 2)
+        FROM bingos b, miembros m
+        WHERE NOT EXISTS (SELECT 1 FROM bingo_distribucion d WHERE d.bingo_id=b.id AND d.miembro_id=m.id)
+        ON CONFLICT (bingo_id, miembro_id) DO NOTHING;
         CREATE TABLE IF NOT EXISTS fechas_rifa (
             id SERIAL PRIMARY KEY,
             fecha TEXT UNIQUE NOT NULL
