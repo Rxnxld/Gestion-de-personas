@@ -131,7 +131,7 @@ def init_db():
         );
         -- backfill distribucion para bingos existentes sin distribucion
         INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado)
-        SELECT b.id, m.id, TRUE, ROUND((b.monto + COALESCE(b.adicional,0)) / NULLIF(b.asistentes,0), 2)
+        SELECT b.id, m.id, TRUE, ROUND(((b.monto + COALESCE(b.adicional,0)) / NULLIF(b.asistentes,0))::numeric, 2)::real
         FROM bingos b, miembros m
         WHERE NOT EXISTS (SELECT 1 FROM bingo_distribucion d WHERE d.bingo_id=b.id AND d.miembro_id=m.id)
         ON CONFLICT (bingo_id, miembro_id) DO NOTHING;
