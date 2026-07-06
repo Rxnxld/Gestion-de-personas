@@ -780,6 +780,262 @@ def export_xlsx_todo():
     return send_file(buf, mimetype='application/zip', as_attachment=True, download_name='grupo_portoviejo_completo_xlsx.zip')
 
 # ═══════════════════════════════════════════
+#  REPORTE DE BINGO (profesional)
+# ═══════════════════════════════════════════
+
+@app.route('/api/export/xlsx/bingo_reporte')
+@login_required
+def export_bingo_reporte():
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side, numbers
+    from openpyxl.utils import get_column_letter
+    from datetime import datetime
+
+    db = get_db()
+    bingos = [dict(r) for r in db.execute("SELECT id, fecha, monto FROM bingos ORDER BY fecha").fetchall()]
+    miembros = [dict(r) for r in db.execute("SELECT id, nombre FROM miembros ORDER BY id").fetchall()]
+    asistencias_raw = [dict(r) for r in db.execute("SELECT miembro_id, fecha FROM asistencias WHERE valor=1").fetchall()]
+
+    # Mapa de asistencia: fecha -> set de miembro_id
+    asist_map = {}
+    for a in asistencias_raw:
+        asist_map.setdefault(a['fecha'], set()).add(a['miembro_id'])
+
+    wb = Workbook()
+
+    # ── Estilos ──
+    title_font = Font(name='Calibri', size=16, bold=True, color='0F172A')
+    subtitle_font = Font(name='Calibri', size=10, color='64748B')
+    header_font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color='0F172A', end_color='0F172A', fill_type='solid')
+    accent_fill = PatternFill(start_color='4F46E5', end_color='4F46E5', fill_type='solid')
+    green_fill = PatternFill(start_color='059669', end_color='059669', fill_type='solid')
+    light_fill = PatternFill(start_color='F8FAFC', end_color='F8FAFC', fill_type='solid')
+    total_fill = PatternFill(start_color='F1F5F9', end_color='F1F5F9', fill_type='solid')
+    data_font = Font(name='Calibri', size=11, color='1E293B')
+    bold_font = Font(name='Calibri', size=11, bold=True, color='1E293B')
+    money_fmt = '#,##0.00'
+    thin_border = Border(
+        left=Side(style='thin', color='E2E8F0'),
+        right=Side(style='thin', color='E2E8F0'),
+        top=Side(style='thin', color='E2E8F0'),
+        bottom=Side(style='thin', color='E2E8F0')
+    )
+    center = Alignment(horizontal='center', vertical='center')
+    left = Alignment(horizontal='left', vertical='center')
+
+    # ═══════════════════════════════════════
+    # HOJA 1: Resumen
+    # ═══════════════════════════════════════
+    ws1 = wb.active
+    ws1.title = "Resumen de Bingos"
+
+    # Título
+    ws1.merge_cells('A1:E1')
+    c = ws1.cell(row=1, column=1, value='Reporte de Bingos — Grupo Calle Portoviejo')
+    c.font = title_font; c.alignment = Alignment(horizontal='left', vertical='center')
+    ws1.row_dimensions[1].height = 30
+
+    ws1.merge_cells('A2:E2')
+    c = ws1.cell(row=2, column=1, value=f'Generado el {datetime.now().strftime("%d/%m/%Y a las %H:%M")}')
+    c.font = subtitle_font; c.alignment = Alignment(horizontal='left', vertical='center')
+    ws1.row_dimensions[2].height = 18
+
+    # Encabezados
+    headers1 = ['#', 'Fecha', 'Monto Total', 'Asistentes', 'Monto por Persona']
+    for j, h in enumerate(headers1, 1):
+        c = ws1.cell(row=4, column=j, value=h)
+        c.font = header_font; c.fill = header_fill
+        c.alignment = center; c.border = thin_border
+    ws1.row_dimensions[4].height = 24
+
+    # Datos
+    gran_total = 0
+    for i, b in enumerate(bingos, 1):
+        row_num = i + 4
+        asistentes = len(asist_map.get(b['fecha'], set()))
+        denom = asistentes if asistentes > 0 else 1
+        por_persona = round(b['monto'] / denom, 2)
+        gran_total += b['monto']
+
+        vals = [i, b['fecha'], b['monto'], asistentes, por_persona]
+        for j, v in enumerate(vals, 1):
+            c = ws1.cell(row=row_num, column=j, value=v)
+            c.font = data_font; c.alignment = center; c.border = thin_border
+            if j == 1: c.alignment = center
+            if j == 3 or j == 5:
+                c.number_format = money_fmt
+        if i % 2 == 0:
+            for j in range(1, 6):
+                ws1.cell(row=row_num, column=j).fill = light_fill
+
+    # Fila de total
+    total_row = len(bingos) + 5
+    ws1.merge_cells(f'A{total_row}:B{total_row}')
+    c = ws1.cell(row=total_row, column=1, value='TOTAL GENERAL')
+    c.font = bold_font; c.alignment = center; c.fill = total_fill
+    for j in range(1, 6):
+        ws1.cell(row=total_row, column=j).border = thin_border
+        ws1.cell(row=total_row, column=j).fill = total_fill
+    c = ws1.cell(row=total_row, column=3, value=gran_total)
+    c.font = bold_font; c.number_format = money_fmt; c.alignment = center
+
+    # Anchos
+    ws1.column_dimensions['A'].width = 6
+    ws1.column_dimensions['B'].width = 16
+    ws1.column_dimensions['C'].width = 18
+    ws1.column_dimensions['D'].width = 14
+    ws1.column_dimensions['E'].width = 22
+
+    # ═══════════════════════════════════════
+    # HOJA 2: Detalle por Miembro
+    # ═══════════════════════════════════════
+    ws2 = wb.create_sheet("Detalle por Miembro")
+
+    ws2.merge_cells(f'A1:{get_column_letter(len(bingos)+2)}1')
+    c = ws2.cell(row=1, column=1, value='Distribución de Bingos por Miembro')
+    c.font = title_font; c.alignment = Alignment(horizontal='left', vertical='center')
+    ws2.row_dimensions[1].height = 30
+
+    ws2.merge_cells(f'A2:{get_column_letter(len(bingos)+2)}2')
+    c = ws2.cell(row=2, column=1, value='Monto que le corresponde a cada miembro por cada bingo (asistencia requerida)')
+    c.font = subtitle_font
+
+    # Encabezados: #, Nombre, [fechas...], Total
+    h2 = ['#', 'Miembro'] + [b['fecha'] for b in bingos] + ['Total Recibido']
+    for j, h in enumerate(h2, 1):
+        c = ws2.cell(row=4, column=j, value=h)
+        c.font = header_font; c.fill = header_fill
+        c.alignment = center; c.border = thin_border
+
+    # Matriz de montos por miembro por bingo
+    montos_por_miembro = {}
+    for m in miembros:
+        montos_por_miembro[m['nombre']] = {}
+        total_miembro = 0
+        for b in bingos:
+            asistentes = len(asist_map.get(b['fecha'], set()))
+            denom = asistentes if asistentes > 0 else 1
+            por_persona = round(b['monto'] / denom, 2)
+            if m['id'] in asist_map.get(b['fecha'], set()):
+                montos_por_miembro[m['nombre']][b['fecha']] = por_persona
+                total_miembro += por_persona
+            else:
+                montos_por_miembro[m['nombre']][b['fecha']] = 0
+        montos_por_miembro[m['nombre']]['_total'] = round(total_miembro, 2)
+
+    for i, m in enumerate(miembros, 1):
+        row_num = i + 4
+        ws2.cell(row=row_num, column=1, value=i).font = data_font
+        ws2.cell(row=row_num, column=1).alignment = center
+        ws2.cell(row=row_num, column=1).border = thin_border
+
+        c = ws2.cell(row=row_num, column=2, value=m['nombre'])
+        c.font = bold_font; c.alignment = left; c.border = thin_border
+
+        for j, b in enumerate(bingos, 3):
+            val = montos_por_miembro[m['nombre']][b['fecha']]
+            c = ws2.cell(row=row_num, column=j, value=val if val > 0 else 0)
+            c.font = data_font; c.alignment = center; c.border = thin_border
+            c.number_format = money_fmt
+            if val > 0:
+                c.fill = PatternFill(start_color='ECFDF5', end_color='ECFDF5', fill_type='solid')
+
+        # Total por miembro
+        col_total = len(bingos) + 3
+        c = ws2.cell(row=row_num, column=col_total, value=montos_por_miembro[m['nombre']]['_total'])
+        c.font = bold_font; c.alignment = center; c.border = thin_border
+        c.number_format = money_fmt
+        c.fill = green_fill
+        c.font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
+
+        if i % 2 == 0:
+            for j in range(1, col_total + 1):
+                cell = ws2.cell(row=row_num, column=j)
+                if not cell.fill or cell.fill.start_color.index == '00000000':
+                    cell.fill = light_fill
+
+    # Fila total
+    total_row2 = len(miembros) + 5
+    ws2.cell(row=total_row2, column=1, value='').border = thin_border
+    c = ws2.cell(row=total_row2, column=2, value='TOTALES')
+    c.font = bold_font; c.alignment = center; c.fill = total_fill
+    c.border = thin_border
+    gran_por_miembro = 0
+    for j, b in enumerate(bingos, 3):
+        suma = sum(montos_por_miembro[m['nombre']][b['fecha']] for m in miembros)
+        c = ws2.cell(row=total_row2, column=j, value=round(suma, 2))
+        c.font = bold_font; c.alignment = center; c.border = thin_border
+        c.number_format = money_fmt; c.fill = total_fill
+        gran_por_miembro += suma
+    col_t = len(bingos) + 3
+    c = ws2.cell(row=total_row2, column=col_t, value=round(gran_por_miembro, 2))
+    c.font = bold_font; c.alignment = center; c.border = thin_border
+    c.number_format = money_fmt; c.fill = total_fill
+
+    # Anchos columna hoja 2
+    ws2.column_dimensions['A'].width = 6
+    ws2.column_dimensions['B'].width = 28
+    for j in range(3, col_t + 1):
+        ws2.column_dimensions[get_column_letter(j)].width = 14
+
+    # ═══════════════════════════════════════
+    # HOJA 3: Resumen por Miembro
+    # ═══════════════════════════════════════
+    ws3 = wb.create_sheet("Totales por Miembro")
+
+    ws3.merge_cells('A1:C1')
+    c = ws3.cell(row=1, column=1, value='Totales Recibidos por Miembro')
+    c.font = title_font
+    ws3.row_dimensions[1].height = 30
+
+    h3 = ['#', 'Miembro', 'Total Recibido en Bingos']
+    for j, h in enumerate(h3, 1):
+        c = ws3.cell(row=3, column=j, value=h)
+        c.font = header_font; c.fill = header_fill
+        c.alignment = center; c.border = thin_border
+
+    miembros_ordenados = sorted(miembros, key=lambda m: montos_por_miembro[m['nombre']]['_total'], reverse=True)
+    for i, m in enumerate(miembros_ordenados, 1):
+        row_num = i + 3
+        ws3.cell(row=row_num, column=1, value=i).font = data_font
+        ws3.cell(row=row_num, column=1).alignment = center
+        ws3.cell(row=row_num, column=1).border = thin_border
+
+        c = ws3.cell(row=row_num, column=2, value=m['nombre'])
+        c.font = bold_font; c.alignment = left; c.border = thin_border
+
+        total = montos_por_miembro[m['nombre']]['_total']
+        c = ws3.cell(row=row_num, column=3, value=total)
+        c.font = Font(name='Calibri', size=11, bold=True, color='059669')
+        c.alignment = center; c.border = thin_border
+        c.number_format = money_fmt
+
+        if i % 2 == 0:
+            ws3.cell(row=row_num, column=1).fill = light_fill
+            ws3.cell(row=row_num, column=2).fill = light_fill
+            ws3.cell(row=row_num, column=3).fill = light_fill
+
+    total_row3 = len(miembros_ordenados) + 4
+    ws3.cell(row=total_row3, column=1, value='').border = thin_border
+    c = ws3.cell(row=total_row3, column=2, value='TOTAL GENERAL')
+    c.font = bold_font; c.alignment = center; c.fill = total_fill; c.border = thin_border
+    c = ws3.cell(row=total_row3, column=3, value=round(gran_por_miembro, 2))
+    c.font = bold_font; c.alignment = center; c.fill = total_fill; c.border = thin_border
+    c.number_format = money_fmt
+
+    ws3.column_dimensions['A'].width = 6
+    ws3.column_dimensions['B'].width = 28
+    ws3.column_dimensions['C'].width = 26
+
+    # ── Guardar ──
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(buf, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                     as_attachment=True, download_name='reporte_bingos.xlsx')
+
+# ═══════════════════════════════════════════
 #  IMPORTAR DESDE EXCEL
 # ═══════════════════════════════════════════
 

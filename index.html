@@ -255,33 +255,33 @@ tbody tr:nth-child(even){background:#f8fafc}
 
       <!-- MIEMBROS -->
       <div id="tb-miembros" class="tb">
-        <div class="page-h"><h3>Miembros</h3><button class="btn btn-p btn-sm" onclick="modalMiembro()">+ Nuevo</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/miembros')">⬇ CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/miembros')">⬇ Excel</button></div>
+        <div class="page-h"><h3>Miembros</h3><button class="btn btn-p btn-sm" onclick="modalMiembro()">+ Nuevo</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/miembros')">⬇ Excel</button></div>
         <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>ID</th><th class="tl">Nombre</th><th>Apodo</th><th>Acción</th></tr></thead><tbody id="miembrosBody"></tbody></table></div></div></div>
       </div>
 
       <!-- ASISTENCIAS -->
       <div id="tb-tablas" class="tb">
-        <div class="page-h"><h3>Asistencias</h3><button class="btn btn-p btn-sm" onclick="modalAsistencia()">+ Registrar</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/asistencias')">⬇ CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/asistencias')">⬇ Excel</button></div>
+        <div class="page-h"><h3>Asistencias</h3><button class="btn btn-p btn-sm" onclick="modalAsistencia()">+ Registrar</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/asistencias')">⬇ Excel</button></div>
         <div class="card"><div class="card-t">Historial</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="tablasHead"></thead><tbody id="tablasBody"></tbody></table></div></div></div>
       </div>
 
       <!-- BINGO -->
       <div id="tb-bingo" class="tb">
-        <div class="page-h"><h3>Bingo</h3><button class="btn btn-p btn-sm" onclick="modalBingo()">+ Registrar</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/bingos')">⬇ CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/bingos')">⬇ Excel</button></div>
+        <div class="page-h"><h3>Bingo</h3><button class="btn btn-p btn-sm" onclick="modalBingo()">+ Registrar</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/bingos')">⬇ Excel</button><button class="btn btn-o btn-sm" onclick="window.open('/api/export/xlsx/bingo_reporte')">📊 Reporte Completo</button></div>
         <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>Fecha</th><th class="tr">Monto</th><th class="tr">Coge c/u</th><th>Asist.</th><th>Acción</th></tr></thead><tbody id="bingoBody"></tbody></table></div></div></div>
         <div class="card" style="background:#ecfdf5;border-color:var(--success)"><div style="font-size:15px;font-weight:700;color:var(--success)">Total Bingo: $<span id="bingoTotal">0.00</span></div></div>
       </div>
 
       <!-- RIFA -->
       <div id="tb-rifa" class="tb">
-        <div class="page-h"><h3>Rifa Grupal</h3><button class="btn btn-p btn-sm" onclick="modalRifa()">+ Registrar</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/rifas')">⬇ CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/rifas')">⬇ Excel</button></div>
+        <div class="page-h"><h3>Rifa Grupal</h3><button class="btn btn-p btn-sm" onclick="modalRifa()">+ Registrar</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/rifas')">⬇ Excel</button></div>
         <div class="card"><div class="card-t">Registros</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="rifaHead"></thead><tbody id="rifaBody"></tbody></table></div></div></div>
         <div class="card" style="background:#fffbeb;border-color:var(--warning)"><div style="font-size:15px;font-weight:700;color:var(--warning)">Total Rifa: $<span id="rifaTotal">0.00</span></div></div>
       </div>
 
       <!-- AHORROS -->
       <div id="tb-ahorros" class="tb">
-        <div class="page-h"><h3>Ahorros</h3><button class="btn btn-p btn-sm" onclick="modalAhorro('normal')">+ Normal</button><button class="btn btn-g btn-sm" onclick="modalAhorro('cumple')">+ Cumpleaños</button><button class="btn btn-o btn-sm" onclick="modalAhorro('rifa')">+ Rifa</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/ahorro_normal')">⬇ Normal CSV</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/ahorro_cumple')">⬇ Cumple CSV</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/ahorro_rifa')">⬇ Rifa CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_normal')">⬇ Normal Excel</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_cumple')">⬇ Cumple Excel</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_rifa')">⬇ Rifa Excel</button></div>
+        <div class="page-h"><h3>Ahorros</h3><button class="btn btn-p btn-sm" onclick="modalAhorro('normal')">+ Normal</button><button class="btn btn-g btn-sm" onclick="modalAhorro('cumple')">+ Cumpleaños</button><button class="btn btn-o btn-sm" onclick="modalAhorro('rifa')">+ Rifa</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_normal')">⬇ Normal</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_cumple')">⬇ Cumpleaños</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_rifa')">⬇ Rifa</button></div>
         <div class="g2">
           <div class="card"><div class="card-t">Ahorro Normal</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="ahNHead"></thead><tbody id="ahNBody"></tbody></table></div></div></div>
           <div class="card"><div class="card-t">Ahorro Cumpleaños</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="ahCHead"></thead><tbody id="ahCBody"></tbody></table></div></div></div>
@@ -292,7 +292,7 @@ tbody tr:nth-child(even){background:#f8fafc}
 
       <!-- CUMPLEAÑOS -->
       <div id="tb-cumpleanos" class="tb">
-        <div class="page-h"><h3>Cumpleaños</h3><button class="btn btn-p btn-sm" onclick="modalCumpleAporte()">+ Aporte</button><button class="btn btn-g btn-sm" onclick="modalCumpleFecha()">+ Fecha</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/cumple_aportes')">⬇ Aportes CSV</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/cumple_fechas')">⬇ Fechas CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/cumple_aportes')">⬇ Aportes Excel</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/cumple_fechas')">⬇ Fechas Excel</button></div>
+        <div class="page-h"><h3>Cumpleaños</h3><button class="btn btn-p btn-sm" onclick="modalCumpleAporte()">+ Aporte</button><button class="btn btn-g btn-sm" onclick="modalCumpleFecha()">+ Fecha</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/cumple_aportes')">⬇ Aportes</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/cumple_fechas')">⬇ Fechas</button></div>
         <div class="g2">
           <div class="card"><div class="card-t">Aportes por Mes</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="cumpleHead"></thead><tbody id="cumpleBody"></tbody></table></div></div></div>
           <div class="card"><div class="card-t">Fechas de Cumpleaños</div><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th>Fecha</th><th>Acción</th></tr></thead><tbody id="cumpleFBody"></tbody></table></div></div></div>
@@ -301,7 +301,7 @@ tbody tr:nth-child(even){background:#f8fafc}
 
       <!-- PRÉSTAMOS -->
       <div id="tb-prestamos" class="tb">
-        <div class="page-h"><h3>Préstamos</h3><button class="btn btn-p btn-sm" onclick="modalPrestamo()">+ Nuevo</button><button class="btn btn-gh btn-sm" onclick="window.open('/api/export/csv/prestamos')">⬇ CSV</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/prestamos')">⬇ Excel</button></div>
+        <div class="page-h"><h3>Préstamos</h3><button class="btn btn-p btn-sm" onclick="modalPrestamo()">+ Nuevo</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/prestamos')">⬇ Excel</button></div>
         <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th class="tr">Monto</th><th class="tl">Obs</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="prestamosBody"></tbody></table></div></div></div>
         <div class="card" style="background:#fef2f2;border-color:var(--danger)"><div style="font-size:15px;font-weight:700;color:var(--danger)">Total Pendiente: $<span id="prestamosTotal">0.00</span></div></div>
       </div>
@@ -352,27 +352,9 @@ tbody tr:nth-child(even){background:#f8fafc}
         <div class="card">
           <div class="card-t">Exportar todo</div>
           <div class="card-b">
-            <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Descargá todas las tablas como CSV o Excel comprimidas en un ZIP.</p>
+            <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Descargá todas las tablas en Excel comprimidas en un ZIP.</p>
             <div class="grup">
-              <a href="/api/export/todo" class="btn btn-g btn-sm">⬇ Todo en CSV (ZIP)</a>
               <a href="/api/export/xlsx/todo" class="btn btn-p btn-sm">⬇ Todo en Excel (ZIP)</a>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-t">Exportar tabla individual — CSV</div>
-          <div class="card-b">
-            <div class="grup">
-              <a href="/api/export/csv/miembros" class="btn btn-gh btn-sm">⬇ Miembros</a>
-              <a href="/api/export/csv/asistencias" class="btn btn-gh btn-sm">⬇ Asistencias</a>
-              <a href="/api/export/csv/bingos" class="btn btn-gh btn-sm">⬇ Bingo</a>
-              <a href="/api/export/csv/rifas" class="btn btn-gh btn-sm">⬇ Rifa</a>
-              <a href="/api/export/csv/ahorro_normal" class="btn btn-gh btn-sm">⬇ Ahorro Normal</a>
-              <a href="/api/export/csv/ahorro_cumple" class="btn btn-gh btn-sm">⬇ Ahorro Cumple</a>
-              <a href="/api/export/csv/ahorro_rifa" class="btn btn-gh btn-sm">⬇ Ahorro Rifa</a>
-              <a href="/api/export/csv/cumple_aportes" class="btn btn-gh btn-sm">⬇ Aportes Cumple</a>
-              <a href="/api/export/csv/cumple_fechas" class="btn btn-gh btn-sm">⬇ Fechas Cumple</a>
-              <a href="/api/export/csv/prestamos" class="btn btn-gh btn-sm">⬇ Préstamos</a>
             </div>
           </div>
         </div>
