@@ -641,18 +641,30 @@ async function saveAsistencia(){
 
 function renderBingos(){
   document.getElementById('bingoBody').innerHTML=S.bingos.map(b=>{
-    const a=S.miembros.length||1;
-    return `<tr><td>${fd(b.fecha)}</td><td class="tr fw6">$${b.monto.toFixed(2)}</td><td class="tr">$${(b.monto/a).toFixed(2)}</td><td><span class="bdg bdg-g">${a}</span></td><td><button class="btn btn-r btn-xs" onclick="delBingo(${b.id})">✕</button></td></tr>`
+    const a=b.asistentes||S.miembros.length||1;
+    return `<tr><td>${fd(b.fecha)}</td><td class="tr fw6">$${b.monto.toFixed(2)}</td><td class="tr">$${(b.monto/a).toFixed(2)}</td><td><span class="bdg" style="cursor:pointer;background:#f1f5f9;color:var(--text);padding:2px 8px" onclick="editarAsistentes(${b.id},${a})" title="Click para cambiar cantidad">${a} ✎</span></td><td><button class="btn btn-r btn-xs" onclick="delBingo(${b.id})">✕</button></td></tr>`
   }).join('')||'<tr><td colspan="5" class="emp"><div class="big">⊟</div>Sin bingos</td></tr>';
   document.getElementById('bingoTotal').textContent=S.bingos.reduce((s,b)=>s+b.monto,0).toFixed(2)
 }
+
+function editarAsistentes(id, actual){
+  modal(`<h3>Editar Asistentes</h3><p style="font-size:13px;color:var(--text2);margin-bottom:14px">Modificá la cantidad de asistentes para calcular el monto por persona.</p><div class="fr"><label>Cantidad de asistentes</label><input type="number" id="fAsistNum" min="1" value="${actual}" autofocus></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="guardarAsistentes(${id})">Guardar</button></div>`)
+}
+
+async function guardarAsistentes(id){
+  const v=parseInt(document.getElementById('fAsistNum').value);
+  if(!v||v<1){toast('Ingresá un número válido','e');return}
+  try{await api('PUT',`/api/bingos/${id}`,{asistentes:v});toast('Actualizado');closeModal();await loadAll()}
+  catch(e){toast(e.message,'e')}
+}
 function modalBingo(){
-  modal(`<h3>Registrar Bingo</h3><div class="fr"><label>Fecha</label><input type="date" id="fBiFecha"></div><div class="fr"><label>Monto ($)</label><input type="number" id="fBiMonto" step="0.01" placeholder="0.00"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveBingo()">Guardar</button></div>`)
+  const defAsist=S.miembros.length||1;
+  modal(`<h3>Registrar Bingo</h3><div class="fr"><label>Fecha</label><input type="date" id="fBiFecha"></div><div class="fr"><label>Monto ($)</label><input type="number" id="fBiMonto" step="0.01" placeholder="0.00"></div><div class="fr"><label>Asistentes</label><input type="number" id="fBiAsist" min="1" value="${defAsist}" placeholder="${defAsist}"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveBingo()">Guardar</button></div>`)
 }
 async function saveBingo(){
-  const f=document.getElementById('fBiFecha').value,m=parseFloat(document.getElementById('fBiMonto').value);
+  const f=document.getElementById('fBiFecha').value,m=parseFloat(document.getElementById('fBiMonto').value),a=parseInt(document.getElementById('fBiAsist').value);
   if(!f||isNaN(m)){toast('Completa campos','e');return}
-  try{await api('POST','/api/bingos',{fecha:f,monto:m});toast('Registrado');closeModal();await loadAll()}catch(e){toast(e.message,'e')}
+  try{await api('POST','/api/bingos',{fecha:f,monto:m,asistentes:a||undefined});toast('Registrado');closeModal();await loadAll()}catch(e){toast(e.message,'e')}
 }
 async function delBingo(id){if(!confirm('¿Eliminar?'))return;try{await api('DELETE',`/api/bingos/${id}`);toast('Eliminado');await loadAll()}catch(e){toast(e.message,'e')}}
 

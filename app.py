@@ -115,8 +115,10 @@ def init_db():
         CREATE TABLE IF NOT EXISTS bingos (
             id SERIAL PRIMARY KEY,
             fecha TEXT UNIQUE NOT NULL,
-            monto REAL NOT NULL
+            monto REAL NOT NULL,
+            asistentes INTEGER DEFAULT 0
         );
+        ALTER TABLE bingos ADD COLUMN IF NOT EXISTS asistentes INTEGER DEFAULT 0;
         CREATE TABLE IF NOT EXISTS fechas_rifa (
             id SERIAL PRIMARY KEY,
             fecha TEXT UNIQUE NOT NULL
@@ -302,16 +304,17 @@ def set_asistencia():
 @app.route('/api/bingos', methods=['GET'])
 @login_required
 def get_bingos():
-    return jsonify([dict(r) for r in get_db().execute("SELECT id, fecha, monto FROM bingos ORDER BY fecha").fetchall()])
+    return jsonify([dict(r) for r in get_db().execute("SELECT id, fecha, monto, asistentes FROM bingos ORDER BY fecha").fetchall()])
 
 @app.route('/api/bingos', methods=['POST'])
 @login_required
 def add_bingo():
     data = request.json
     db = get_db()
+    total_miembros = len(db.execute("SELECT id FROM miembros").fetchall())
+    asistentes = data.get('asistentes', total_miembros) or total_miembros
     try:
-        db.execute("INSERT INTO bingos (fecha, monto) VALUES (?, ?)", (data['fecha'], float(data['monto'])))
-        # Auto-crear la fecha en fechas_tablas para que aparezca en Tablas de Bingo
+        db.execute("INSERT INTO bingos (fecha, monto, asistentes) VALUES (?, ?, ?)", (data['fecha'], float(data['monto']), int(asistentes)))
         try:
             db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (data['fecha'],))
         except psycopg2.IntegrityError:
@@ -320,6 +323,18 @@ def add_bingo():
         return jsonify({'ok': True}), 201
     except psycopg2.IntegrityError:
         return jsonify({'error':'La fecha ya existe'}), 409
+
+@app.route('/api/bingos/<int:id>', methods=['PUT'])
+@login_required
+def update_bingo(id):
+    data = request.json
+    db = get_db()
+    if 'asistentes' in data:
+        db.execute("UPDATE bingos SET asistentes=? WHERE id=?", (int(data['asistentes']), id))
+    if 'monto' in data:
+        db.execute("UPDATE bingos SET monto=? WHERE id=?", (float(data['monto']), id))
+    db.commit()
+    return jsonify({'ok': True})
 
 @app.route('/api/bingos/<int:id>', methods=['DELETE'])
 @login_required
@@ -516,7 +531,7 @@ def get_datos_completos():
         if r['nombre'] not in asistencias: asistencias[r['nombre']] = {}
         asistencias[r['nombre']][r['fecha']] = r['valor']
 
-    bingos = [dict(r) for r in db.execute("SELECT id, fecha, monto FROM bingos ORDER BY fecha").fetchall()]
+    bingos = [dict(r) for r in db.execute("SELECT id, fecha, monto, asistentes FROM bingos ORDER BY fecha").fetchall()]
     fechas_rifa = [r['fecha'] for r in db.execute("SELECT fecha FROM fechas_rifa ORDER BY fecha").fetchall()]
 
     ri_raw = db.execute("SELECT m.nombre, r.fecha, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id").fetchall()
@@ -798,7 +813,7 @@ def export_bingo_reporte():
     from datetime import datetime
 
     db = get_db()
-    bingos = [dict(r) for r in db.execute("SELECT id, fecha, monto FROM bingos ORDER BY fecha").fetchall()]
+    bingos = [dict(r) for r in db.execute("SELECT id, fecha, monto, asistentes FROM bingos ORDER BY fecha").fetchall()]
     miembros = [dict(r) for r in db.execute("SELECT id, nombre FROM miembros ORDER BY id").fetchall()]
     asistencias_raw = [dict(r) for r in db.execute("SELECT miembro_id, fecha FROM asistencias WHERE valor=1").fetchall()]
 
@@ -848,7 +863,7 @@ def export_bingo_reporte():
     ws1.row_dimensions[2].height = 18
 
     # Encabezados
-    headers1 = ['#', 'Fecha', 'Monto Total', 'Total Miembros', 'Monto por Persona']
+    headers1 = ['#', 'Fecha', 'Monto Total', 'Asistentes', 'Monto por Persona']
     for j, h in enumerate(headers1, 1):
         c = ws1.cell(row=4, column=j, value=h)
         c.font = header_font; c.fill = header_fill
@@ -859,12 +874,12 @@ def export_bingo_reporte():
     gran_total = 0
     for i, b in enumerate(bingos, 1):
         row_num = i + 4
-        total_miembros = len(miembros)
-        denom = total_miembros if total_miembros > 0 else 1
+        asistentes = b.get('asistentes') or len(miembros)
+        denom = asistentes if asistentes > 0 else 1
         por_persona = round(b['monto'] / denom, 2)
         gran_total += b['monto']
 
-        vals = [i, b['fecha'], b['monto'], total_miembros, por_persona]
+        vals = [i, b['fecha'], b['monto'], asistentes, por_persona]
         for j, v in enumerate(vals, 1):
             c = ws1.cell(row=row_num, column=j, value=v)
             c.font = data_font; c.alignment = center; c.border = thin_border
@@ -915,13 +930,13 @@ def export_bingo_reporte():
         c.alignment = center; c.border = thin_border
 
     # Matriz de montos por miembro por bingo
-    total_miembros = len(miembros)
-    denom = total_miembros if total_miembros > 0 else 1
     montos_por_miembro = {}
     for m in miembros:
         montos_por_miembro[m['nombre']] = {}
         total_miembro = 0
         for b in bingos:
+            asistentes = b.get('asistentes') or len(miembros)
+            denom = asistentes if asistentes > 0 else 1
             por_persona = round(b['monto'] / denom, 2)
             montos_por_miembro[m['nombre']][b['fecha']] = por_persona
             total_miembro += por_persona
