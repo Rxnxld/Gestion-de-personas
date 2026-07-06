@@ -601,19 +601,31 @@ async function delMiembro(id){if(!confirm('¿Eliminar?'))return;try{await api('D
 
 function renderTablas(){
   const fs=S.fechasTablas;
-  document.getElementById('tablasHead').innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+fs.map(f=>`<th title="Click para cambiar">${fd(f)}</th>`).join('')+'</tr>';
+  document.getElementById('tablasHead').innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+fs.map(f=>`<th>${fd(f)}</th>`).join('')+'<th style="width:50px"></th></tr>';
   document.getElementById('tablasBody').innerHTML=S.miembros.map((m,i)=>{
-    const c=fs.map(f=>{const v=(S.asistencias[m.nombre]?.[f])||0;return `<td onclick="toggleTabla('${esc(m.nombre)}','${f}',${v})" style="cursor:pointer;user-select:none" title="${v?'Click: marcar no pagado':'Click: marcar pagado'}">${v?'✓':'—'}</td>`}).join('');
-    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${c}</tr>`
+    const c=fs.map(f=>{const v=(S.asistencias[m.nombre]?.[f])||0;return `<td>${v?'✓':'—'}</td>`}).join('');
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${c}<td><button class="btn btn-gh btn-xs" onclick="editarTabla(${m.id})" title="Editar pagos">✎</button></td></tr>`
   }).join('')||'<tr><td colspan="20" class="emp"><div class="big">⊞</div>Sin registros</td></tr>'
 }
 
-async function toggleTabla(nombre, fecha, valActual){
+function editarTabla(miembroId){
+  const m=S.miembros.find(x=>x.id===miembroId);if(!m)return;
+  const fs=S.fechasTablas;
+  const rows=fs.map(f=>{
+    const v=(S.asistencias[m.nombre]?.[f])||0;
+    return `<div class="fr"><label>${fd(f)}</label><select id="tab_${f}"><option value="1" ${v?'selected':''}>Sí (pagó)</option><option value="0" ${!v?'selected':''}>No</option></select></div>`
+  }).join('');
+  modal(`<h3>Pagos de ${esc(m.nombre)}</h3>${rows}<div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="guardarEditarTabla(${m.id})">Guardar</button></div>`)
+}
+
+async function guardarEditarTabla(miembroId){
+  const m=S.miembros.find(x=>x.id===miembroId);if(!m)return;
   try{
-    await api('POST','/api/tablas/fechas',{fecha:fecha});
-    await api('POST','/api/tablas/asistencias',{nombre:nombre,fecha:fecha,valor:valActual?0:1});
-    toast(valActual?'Marcado como no pagado':'✓ Pagado');
-    await loadAll()
+    for(const f of S.fechasTablas){
+      const sel=document.getElementById(`tab_${f}`);
+      if(sel) await api('POST','/api/tablas/asistencias',{nombre:m.nombre,fecha:f,valor:parseInt(sel.value)});
+    }
+    toast('Guardado');closeModal();await loadAll()
   }catch(e){toast(e.message,'e')}
 }
 
