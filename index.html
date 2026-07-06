@@ -514,7 +514,10 @@ function computeEstadoCuenta(){
     const pagado=prestamosM.filter(p=>p.estado==='pagado').reduce((s,p)=>s+p.monto,0);
     const bingoTotal=S.bingos.reduce((s,b)=>{
       const d=(b.distribucion||[]).find(x=>x.miembro_id===m.id);
-      return s+(d&&d.recibe?d.monto_asignado:0)
+      if(!d||!d.recibe)return s;
+      const a=b.asistentes||S.miembros.length||1;
+      const coge=(b.monto+parseFloat(b.adicional||0))/a;
+      return s+coge;
     },0);
     const saldoNeto=ahorroTotal-pendiente;
     let estadoGeneral='al_dia';
