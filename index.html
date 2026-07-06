@@ -58,9 +58,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .sidebar-foot{padding:10px 14px;border-top:1px solid rgba(255,255,255,.08);font-size:10px;color:#475569}
 .sidebar-foot button{background:0 0;border:none;color:#64748b;font-size:10px;cursor:pointer;font-family:inherit;padding:0}
 .sidebar-foot button:hover{color:#e2e8f0}
-.sidebar-toggle{position:absolute;top:18px;right:-32px;width:28px;height:28px;border-radius:0 6px 6px 0;background:var(--primary);border:none;color:#64748b;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;z-index:1}
-.sidebar-toggle:hover{color:#e2e8f0}
-.sidebar.collapsed .sidebar-toggle{right:-28px;border-radius:6px;transform:rotate(180deg)}
+
 
 .main{margin-left:var(--side);flex:1;min-height:100vh;transition:margin-left .25s}
 .sidebar.collapsed+.main{margin-left:0}
@@ -232,7 +230,6 @@ tbody tr:nth-child(even){background:#f8fafc}
 <!-- APP -->
 <div id="appPage" class="app-page">
   <aside class="sidebar" id="sidebar">
-    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Ocultar menú">◀</button>
     <div class="sidebar-brand">
       <h1>Grupo Calle Portoviejo</h1>
       <small>Gestión 2026 · PostgreSQL</small>
