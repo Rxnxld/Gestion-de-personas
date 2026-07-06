@@ -121,6 +121,14 @@ def init_db():
         );
         ALTER TABLE bingos ADD COLUMN IF NOT EXISTS asistentes INTEGER DEFAULT 0;
         ALTER TABLE bingos ADD COLUMN IF NOT EXISTS adicional REAL DEFAULT 0;
+        CREATE TABLE IF NOT EXISTS bingo_distribucion (
+            id SERIAL PRIMARY KEY,
+            bingo_id INTEGER NOT NULL REFERENCES bingos(id) ON DELETE CASCADE,
+            miembro_id INTEGER NOT NULL REFERENCES miembros(id) ON DELETE CASCADE,
+            recibe BOOLEAN DEFAULT TRUE,
+            monto_asignado REAL DEFAULT 0,
+            UNIQUE(bingo_id, miembro_id)
+        );
         CREATE TABLE IF NOT EXISTS fechas_rifa (
             id SERIAL PRIMARY KEY,
             fecha TEXT UNIQUE NOT NULL
@@ -311,7 +319,12 @@ def set_asistencia():
 @app.route('/api/bingos', methods=['GET'])
 @login_required
 def get_bingos():
-    return jsonify([dict(r) for r in get_db().execute("SELECT id, fecha, monto, adicional, asistentes FROM bingos ORDER BY fecha").fetchall()])
+    db = get_db()
+    bingos = [dict(r) for r in db.execute("SELECT id, fecha, monto, adicional, asistentes FROM bingos ORDER BY fecha").fetchall()]
+    for b in bingos:
+        dist = db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE bingo_id=?", (b['id'],)).fetchall()
+        b['distribucion'] = [dict(d) for d in dist] if dist else []
+    return jsonify(bingos)
 
 @app.route('/api/bingos', methods=['POST'])
 @login_required
@@ -359,6 +372,29 @@ def update_bingo(id):
 def delete_bingo(id):
     get_db().execute("DELETE FROM bingos WHERE id=?", (id,))
     get_db().commit()
+    return jsonify({'ok': True})
+
+@app.route('/api/bingos/<int:id>/distribucion', methods=['GET'])
+@login_required
+def get_distribucion(id):
+    db = get_db()
+    dist = {r['miembro_id']: {'recibe': r['recibe'], 'monto': r['monto_asignado']}
+            for r in db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE bingo_id=?", (id,)).fetchall()}
+    miembros = db.execute("SELECT id, nombre FROM miembros ORDER BY nombre").fetchall()
+    return jsonify([{'miembro_id': m['id'], 'nombre': m['nombre'],
+                     'recibe': dist.get(m['id'], {}).get('recibe', True),
+                     'monto': dist.get(m['id'], {}).get('monto', 0)} for m in miembros])
+
+@app.route('/api/bingos/<int:id>/distribucion', methods=['PUT'])
+@login_required
+def save_distribucion(id):
+    data = request.json
+    db = get_db()
+    db.execute("DELETE FROM bingo_distribucion WHERE bingo_id=?", (id,))
+    for item in data:
+        db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado) VALUES (?, ?, ?, ?)",
+                   (id, item['miembro_id'], item.get('recibe', True), float(item.get('monto', 0))))
+    db.commit()
     return jsonify({'ok': True})
 
 # ═══════════════════════════════════════════
