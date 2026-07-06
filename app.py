@@ -615,6 +615,9 @@ def get_datos_completos():
         asistencias[r['nombre']][r['fecha']] = r['valor']
 
     bingos = [dict(r) for r in db.execute("SELECT id, fecha, monto, adicional, asistentes FROM bingos ORDER BY fecha").fetchall()]
+    for b in bingos:
+        dist = db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE bingo_id=?", (b['id'],)).fetchall()
+        b['distribucion'] = [dict(d) for d in dist] if dist else []
     fechas_rifa = [r['fecha'] for r in db.execute("SELECT fecha FROM fechas_rifa ORDER BY fecha").fetchall()]
 
     ri_raw = db.execute("SELECT m.nombre, r.fecha, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id").fetchall()
