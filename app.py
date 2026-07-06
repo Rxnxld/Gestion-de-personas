@@ -309,6 +309,13 @@ def set_asistencia():
     cur = db.execute("SELECT COUNT(*) as cnt FROM asistencias WHERE fecha=? AND valor=1", (data['fecha'],))
     total = cur.fetchone()['cnt']
     db.execute("UPDATE bingos SET monto=? WHERE fecha=?", (float(total), data['fecha']))
+    # Actualizar distribución automática con el nuevo monto
+    b = db.execute("SELECT id, monto, adicional, asistentes FROM bingos WHERE fecha=?", (data['fecha'],)).fetchone()
+    if b:
+        t = b['monto'] + (b['adicional'] or 0)
+        a = b['asistentes'] or 1
+        coge = round(t / a, 2) if a > 0 else 0
+        db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE", (coge, b['id']))
     db.commit()
     return jsonify({'ok': True})
 
@@ -335,7 +342,15 @@ def add_bingo():
     asistentes = data.get('asistentes', total_miembros) or total_miembros
     adicional = float(data.get('adicional', 0) or 0)
     try:
-        db.execute("INSERT INTO bingos (fecha, monto, adicional, asistentes) VALUES (?, ?, ?, ?)", (data['fecha'], float(data['monto']), adicional, int(asistentes)))
+        cur = db.execute("INSERT INTO bingos (fecha, monto, adicional, asistentes) VALUES (?, ?, ?, ?) RETURNING id", (data['fecha'], float(data['monto']), adicional, int(asistentes)))
+        bingo_id = cur.fetchone()['id']
+        # auto-crear distribución: todos reciben, monto = total / asistentes
+        todos = db.execute("SELECT id FROM miembros").fetchall()
+        total = float(data['monto']) + adicional
+        coge = total / int(asistentes) if int(asistentes) > 0 else 0
+        for m in todos:
+            db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado) VALUES (?, ?, TRUE, ?)",
+                       (bingo_id, m['id'], round(coge, 2)))
         try:
             db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (data['fecha'],))
         except psycopg2.IntegrityError:
@@ -350,7 +365,7 @@ def add_bingo():
 def update_bingo(id):
     data = request.json
     db = get_db()
-    old = db.execute("SELECT fecha FROM bingos WHERE id=?", (id,)).fetchone()
+    old = db.execute("SELECT id, fecha, monto, adicional, asistentes FROM bingos WHERE id=?", (id,)).fetchone()
     if 'asistentes' in data:
         db.execute("UPDATE bingos SET asistentes=? WHERE id=?", (int(data['asistentes']), id))
     if 'monto' in data:
@@ -364,6 +379,14 @@ def update_bingo(id):
             db.execute("UPDATE asistencias SET fecha=? WHERE fecha=?", (data['fecha'], old['fecha']))
         except psycopg2.IntegrityError:
             return jsonify({'error': 'La fecha ya existe en bingos'}), 409
+    # si cambió monto/adicional/asistentes, actualizar distribución automática
+    if 'monto' in data or 'adicional' in data or 'asistentes' in data:
+        b = db.execute("SELECT monto, adicional, asistentes FROM bingos WHERE id=?", (id,)).fetchone()
+        if b:
+            total = b['monto'] + (b['adicional'] or 0)
+            a = b['asistentes'] or 1
+            coge = round(total / a, 2) if a > 0 else 0
+            db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE", (coge, id))
     db.commit()
     return jsonify({'ok': True})
 
@@ -635,6 +658,10 @@ def _calcular_estado_cuenta(db):
     for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):
         asis[r['miembro_id']] = r['s'] or 0
 
+    bingo_dist = {}
+    for r in db.execute("SELECT miembro_id, SUM(monto_asignado) s FROM bingo_distribucion WHERE recibe=TRUE GROUP BY miembro_id"):
+        bingo_dist[r['miembro_id']] = r['s'] or 0
+
     rifa = {}
     for r in db.execute("SELECT miembro_id, SUM(valor) s FROM rifas GROUP BY miembro_id"):
         rifa[r['miembro_id']] = r['s'] or 0
@@ -671,6 +698,7 @@ def _calcular_estado_cuenta(db):
             'id': mid, 'nombre': m['nombre'], 'apodo': m['apodo'],
             'asistencia': {'asistidas': as_ok, 'total': total_fechas_tablas, 'pct': as_pct},
             'rifa': {'participaciones': rifa.get(mid, 0), 'totalFechas': total_fechas_rifa},
+            'bingo': round(bingo_dist.get(mid, 0), 2),
             'ahorros': {'normal': round(aN, 2), 'cumple': round(aC, 2), 'rifa': round(aR, 2), 'total': round(ahorro_total, 2)},
             'cumpleAportes': cumple.get(mid, 0),
             'cumpleFecha': cumple_fecha.get(mid),
@@ -696,7 +724,7 @@ def export_estado_cuenta_xlsx():
     ws = wb.active
     ws.title = "Estado de Cuenta"
     cols = ['N°','Nombre','Asist. (Si/Total)','Asist. %','Rifa (Participaciones)',
-            'Ahorro Normal','Ahorro Cumple','Ahorro Rifa','Total Ahorros',
+            'Bingo ($)','Ahorro Normal','Ahorro Cumple','Ahorro Rifa','Total Ahorros',
             'Aportes Cumple','Préstamo Pendiente','Préstamo Pagado','Saldo Neto','Estado']
     hf = Font(bold=True, color='FFFFFF', size=11)
     hfill = PatternFill(start_color='0F172A', end_color='0F172A', fill_type='solid')
@@ -708,7 +736,7 @@ def export_estado_cuenta_xlsx():
     for i, d in enumerate(datos, 1):
         row = [
             i, d['nombre'], f"{d['asistencia']['asistidas']}/{d['asistencia']['total']}", f"{d['asistencia']['pct']}%",
-            d['rifa']['participaciones'], d['ahorros']['normal'], d['ahorros']['cumple'], d['ahorros']['rifa'],
+            d['rifa']['participaciones'], d['bingo'], d['ahorros']['normal'], d['ahorros']['cumple'], d['ahorros']['rifa'],
             d['ahorros']['total'], d['cumpleAportes'], d['prestamos']['pendiente'], d['prestamos']['pagado'],
             d['saldoNeto'], estado_lbl.get(d['estadoGeneral'], d['estadoGeneral'])
         ]
