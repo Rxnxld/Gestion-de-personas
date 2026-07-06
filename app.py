@@ -337,12 +337,20 @@ def add_bingo():
 def update_bingo(id):
     data = request.json
     db = get_db()
+    old = db.execute("SELECT fecha FROM bingos WHERE id=?", (id,)).fetchone()
     if 'asistentes' in data:
         db.execute("UPDATE bingos SET asistentes=? WHERE id=?", (int(data['asistentes']), id))
     if 'monto' in data:
         db.execute("UPDATE bingos SET monto=? WHERE id=?", (float(data['monto']), id))
     if 'adicional' in data:
         db.execute("UPDATE bingos SET adicional=? WHERE id=?", (float(data['adicional']), id))
+    if 'fecha' in data and old and data['fecha'] != old['fecha']:
+        try:
+            db.execute("UPDATE bingos SET fecha=? WHERE id=?", (data['fecha'], id))
+            db.execute("UPDATE fechas_tablas SET fecha=? WHERE fecha=?", (data['fecha'], old['fecha']))
+            db.execute("UPDATE asistencias SET fecha=? WHERE fecha=?", (data['fecha'], old['fecha']))
+        except psycopg2.IntegrityError:
+            return jsonify({'error': 'La fecha ya existe en bingos'}), 409
     db.commit()
     return jsonify({'ok': True})
 

@@ -667,7 +667,7 @@ async function saveAsistencia(){
 function renderBingos(){
   document.getElementById('bingoBody').innerHTML=S.bingos.map(b=>{
     const a=b.asistentes||S.miembros.length||1, ad=parseFloat(b.adicional||0), total=b.monto+ad;
-    return `<tr><td>${fd(b.fecha)}</td>
+    return `<tr><td><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarFechaBingo(${b.id},'${b.fecha}')" title="Click para cambiar fecha">${fd(b.fecha)} ✎</span></td>
       <td class="tr fw6">$${b.monto.toFixed(2)}</td>
       <td class="tr"><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarAdicional(${b.id},${ad})" title="Click para editar">$${ad.toFixed(2)} ✎</span></td>
       <td class="tr fw6" style="color:var(--accent)">$${total.toFixed(2)}</td>
@@ -697,6 +697,18 @@ async function guardarMonto(id){
   const v=parseFloat(document.getElementById('fMontoNum').value);
   if(isNaN(v)||v<0){toast('Ingresá un monto válido','e');return}
   try{await api('PUT',`/api/bingos/${id}`,{monto:v});toast('Actualizado');closeModal();await loadAll()}
+  catch(e){toast(e.message,'e')}
+}
+
+function editarFechaBingo(id, fecha){
+  const iso = fecha.includes('-') ? fecha : fecha.split('/').reverse().join('-');
+  modal(`<h3>Cambiar Fecha del Bingo</h3><p style="font-size:13px;color:var(--text2);margin-bottom:14px">También se actualizará en Tablas de Bingo.</p><div class="fr"><label>Fecha</label><input type="date" id="fBingofecha" value="${iso}"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="guardarFechaBingo(${id})">Guardar</button></div>`)
+}
+
+async function guardarFechaBingo(id){
+  const f=document.getElementById('fBingofecha').value;
+  if(!f){toast('Seleccioná una fecha','e');return}
+  try{await api('PUT',`/api/bingos/${id}`,{fecha:f});toast('Actualizado');closeModal();await loadAll()}
   catch(e){toast(e.message,'e')}
 }
 function modalBingo(){
