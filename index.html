@@ -261,7 +261,7 @@ tbody tr:nth-child(even){background:#f8fafc}
 
       <!-- ASISTENCIAS -->
       <div id="tb-tablas" class="tb">
-        <div class="page-h"><h3>Tablas de Bingo</h3><button class="btn btn-p btn-sm" onclick="modalAsistencia()">+ Pagar Tabla</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/asistencias')">⬇ Excel</button></div>
+        <div class="page-h"><h3>Tablas de Bingo</h3><button class="btn btn-p btn-sm" onclick="modalAsistencia()">+ Nueva Fecha</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/asistencias')">⬇ Excel</button></div>
         <div class="card"><div class="card-t">Historial de Pagos</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="tablasHead"></thead><tbody id="tablasBody"></tbody></table></div></div></div>
       </div>
 
@@ -601,20 +601,29 @@ async function delMiembro(id){if(!confirm('¿Eliminar?'))return;try{await api('D
 
 function renderTablas(){
   const fs=S.fechasTablas;
-  document.getElementById('tablasHead').innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+fs.map(f=>`<th>${fd(f)}</th>`).join('')+'</tr>';
+  document.getElementById('tablasHead').innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+fs.map(f=>`<th title="Click para cambiar">${fd(f)}</th>`).join('')+'</tr>';
   document.getElementById('tablasBody').innerHTML=S.miembros.map((m,i)=>{
-    const c=fs.map(f=>{const v=(S.asistencias[m.nombre]?.[f])||0;return `<td>${v?'✓':'—'}</td>`}).join('');
+    const c=fs.map(f=>{const v=(S.asistencias[m.nombre]?.[f])||0;return `<td onclick="toggleTabla('${esc(m.nombre)}','${f}',${v})" style="cursor:pointer;user-select:none" title="${v?'Click: marcar no pagado':'Click: marcar pagado'}">${v?'✓':'—'}</td>`}).join('');
     return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${c}</tr>`
   }).join('')||'<tr><td colspan="20" class="emp"><div class="big">⊞</div>Sin registros</td></tr>'
 }
 
+async function toggleTabla(nombre, fecha, valActual){
+  try{
+    await api('POST','/api/tablas/fechas',{fecha:fecha});
+    await api('POST','/api/tablas/asistencias',{nombre:nombre,fecha:fecha,valor:valActual?0:1});
+    toast(valActual?'Marcado como no pagado':'✓ Pagado');
+    await loadAll()
+  }catch(e){toast(e.message,'e')}
+}
+
 function modalAsistencia(){
-  modal(`<h3>Registrar Pago de Tabla</h3><div class="fr"><label>Fecha</label><input type="date" id="fAsFecha"></div><div class="fr"><label>Miembro</label><select id="fAsMiembro"><option value="">Seleccionar...</option>${selMi()}</select></div><div class="fr"><label>Pagó</label><select id="fAsVal"><option value="1">Sí</option><option value="0">No</option></select></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveAsistencia()">Guardar</button></div>`)
+  modal(`<h3>Nueva Fecha de Tabla</h3><div class="fr"><label>Fecha</label><input type="date" id="fAsFecha"></div><p style="font-size:12px;color:var(--text2);margin-top:10px">La fecha se agregará y podés marcar pagos haciendo click en las celdas de la tabla.</p><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveAsistencia()">Agregar Fecha</button></div>`)
 }
 async function saveAsistencia(){
-  const f=document.getElementById('fAsFecha').value,n=document.getElementById('fAsMiembro').value,v=parseInt(document.getElementById('fAsVal').value);
-  if(!f||!n){toast('Completa campos','e');return}
-  try{await api('POST','/api/tablas/fechas',{fecha:f});await api('POST','/api/tablas/asistencias',{nombre:n,fecha:f,valor:v});toast('Registrado');closeModal();await loadAll()}
+  const f=document.getElementById('fAsFecha').value;
+  if(!f){toast('Seleccioná una fecha','e');return}
+  try{await api('POST','/api/tablas/fechas',{fecha:f});toast('Fecha agregada');closeModal();await loadAll()}
   catch(e){toast(e.message,'e')}
 }
 

@@ -308,9 +308,15 @@ def get_bingos():
 @login_required
 def add_bingo():
     data = request.json
+    db = get_db()
     try:
-        get_db().execute("INSERT INTO bingos (fecha, monto) VALUES (?, ?)", (data['fecha'], float(data['monto'])))
-        get_db().commit()
+        db.execute("INSERT INTO bingos (fecha, monto) VALUES (?, ?)", (data['fecha'], float(data['monto'])))
+        # Auto-crear la fecha en fechas_tablas para que aparezca en Tablas de Bingo
+        try:
+            db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (data['fecha'],))
+        except psycopg2.IntegrityError:
+            pass
+        db.commit()
         return jsonify({'ok': True}), 201
     except psycopg2.IntegrityError:
         return jsonify({'error':'La fecha ya existe'}), 409
