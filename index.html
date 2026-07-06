@@ -601,11 +601,23 @@ async function delMiembro(id){if(!confirm('¿Eliminar?'))return;try{await api('D
 
 function renderTablas(){
   const fs=S.fechasTablas;
-  document.getElementById('tablasHead').innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+fs.map(f=>`<th>${fd(f)}</th>`).join('')+'<th style="width:50px"></th></tr>';
+  document.getElementById('tablasHead').innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+fs.map(f=>`<th>${fd(f)}<br><span style="font-weight:400;font-size:9px">(\$1 c/u)</span></th>`).join('')+'<th style="width:50px"></th></tr>';
   document.getElementById('tablasBody').innerHTML=S.miembros.map((m,i)=>{
     const c=fs.map(f=>{const v=(S.asistencias[m.nombre]?.[f])||0;return `<td>${v?'✓':'—'}</td>`}).join('');
     return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${c}<td><button class="btn btn-gh btn-xs" onclick="editarTabla(${m.id})" title="Editar pagos">✎</button></td></tr>`
-  }).join('')||'<tr><td colspan="20" class="emp"><div class="big">⊞</div>Sin registros</td></tr>'
+  }).join('')||'<tr><td colspan="20" class="emp"><div class="big">⊞</div>Sin registros</td></tr>';
+  // Fila de totales por fecha
+  if(fs.length){
+    const footer='<tr style="background:#f1f5f9;font-weight:700"><td></td><td class="tl">Total Pagos</td>'+fs.map(f=>{
+      const total=S.miembros.reduce((s,m)=>s+((S.asistencias[m.nombre]?.[f])||0),0);
+      return `<td>${total}</td>`
+    }).join('')+'<td></td></tr>'+
+    '<tr style="background:#eef2ff;font-weight:700"><td></td><td class="tl">Monto Bingo</td>'+fs.map(f=>{
+      const total=S.miembros.reduce((s,m)=>s+((S.asistencias[m.nombre]?.[f])||0),0);
+      return `<td>$${total.toFixed(2)}</td>`
+    }).join('')+'<td></td></tr>';
+    document.getElementById('tablasBody').insertAdjacentHTML('beforeend', footer);
+  }
 }
 
 function editarTabla(miembroId){
@@ -642,13 +654,13 @@ async function saveAsistencia(){
 function renderBingos(){
   document.getElementById('bingoBody').innerHTML=S.bingos.map(b=>{
     const a=b.asistentes||S.miembros.length||1;
-    return `<tr><td>${fd(b.fecha)}</td><td class="tr fw6">$${b.monto.toFixed(2)}</td><td class="tr">$${(b.monto/a).toFixed(2)}</td><td><span class="bdg" style="cursor:pointer;background:#f1f5f9;color:var(--text);padding:2px 8px" onclick="editarAsistentes(${b.id},${a})" title="Click para cambiar cantidad">${a} ✎</span></td><td><button class="btn btn-r btn-xs" onclick="delBingo(${b.id})">✕</button></td></tr>`
+    return `<tr><td>${fd(b.fecha)}</td><td class="tr fw6"><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarMonto(${b.id},${b.monto})" title="Click para editar">$${b.monto.toFixed(2)} ✎</span></td><td class="tr">$${(b.monto/a).toFixed(2)}</td><td><span class="bdg" style="cursor:pointer;background:#f1f5f9;color:var(--text);padding:2px 8px" onclick="editarAsistentes(${b.id},${a})" title="Click para cambiar cantidad">${a} ✎</span></td><td><button class="btn btn-r btn-xs" onclick="delBingo(${b.id})">✕</button></td></tr>`
   }).join('')||'<tr><td colspan="5" class="emp"><div class="big">⊟</div>Sin bingos</td></tr>';
   document.getElementById('bingoTotal').textContent=S.bingos.reduce((s,b)=>s+b.monto,0).toFixed(2)
 }
 
 function editarAsistentes(id, actual){
-  modal(`<h3>Editar Asistentes</h3><p style="font-size:13px;color:var(--text2);margin-bottom:14px">Modificá la cantidad de asistentes para calcular el monto por persona.</p><div class="fr"><label>Cantidad de asistentes</label><input type="number" id="fAsistNum" min="1" value="${actual}" autofocus></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="guardarAsistentes(${id})">Guardar</button></div>`)
+  modal(`<h3>Editar Asistentes</h3><p style="font-size:13px;color:var(--text2);margin-bottom:14px">Cantidad de personas para dividir el bingo.</p><div class="fr"><label>Asistentes</label><input type="number" id="fAsistNum" min="1" value="${actual}" autofocus></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="guardarAsistentes(${id})">Guardar</button></div>`)
 }
 
 async function guardarAsistentes(id){
@@ -657,14 +669,25 @@ async function guardarAsistentes(id){
   try{await api('PUT',`/api/bingos/${id}`,{asistentes:v});toast('Actualizado');closeModal();await loadAll()}
   catch(e){toast(e.message,'e')}
 }
+
+function editarMonto(id, actual){
+  modal(`<h3>Editar Monto del Bingo</h3><p style="font-size:13px;color:var(--text2);margin-bottom:14px">El monto se calcula automáticamente desde los pagos de tablas (Sí × $1). Podés modificarlo manualmente si es necesario.</p><div class="fr"><label>Monto ($)</label><input type="number" id="fMontoNum" step="0.01" min="0" value="${actual}" autofocus></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="guardarMonto(${id})">Guardar</button></div>`)
+}
+
+async function guardarMonto(id){
+  const v=parseFloat(document.getElementById('fMontoNum').value);
+  if(isNaN(v)||v<0){toast('Ingresá un monto válido','e');return}
+  try{await api('PUT',`/api/bingos/${id}`,{monto:v});toast('Actualizado');closeModal();await loadAll()}
+  catch(e){toast(e.message,'e')}
+}
 function modalBingo(){
   const defAsist=S.miembros.length||1;
-  modal(`<h3>Registrar Bingo</h3><div class="fr"><label>Fecha</label><input type="date" id="fBiFecha"></div><div class="fr"><label>Monto ($)</label><input type="number" id="fBiMonto" step="0.01" placeholder="0.00"></div><div class="fr"><label>Asistentes</label><input type="number" id="fBiAsist" min="1" value="${defAsist}" placeholder="${defAsist}"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveBingo()">Guardar</button></div>`)
+  modal(`<h3>Registrar Bingo</h3><div class="fr"><label>Fecha</label><input type="date" id="fBiFecha"></div><div class="fr"><label>Monto ($) — se auto-calcula desde pagos</label><input type="number" id="fBiMonto" step="0.01" placeholder="0.00" value="0"></div><div class="fr"><label>Asistentes</label><input type="number" id="fBiAsist" min="1" value="${defAsist}"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveBingo()">Guardar</button></div>`)
 }
 async function saveBingo(){
-  const f=document.getElementById('fBiFecha').value,m=parseFloat(document.getElementById('fBiMonto').value),a=parseInt(document.getElementById('fBiAsist').value);
-  if(!f||isNaN(m)){toast('Completa campos','e');return}
-  try{await api('POST','/api/bingos',{fecha:f,monto:m,asistentes:a||undefined});toast('Registrado');closeModal();await loadAll()}catch(e){toast(e.message,'e')}
+  const f=document.getElementById('fBiFecha').value,a=parseInt(document.getElementById('fBiAsist').value);
+  if(!f){toast('Completa campos','e');return}
+  try{await api('POST','/api/bingos',{fecha:f,monto:0,asistentes:a||undefined});toast('Registrado');closeModal();await loadAll()}catch(e){toast(e.message,'e')}
 }
 async function delBingo(id){if(!confirm('¿Eliminar?'))return;try{await api('DELETE',`/api/bingos/${id}`);toast('Eliminado');await loadAll()}catch(e){toast(e.message,'e')}}
 
