@@ -518,8 +518,9 @@ function computeEstadoCuenta(){
       // monto_asignado ya refleja el valor real (auto o personalizado en el Reparto)
       return s+(parseFloat(d.monto_asignado)||0);
     },0);
-    // Tablas marcadas explícitamente como "No" (no pagadas): se descuentan $1 c/u
-    const bingoDebe=S.fechasTablas.reduce((s,f)=>s+((S.asistencias[m.nombre]?.[f]===0)?1:0),0);
+    // Conecta Tablas con Bingo: toda fecha que el miembro NO tenga marcada
+    // como "Sí" (la marcó "No" o nunca la tocó) cuenta como no pagada.
+    const bingoDebe=Math.max(totalFechas-asOk,0);
     const bingoTotal=Math.round((bingoGanado-bingoDebe)*100)/100;
     const saldoNeto=ahorroTotal-pendiente;
     let estadoGeneral='al_dia';

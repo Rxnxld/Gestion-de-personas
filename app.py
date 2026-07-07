@@ -686,12 +686,6 @@ def _calcular_estado_cuenta(db):
     for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):
         asis[r['miembro_id']] = r['s'] or 0
 
-    # Tablas que el miembro NO pagó (valor=0): se descuentan $1 c/u de lo que
-    # ganó en bingo, ya que ese dinero nunca lo aportó al pozo.
-    no_pago = {}
-    for r in db.execute("SELECT miembro_id, COUNT(*) c FROM asistencias WHERE valor=0 GROUP BY miembro_id"):
-        no_pago[r['miembro_id']] = r['c'] or 0
-
     # monto_asignado en bingo_distribucion ya refleja el valor real que a cada
     # miembro le toca (auto-calculado o personalizado a mano en el Reparto),
     # así que basta con sumarlo directamente para quienes reciben.
@@ -732,7 +726,10 @@ def _calcular_estado_cuenta(db):
         saldo_neto = round(ahorro_total - p['pendiente'], 2)
         estado_general = 'moroso' if p['pendiente'] > 0 and as_pct < 50 else ('con_deuda' if p['pendiente'] > 0 else 'al_dia')
         bingo_ganado = round(bingo_dist.get(mid, 0), 2)
-        bingo_debe = no_pago.get(mid, 0)  # $1 por cada tabla no pagada
+        # Conecta la tabla de Asistencias con la de Bingo: cualquier fecha de
+        # "Tablas de Bingo" que el miembro NO tenga marcada como "Sí" (ya sea
+        # que la marcó "No" o que nunca la tocó) cuenta como no pagada.
+        bingo_debe = max(total_fechas_tablas - as_ok, 0)
         bingo_total = round(bingo_ganado - bingo_debe, 2)
         resultado.append({
             'id': mid, 'nombre': m['nombre'], 'apodo': m['apodo'],
