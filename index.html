@@ -645,7 +645,7 @@ function renderTablas(){
     }).join('')+'<td></td></tr>'+
     '<tr style="background:#eef2ff;font-weight:700"><td></td><td class="tl">Monto Bingo</td>'+fs.map(f=>{
       const total=S.miembros.reduce((s,m)=>s+((S.asistencias[m.nombre]?.[f])||0),0);
-      return `<td>$${total.toFixed(2)}</td>`
+      return `<td>$${total}</td>`
     }).join('')+'<td></td></tr>';
     document.getElementById('tablasBody').insertAdjacentHTML('beforeend', footer);
   }
