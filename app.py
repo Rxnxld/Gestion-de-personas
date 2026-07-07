@@ -732,7 +732,7 @@ def _calcular_estado_cuenta(db):
         estado_general = 'moroso' if p['pendiente'] > 0 and as_pct < 50 else ('con_deuda' if p['pendiente'] > 0 else 'al_dia')
         bingo_ganado = bingo_dist.get(mid, 0)
         bingo_debe = max(total_fechas_tablas - as_ok, 0)
-        bingo_total = bingo_ganado - bingo_debe
+        bingo_total = as_ok + bingo_ganado - bingo_debe
         resultado.append({
             'id': mid, 'nombre': m['nombre'], 'apodo': m['apodo'],
             'asistencia': {'asistidas': as_ok, 'total': total_fechas_tablas, 'pct': as_pct},
