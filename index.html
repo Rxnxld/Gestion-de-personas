@@ -300,10 +300,8 @@ tbody tr:nth-child(even){background:#f8fafc}
       <!-- AHORROS -->
       <div id="tb-ahorros" class="tb">
         <div class="page-h"><h3>Ahorros</h3><button class="btn btn-p btn-sm" onclick="modalAhorro('normal')">+ Normal</button><button class="btn btn-g btn-sm" onclick="modalAhorro('cumple')">+ Cumpleaños</button><button class="btn btn-o btn-sm" onclick="modalAhorro('rifa')">+ Rifa</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_normal')">⬇ Normal</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_cumple')">⬇ Cumpleaños</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_rifa')">⬇ Rifa</button></div>
-        <div class="g2">
-          <div class="card"><div class="card-t">Ahorro Normal</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="ahNHead"></thead><tbody id="ahNBody"></tbody></table></div></div></div>
-          <div class="card"><div class="card-t">Ahorro Cumpleaños</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="ahCHead"></thead><tbody id="ahCBody"></tbody></table></div></div></div>
-        </div>
+        <div class="card"><div class="card-t">Ahorro Normal</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="ahNHead"></thead><tbody id="ahNBody"></tbody></table></div></div></div>
+        <div class="card"><div class="card-t">Ahorro Cumpleaños</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="ahCHead"></thead><tbody id="ahCBody"></tbody></table></div></div></div>
         <div class="card"><div class="card-t">Ahorro Rifa Grupal</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="ahRHead"></thead><tbody id="ahRBody"></tbody></table></div></div></div>
         <div class="card" style="background:#eef2ff;border-color:var(--accent)"><div style="font-size:16px;font-weight:700;color:var(--accent)">Total General: $<span id="ahorroGral">0.00</span></div></div>
       </div>
