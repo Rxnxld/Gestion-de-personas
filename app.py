@@ -686,12 +686,19 @@ def _calcular_estado_cuenta(db):
     for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):
         asis[r['miembro_id']] = r['s'] or 0
 
-    # monto_asignado en bingo_distribucion ya refleja el valor real que a cada
-    # miembro le toca (auto-calculado o personalizado a mano en el Reparto),
-    # así que basta con sumarlo directamente para quienes reciben.
+    # Calcular bingo ganado por miembro usando Coge c/u directamente,
+    # para evitar errores de precisión con valores almacenados.
     bingo_dist = {}
-    for r in db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE recibe=TRUE"):
-        bingo_dist[r['miembro_id']] = bingo_dist.get(r['miembro_id'], 0) + (r['monto_asignado'] or 0)
+    all_miembros = [r['id'] for r in db.execute("SELECT id FROM miembros").fetchall()]
+    for mid in all_miembros:
+        bingo_dist[mid] = 0.0
+    for b in db.execute("SELECT id, monto, adicional, asistentes FROM bingos").fetchall():
+        a = b['asistentes'] or 1
+        coge = round((b['monto'] + (b['adicional'] or 0)) / a, 2)
+        excl = {r['miembro_id'] for r in db.execute("SELECT miembro_id FROM bingo_distribucion WHERE bingo_id=? AND recibe=FALSE", (b['id'],)).fetchall()}
+        for mid in all_miembros:
+            if mid not in excl:
+                bingo_dist[mid] = round(bingo_dist[mid] + coge, 2)
 
     rifa = {}
     for r in db.execute("SELECT miembro_id, SUM(valor) s FROM rifas GROUP BY miembro_id"):

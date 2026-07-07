@@ -515,8 +515,9 @@ function computeEstadoCuenta(){
     const bingoGanado=S.bingos.reduce((s,b)=>{
       const d=(b.distribucion||[]).find(x=>x.miembro_id===m.id);
       if(!d||!d.recibe)return s;
-      // monto_asignado ya refleja el valor real (auto o personalizado en el Reparto)
-      return s+(parseFloat(d.monto_asignado)||0);
+      const a=b.asistentes||S.miembros.length||1;
+      const coge=Math.round(100*((b.monto+parseFloat(b.adicional||0))/a))/100;
+      return s+coge;
     },0);
     // Conecta Tablas con Bingo: toda fecha que el miembro NO tenga marcada
     // como "Sí" (la marcó "No" o nunca la tocó) cuenta como no pagada.
@@ -695,16 +696,16 @@ async function saveAsistencia(){
 
 function renderBingos(){
   document.getElementById('bingoBody').innerHTML=S.bingos.map(b=>{
-    const a=b.asistentes||S.miembros.length||1, ad=parseFloat(b.adicional||0), total=b.monto+ad;
+    const a=b.asistentes||S.miembros.length||1, ad=parseFloat(b.adicional||0), total=b.monto+ad, coge=Math.round(100*total/a)/100;
     return `<tr><td><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarFechaBingo(${b.id},'${b.fecha}')" title="Click para cambiar fecha">${fd(b.fecha)} ✎</span></td>
       <td class="tr fw6">$${b.monto.toFixed(2)}</td>
       <td class="tr"><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarAdicional(${b.id},${ad})" title="Click para editar">$${ad.toFixed(2)} ✎</span></td>
       <td class="tr fw6" style="color:var(--accent)">$${total.toFixed(2)}</td>
-      <td class="tr">$${(total/a).toFixed(2)}</td>
+      <td class="tr">$${coge.toFixed(2)}</td>
       <td><span class="bdg" style="cursor:pointer;background:#f1f5f9;color:var(--text);padding:2px 8px" onclick="editarAsistentes(${b.id},${a})" title="Click para cambiar">${a} ✎</span></td>
       <td><button class="btn btn-gh btn-xs" onclick="modalReparto(${b.id})" title="Distribuir">⊞ Reparto</button> <button class="btn btn-r btn-xs" onclick="delBingo(${b.id})">✕</button></td></tr>`
   }).join('')||'<tr><td colspan="8" class="emp"><div class="big">⊟</div>Sin bingos</td></tr>';
-  document.getElementById('bingoTotal').textContent=S.bingos.reduce((s,b)=>s+b.monto+(parseFloat(b.adicional||0)),0).toFixed(2)
+  document.getElementById('bingoTotal').textContent=Math.round(100*S.bingos.reduce((s,b)=>s+b.monto+(parseFloat(b.adicional||0)),0))/100
 }
 
 function editarAsistentes(id, actual){
