@@ -551,8 +551,8 @@ function renderEstadoCuenta(){
     const pill=d.estadoGeneral==='al_dia'?'<span class="pill pill-ok">Al día</span>':d.estadoGeneral==='con_deuda'?'<span class="pill pill-warn">Con deuda</span>':'<span class="pill pill-danger">Moroso</span>';
     const abdg=d.asistencia.pct>=70?'bdg-g':d.asistencia.pct>=40?'bdg-w':'bdg-r';
     const bingoColor=d.bingo>0?'color:var(--success)':d.bingo<0?'color:var(--danger)':'color:var(--text2)';
-    const bingoTitle=d.bingoDebe>0?`title="Ganado $${d.bingoGanado.toFixed(4)} − $${d.bingoDebe.toFixed(4)} (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} no pagada${d.bingoDebe===1?'':'s'})"`:'';
-    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${abdg}">${d.asistencia.pct}%</span></td><td>${d.rifa.participaciones}</td><td class="tr fw6" style="${bingoColor}" ${bingoTitle}>${d.bingo!==0?'$'+d.bingo.toFixed(4):'—'}</td><td class="tr">$${d.ahorros.total.toFixed(2)}</td><td class="tr">${d.cumpleAportes}</td><td class="tr">$${d.prestamos.pendiente.toFixed(2)}</td><td class="tr fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">$${d.saldoNeto.toFixed(2)}</td><td>${pill}</td></tr>`
+    const bingoTitle=d.bingoDebe>0?`title="Ganado $${d.bingoGanado.toFixed(2)} − $${d.bingoDebe.toFixed(2)} (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} no pagada${d.bingoDebe===1?'':'s'})"`:'';
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${abdg}">${d.asistencia.pct}%</span></td><td>${d.rifa.participaciones}</td><td class="tr fw6" style="${bingoColor}" ${bingoTitle}>${d.bingo!==0?'$'+d.bingo.toFixed(2):'—'}</td><td class="tr">$${d.ahorros.total.toFixed(2)}</td><td class="tr">${d.cumpleAportes}</td><td class="tr">$${d.prestamos.pendiente.toFixed(2)}</td><td class="tr fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">$${d.saldoNeto.toFixed(2)}</td><td>${pill}</td></tr>`
   }).join('')||'<tr><td colspan="10" class="emp"><div class="big">◈</div>Sin datos</td></tr>';
   renderEstadoIndividual();
 }
@@ -579,7 +579,7 @@ function renderEstadoIndividual(){
       <div class="ec-grid">
         <div class="ec-item"><div class="l">Tablas Pagadas</div><div class="v">${d.asistencia.asistidas}/${d.asistencia.total}</div><div class="ec-bar"><div class="ec-bar-fill" style="width:${d.asistencia.pct}%"></div></div><div style="font-size:11px;color:var(--text2);margin-top:3px">${d.asistencia.pct}%</div></div>
         <div class="ec-item"><div class="l">Rifa Grupal</div><div class="v">${d.rifa.participaciones}</div><div style="font-size:11px;color:var(--text2)">participaciones de ${d.rifa.totalFechas}</div></div>
-        <div class="ec-item" style="background:${d.bingo<0?'#fef2f2':'#ecfdf5'};border-color:${d.bingo<0?'var(--danger)':'var(--success)'}"><div class="l">Bingo (neto)</div><div class="v" style="color:${d.bingo<0?'var(--danger)':'var(--success)'}">$${d.bingo.toFixed(4)}</div>${d.bingoDebe>0?`<div style="font-size:11px;color:var(--text2);margin-top:2px">Ganado $${d.bingoGanado.toFixed(4)} − $${d.bingoDebe.toFixed(4)} (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} no pagada${d.bingoDebe===1?'':'s'})</div>`:''}</div>
+        <div class="ec-item" style="background:${d.bingo<0?'#fef2f2':'#ecfdf5'};border-color:${d.bingo<0?'var(--danger)':'var(--success)'}"><div class="l">Bingo (neto)</div><div class="v" style="color:${d.bingo<0?'var(--danger)':'var(--success)'}">$${d.bingo.toFixed(2)}</div>${d.bingoDebe>0?`<div style="font-size:11px;color:var(--text2);margin-top:2px">Ganado $${d.bingoGanado.toFixed(2)} − $${d.bingoDebe.toFixed(2)} (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} no pagada${d.bingoDebe===1?'':'s'})</div>`:''}</div>
         <div class="ec-item"><div class="l">Ahorro Normal</div><div class="v">$${d.ahorros.normal.toFixed(2)}</div></div>
         <div class="ec-item"><div class="l">Ahorro Cumpleaños</div><div class="v">$${d.ahorros.cumple.toFixed(2)}</div></div>
         <div class="ec-item"><div class="l">Ahorro Rifa</div><div class="v">$${d.ahorros.rifa.toFixed(2)}</div></div>
@@ -696,12 +696,12 @@ function renderBingos(){
     return `<tr><td><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarFechaBingo(${b.id},'${b.fecha}')" title="Click para cambiar fecha">${fd(b.fecha)} ✎</span></td>
       <td class="tr fw6">$${b.monto.toFixed(2)}</td>
       <td class="tr"><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarAdicional(${b.id},${ad})" title="Click para editar">$${ad.toFixed(2)} ✎</span></td>
-      <td class="tr fw6" style="color:var(--accent)">$${total.toFixed(4)}</td>
-      <td class="tr">$${(total/a).toFixed(4)}</td>
+      <td class="tr fw6" style="color:var(--accent)">$${total.toFixed(2)}</td>
+      <td class="tr">$${(total/a).toFixed(2)}</td>
       <td><span class="bdg" style="cursor:pointer;background:#f1f5f9;color:var(--text);padding:2px 8px" onclick="editarAsistentes(${b.id},${a})" title="Click para cambiar">${a} ✎</span></td>
       <td><button class="btn btn-gh btn-xs" onclick="modalReparto(${b.id})" title="Distribuir">⊞ Reparto</button> <button class="btn btn-r btn-xs" onclick="delBingo(${b.id})">✕</button></td></tr>`
   }).join('')||'<tr><td colspan="8" class="emp"><div class="big">⊟</div>Sin bingos</td></tr>';
-  document.getElementById('bingoTotal').textContent=S.bingos.reduce((s,b)=>s+b.monto+(parseFloat(b.adicional||0)),0).toFixed(4)
+  document.getElementById('bingoTotal').textContent=S.bingos.reduce((s,b)=>s+b.monto+(parseFloat(b.adicional||0)),0).toFixed(2)
 }
 
 function editarAsistentes(id, actual){
