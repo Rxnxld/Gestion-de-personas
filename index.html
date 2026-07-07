@@ -290,7 +290,7 @@ tbody tr:nth-child(even){background:#f8fafc}
 
       <!-- RIFA -->
       <div id="tb-rifa" class="tb">
-        <div class="page-h"><h3>Rifa Grupal</h3><button class="btn btn-p btn-sm" onclick="modalRifa()">+ Registrar</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/rifas')">⬇ Excel</button></div>
+        <div class="page-h"><h3>Rifa Grupal</h3><div style="font-size:12px;color:var(--text2)">2 cupos por mes · $1 c/u · Click para marcar</div><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/rifas')">⬇ Excel</button></div>
         <div class="card"><div class="card-t">Registros</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="rifaHead"></thead><tbody id="rifaBody"></tbody></table></div></div></div>
         <div class="card" style="background:#fffbeb;border-color:var(--warning)"><div style="font-size:15px;font-weight:700;color:var(--warning)">Total Rifa: $<span id="rifaTotal">0.00</span></div></div>
       </div>
@@ -818,23 +818,41 @@ async function guardarAdicional(id){
 async function delBingo(id){if(!confirm('¿Eliminar?'))return;try{await api('DELETE',`/api/bingos/${id}`);toast('Eliminado');await loadAll()}catch(e){toast(e.message,'e')}}
 
 function renderRifa(){
-  const fs=S.fechasRifa;
-  document.getElementById('rifaHead').innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+fs.map(f=>`<th>${fd(f)}</th>`).join('')+'<th>Total</th></tr>';
-  let tg=0;
+  const meses=MESES;
+  const head='<tr><th>#</th><th class="tl">Nombre</th>'+meses.map(m=>`<th colspan="2" style="text-align:center;min-width:56px">${m.slice(0,3)}</th>`).join('')+'<th class="tr">Total</th></tr>'+
+    '<tr><th></th><th></th>'+meses.map(()=>'<th style="font-weight:400;font-size:9px;padding:2px 4px">1</th><th style="font-weight:400;font-size:9px;padding:2px 4px">2</th>').join('')+'<th></th></tr>';
+  document.getElementById('rifaHead').innerHTML=head;
+  let gl=0;
   document.getElementById('rifaBody').innerHTML=S.miembros.map((m,i)=>{
-    const c=fs.map(f=>{const v=(S.rifas[m.nombre]?.[f])||0;return `<td>${v||'—'}</td>`}).join('');
-    const s=fs.reduce((s,f)=>s+((S.rifas[m.nombre]?.[f])||0),0);tg+=s;
-    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${c}<td class="fw6">${s}</td></tr>`
-  }).join('')||'<tr><td colspan="20" class="emp"><div class="big">⊡</div>Sin registros</td></tr>';
-  document.getElementById('rifaTotal').textContent=tg.toFixed(2)
+    const cells=meses.map(me=>{
+      const v=(S.rifas[m.nombre]?.[me])||0;
+      const s1=!!(v&1), s2=!!(v&2);
+      return `<td class="tb-cell ${s1?'pagado':'nopagado'}" onclick="toggleRifaSlot('${esc(m.nombre)}','${me}',1)" title="${s1?'Quitar':'Poner'} slot 1">${s1?'✓':'○'}</td>
+              <td class="tb-cell ${s2?'pagado':'nopagado'}" onclick="toggleRifaSlot('${esc(m.nombre)}','${me}',2)" title="${s2?'Quitar':'Poner'} slot 2">${s2?'✓':'○'}</td>`
+    }).join('');
+    const total=meses.reduce((s,me)=>s+((S.rifas[m.nombre]?.[me])||0),0);
+    gl+=total;
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${cells}<td class="fw6">$${$f(total)}</td></tr>`
+  }).join('')||'<tr><td colspan="26" class="emp"><div class="big">⊡</div>Sin miembros</td></tr>';
+  // Footer: total per month
+  if(S.miembros.length){
+    const foot='<tr style="background:var(--border-l);font-weight:700">'+
+      '<td></td><td class="tl">Total Mes</td>'+
+      meses.map(me=>{
+        const t=S.miembros.reduce((s,m)=>s+((S.rifas[m.nombre]?.[me])||0),0);
+        return `<td style="font-size:12px;font-weight:700;color:var(--accent)" colspan="2">$${$f(t)}</td>`
+      }).join('')+
+      `<td class="tr" style="color:var(--accent)">$${$f(gl)}</td></tr>`;
+    document.getElementById('rifaBody').insertAdjacentHTML('beforeend',foot);
+  }
+  document.getElementById('rifaTotal').textContent=$f(gl)
 }
-function modalRifa(){
-  modal(`<h3>Registrar Rifa</h3><div class="fr"><label>Fecha</label><input type="date" id="fRiFecha"></div><div class="fr"><label>Miembro</label><select id="fRiMiembro"><option value="">Seleccionar...</option>${selMi()}</select></div><div class="fr"><label>Cantidad</label><input type="number" id="fRiVal" min="0" step="1" value="1"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveRifa()">Guardar</button></div>`)
-}
-async function saveRifa(){
-  const f=document.getElementById('fRiFecha').value,n=document.getElementById('fRiMiembro').value,v=parseInt(document.getElementById('fRiVal').value)||0;
-  if(!f||!n){toast('Completa campos','e');return}
-  try{await api('POST','/api/rifa/fechas',{fecha:f});await api('POST','/api/rifa',{nombre:n,fecha:f,valor:v});toast('Registrado');closeModal();await loadAll()}catch(e){toast(e.message,'e')}
+
+async function toggleRifaSlot(nombre, mes, slot){
+  const cur=(S.rifas[nombre]?.[mes])||0;
+  const nuevo=slot===1?(cur^1):(cur^2);
+  try{await api('POST','/api/rifa',{nombre,mes,valor:nuevo});await loadAll()}
+  catch(e){toast(e.message,'e')}
 }
 
 function renderAhorros(){

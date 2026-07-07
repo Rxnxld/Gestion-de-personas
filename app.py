@@ -460,11 +460,11 @@ def add_fecha_rifa():
 @app.route('/api/rifa', methods=['GET'])
 @login_required
 def get_rifas():
-    rows = get_db().execute("SELECT m.nombre, r.fecha, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id").fetchall()
+    rows = get_db().execute("SELECT m.nombre, r.fecha as mes, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id").fetchall()
     r = {}
     for row in rows:
         if row['nombre'] not in r: r[row['nombre']] = {}
-        r[row['nombre']][row['fecha']] = row['valor']
+        r[row['nombre']][row['mes']] = row['valor']
     return jsonify(r)
 
 @app.route('/api/rifa', methods=['POST'])
@@ -474,8 +474,10 @@ def set_rifa():
     db = get_db()
     miembro = db.execute("SELECT id FROM miembros WHERE nombre=?", (data['nombre'],)).fetchone()
     if not miembro: return jsonify({'error':'Miembro no encontrado'}), 404
+    valor = int(data.get('valor', 0))
+    if valor < 0 or valor > 2: return jsonify({'error':'Valor debe ser 0, 1 o 2'}), 400
     db.execute("INSERT INTO rifas (miembro_id, fecha, valor) VALUES (?, ?, ?) ON CONFLICT(miembro_id, fecha) DO UPDATE SET valor=excluded.valor",
-               (miembro['id'], data['fecha'], int(data.get('valor', 0))))
+               (miembro['id'], data['mes'], valor))
     db.commit()
     return jsonify({'ok': True})
 
@@ -628,7 +630,7 @@ def get_datos_completos():
     for b in bingos:
         dist = db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE bingo_id=?", (b['id'],)).fetchall()
         b['distribucion'] = [dict(d) for d in dist] if dist else []
-    fechas_rifa = [r['fecha'] for r in db.execute("SELECT fecha FROM fechas_rifa ORDER BY fecha").fetchall()]
+    fechas_rifa = [r['nombre'] for r in db.execute("SELECT nombre FROM meses_ahorro ORDER BY orden").fetchall()]
 
     ri_raw = db.execute("SELECT m.nombre, r.fecha, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id").fetchall()
     rifas = {}
@@ -671,7 +673,7 @@ def _calcular_estado_cuenta(db):
     préstamos) para producir un estado de cuenta único por miembro."""
     miembros = [dict(r) for r in db.execute("SELECT id, nombre, apodo FROM miembros ORDER BY id").fetchall()]
     total_fechas_tablas = db.execute("SELECT COUNT(*) c FROM fechas_tablas").fetchone()['c']
-    total_fechas_rifa = db.execute("SELECT COUNT(*) c FROM fechas_rifa").fetchone()['c']
+    total_fechas_rifa = 12
 
     asis = {}
     for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):
