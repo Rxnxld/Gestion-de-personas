@@ -763,7 +763,7 @@ def export_estado_cuenta_xlsx():
     ws = wb.active
     ws.title = "Estado de Cuenta"
     cols = ['N°','Nombre','Asist. (Si/Total)','Asist. %','Rifa (Participaciones)',
-            'Bingo Ganado','Tablas No Pagadas ($)','Bingo Neto ($)','Ahorro Normal','Ahorro Cumple','Ahorro Rifa','Total Ahorros',
+            'Ganado del Bingo ($)','Tablas Sin Pagar','Neto del Bingo ($)','Ahorro Normal','Ahorro Cumple','Ahorro Rifa','Total Ahorros',
             'Aportes Cumple','Préstamo Pendiente','Préstamo Pagado','Saldo Neto','Estado']
     hf = Font(bold=True, color='FFFFFF', size=11)
     hfill = PatternFill(start_color='0F172A', end_color='0F172A', fill_type='solid')
