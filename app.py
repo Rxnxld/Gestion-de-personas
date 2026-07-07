@@ -687,8 +687,16 @@ def _calcular_estado_cuenta(db):
         asis[r['miembro_id']] = r['s'] or 0
 
     bingo_dist = {}
-    for r in db.execute("SELECT miembro_id, SUM(monto_asignado) s FROM bingo_distribucion WHERE recibe=TRUE GROUP BY miembro_id"):
-        bingo_dist[r['miembro_id']] = r['s'] or 0
+    all_mids = [r['id'] for r in db.execute("SELECT id FROM miembros").fetchall()]
+    for mid in all_mids:
+        bingo_dist[mid] = 0.0
+    for b in db.execute("SELECT id, monto, adicional, asistentes FROM bingos").fetchall():
+        a = b['asistentes'] or 1
+        coge = (b['monto'] + (b['adicional'] or 0)) / a
+        excl = {r['miembro_id'] for r in db.execute("SELECT miembro_id FROM bingo_distribucion WHERE bingo_id=? AND recibe=FALSE", (b['id'],)).fetchall()}
+        for mid in all_mids:
+            if mid not in excl:
+                bingo_dist[mid] += coge
 
     rifa = {}
     for r in db.execute("SELECT miembro_id, SUM(valor) s FROM rifas GROUP BY miembro_id"):

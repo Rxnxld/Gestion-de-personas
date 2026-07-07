@@ -515,7 +515,8 @@ function computeEstadoCuenta(){
     const bingoGanado=S.bingos.reduce((s,b)=>{
       const d=(b.distribucion||[]).find(x=>x.miembro_id===m.id);
       if(!d||!d.recibe)return s;
-      return s+(parseFloat(d.monto_asignado)||0);
+      const a=b.asistentes||S.miembros.length||1;
+      return s+((b.monto+parseFloat(b.adicional||0))/a);
     },0);
     const bingoDebe=Math.max(totalFechas-asOk,0);
     const bingoTotal=bingoGanado-bingoDebe;
