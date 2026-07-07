@@ -441,6 +441,10 @@ async function logout(){
   document.getElementById('loginPass').value='';document.getElementById('loginErr').textContent=''
 }
 
+let _loadingCounter=0;
+function showLoading(msg){document.getElementById('loadingText').textContent=msg||'Cargando…';document.getElementById('loadingOverlay').classList.add('show')}
+function hideLoading(){document.getElementById('loadingOverlay').classList.remove('show')}
+
 function toggleSidebar(){
   const s=document.getElementById('sidebar');
   if(window.innerWidth<=900){s.classList.toggle('open')}else{s.classList.toggle('collapsed')}
@@ -449,15 +453,18 @@ function toggleSidebar(){
 // ─── API ───
 async function api(m,p,b){
   const opts={method:m,headers:{'Content-Type':'application/json'}};if(b)opts.body=JSON.stringify(b);
+  _loadingCounter++;if(_loadingCounter===1)showLoading();
   try{
     const r=await fetch(p,opts);
     const badge=document.getElementById('connBadge');badge.className='bdg-g';badge.textContent='● OK';
-    if(r.status===401){logout();throw new Error('Sesión expirada')}
+    if(r.status===401){logout();throw new Error('Sesi\u00f3n expirada')}
     if(!r.ok){const e=await r.json();throw new Error(e.error||'Error')}
     return await r.json()
   }catch(e){
-    const badge=document.getElementById('connBadge');badge.className='bdg';badge.style.background='#fef2f2';badge.style.color='#dc2626';badge.textContent='● Error';
+    const badge=document.getElementById('connBadge');badge.className='bdg';badge.style.background='#fef2f2';badge.style.color='#dc2626';badge.textContent='\u25cf Error';
     throw e
+  }finally{
+    _loadingCounter=Math.max(0,_loadingCounter-1);if(!_loadingCounter)hideLoading()
   }
 }
 
@@ -467,8 +474,9 @@ async function loadAll(){
 
 function toast(m,t='s'){
   const box=document.getElementById('toastBox');const el=document.createElement('div');
-  el.className='toast '+t;el.textContent=m;box.appendChild(el);
-  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300)},2200)
+  const icons={s:'\u2713',e:'\u2715',i:'\u2139'};
+  el.className='toast '+t;el.innerHTML='<span style="font-size:14px;font-weight:700;flex-shrink:0;opacity:.85">'+(icons[t]||'')+'</span><span>'+m+'</span>';box.appendChild(el);
+  setTimeout(()=>{el.classList.add('fade');setTimeout(()=>{if(el.parentNode)el.remove()},400)},2600)
 }
 
 // ─── NAV ───
@@ -489,6 +497,7 @@ function closeModal(){document.getElementById('modalBg').classList.remove('open'
 document.getElementById('modalBg').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()})
 
 function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39'})[c])}
+function $f(n){const v=Number(n||0);return v.toFixed(2)}
 function fd(f){if(!f)return'';const d=new Date(f+'T12:00:00');return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}
 function selM(val){return MESES.map(m=>`<option value="${m}"${m===val?' selected':''}>${m.toLowerCase()}</option>`).join('')}
 function selMi(val){return S.miembros.map(m=>`<option value="${esc(m.nombre)}"${m.nombre===val?' selected':''}>${esc(m.nombre)}${m.apodo?' ('+esc(m.apodo)+')':''}</option>`).join('')}
