@@ -475,7 +475,7 @@ def set_rifa():
     miembro = db.execute("SELECT id FROM miembros WHERE nombre=?", (data['nombre'],)).fetchone()
     if not miembro: return jsonify({'error':'Miembro no encontrado'}), 404
     valor = int(data.get('valor', 0))
-    if valor < 0 or valor > 2: return jsonify({'error':'Valor debe ser 0, 1 o 2'}), 400
+    if valor < 0 or valor > 3: return jsonify({'error':'Valor debe ser 0, 1, 2 o 3'}), 400
     db.execute("INSERT INTO rifas (miembro_id, fecha, valor) VALUES (?, ?, ?) ON CONFLICT(miembro_id, fecha) DO UPDATE SET valor=excluded.valor",
                (miembro['id'], data['mes'], valor))
     db.commit()
@@ -829,7 +829,7 @@ def export_todo():
             'miembros': ("SELECT nombre, apodo FROM miembros ORDER BY id", ['nombre','apodo']),
             'asistencias': ("SELECT m.nombre, a.fecha, CASE WHEN a.valor=1 THEN 'Si' ELSE 'No' END FROM asistencias a JOIN miembros m ON a.miembro_id = m.id ORDER BY a.fecha,m.nombre", ['miembro','fecha','asistio']),
             'bingos': ("SELECT fecha, monto FROM bingos ORDER BY fecha", ['fecha','monto']),
-            'rifas': ("SELECT m.nombre, r.fecha, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id ORDER BY r.fecha,m.nombre", ['miembro','fecha','cantidad']),
+        'rifas': ("SELECT m.nombre, r.fecha as mes, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id ORDER BY r.fecha,m.nombre", ['miembro','mes','cantidad']),
             'ahorro_normal': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='normal' ORDER BY ma.orden,m.nombre", ['miembro','mes','monto']),
             'ahorro_cumple': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='cumple' ORDER BY ma.orden,m.nombre", ['miembro','mes','monto']),
             'ahorro_rifa': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='rifa' ORDER BY ma.orden,m.nombre", ['miembro','mes','monto']),
@@ -872,7 +872,7 @@ _TABLA_MAPPING = {
     'miembros': ("SELECT nombre, apodo FROM miembros ORDER BY id", ['Nombre','Apodo']),
     'asistencias': ("SELECT m.nombre, a.fecha, CASE WHEN a.valor=1 THEN 'Si' ELSE 'No' END FROM asistencias a JOIN miembros m ON a.miembro_id = m.id ORDER BY a.fecha,m.nombre", ['Miembro','Fecha','Asistió']),
     'bingos': ("SELECT fecha, monto FROM bingos ORDER BY fecha", ['Fecha','Monto']),
-    'rifas': ("SELECT m.nombre, r.fecha, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id ORDER BY r.fecha,m.nombre", ['Miembro','Fecha','Cantidad']),
+    'rifas': ("SELECT m.nombre, r.fecha as mes, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id ORDER BY r.fecha,m.nombre", ['Miembro','Mes','Cantidad']),
     'ahorro_normal': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='normal' ORDER BY ma.orden,m.nombre", ['Miembro','Mes','Monto']),
     'ahorro_cumple': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='cumple' ORDER BY ma.orden,m.nombre", ['Miembro','Mes','Monto']),
     'ahorro_rifa': ("SELECT m.nombre, ma.nombre as mes, a.valor FROM ahorros a JOIN miembros m ON a.miembro_id = m.id JOIN meses_ahorro ma ON a.mes_id = ma.id WHERE a.tipo='rifa' ORDER BY ma.orden,m.nombre", ['Miembro','Mes','Monto']),

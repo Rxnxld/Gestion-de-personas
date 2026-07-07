@@ -827,8 +827,8 @@ function renderRifa(){
     const cells=meses.map(me=>{
       const v=(S.rifas[m.nombre]?.[me])||0;
       const s1=!!(v&1), s2=!!(v&2);
-      return `<td class="tb-cell ${s1?'pagado':'nopagado'}" onclick="toggleRifaSlot('${esc(m.nombre)}','${me}',1)" title="${s1?'Quitar':'Poner'} slot 1">${s1?'✓':'○'}</td>
-              <td class="tb-cell ${s2?'pagado':'nopagado'}" onclick="toggleRifaSlot('${esc(m.nombre)}','${me}',2)" title="${s2?'Quitar':'Poner'} slot 2">${s2?'✓':'○'}</td>`
+      return `<td class="tb-cell ${s1?'pagado':'nopagado'}" onclick="toggleRifaSlot(${m.id},'${me}',1)" title="${s1?'Quitar':'Poner'} slot 1">${s1?'✓':'○'}</td>
+              <td class="tb-cell ${s2?'pagado':'nopagado'}" onclick="toggleRifaSlot(${m.id},'${me}',2)" title="${s2?'Quitar':'Poner'} slot 2">${s2?'✓':'○'}</td>`
     }).join('');
     const total=meses.reduce((s,me)=>s+((S.rifas[m.nombre]?.[me])||0),0);
     gl+=total;
@@ -848,10 +848,11 @@ function renderRifa(){
   document.getElementById('rifaTotal').textContent=$f(gl)
 }
 
-async function toggleRifaSlot(nombre, mes, slot){
-  const cur=(S.rifas[nombre]?.[mes])||0;
+async function toggleRifaSlot(miembroId, mes, slot){
+  const m=S.miembros.find(x=>x.id===miembroId);if(!m)return;
+  const cur=(S.rifas[m.nombre]?.[mes])||0;
   const nuevo=slot===1?(cur^1):(cur^2);
-  try{await api('POST','/api/rifa',{nombre,mes,valor:nuevo});await loadAll()}
+  try{await api('POST','/api/rifa',{nombre:m.nombre,mes,valor:nuevo});await loadAll()}
   catch(e){toast(e.message,'e')}
 }
 
