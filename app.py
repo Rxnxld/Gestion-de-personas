@@ -713,7 +713,7 @@ def _calcular_estado_cuenta(db):
         as_pct = round((as_ok / total_fechas_tablas) * 100, 1) if total_fechas_tablas else 0
         aN = ahorros['normal'].get(mid, 0)
         aC = ahorros['cumple'].get(mid, 0)
-        aR = ahorros['rifa'].get(mid, 0)
+        aR = rifa.get(mid, 0)  # Calculado de las rifas (cada slot = $1)
         ahorro_total = aN + aC + aR
         p = prest.get(mid, {'pendiente': 0, 'pagado': 0})
         saldo_neto = round(ahorro_total - p['pendiente'], 2)

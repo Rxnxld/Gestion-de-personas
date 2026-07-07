@@ -463,7 +463,9 @@ async function api(m,p,b){
 }
 
 async function loadAll(){
-  try{const d=await api('GET','/api/datos/completos');S=d;renderAll()}catch(e){toast('Error: '+e.message,'e')}
+  try{const d=await api('GET','/api/datos/completos');S=d;
+  S.ahorroRifa={};S.miembros.forEach(m=>{S.ahorroRifa[m.nombre]={};MESES.forEach(me=>{const v=(S.rifas[m.nombre]?.[me])||0;S.ahorroRifa[m.nombre][me]=(v&1)+((v>>1)&1)})});
+  renderAll()}catch(e){toast('Error: '+e.message,'e')}
 }
 
 function toast(m,t='s'){
@@ -508,7 +510,7 @@ function computeEstadoCuenta(){
     const riParticip=S.fechasRifa.reduce((s,f)=>{const v=(S.rifas[m.nombre]?.[f])||0;return s+(v&1)+((v>>1)&1)},0);
     const aN=MESES.reduce((s,me)=>s+((S.ahorroNormal[m.nombre]?.[me])||0),0);
     const aC=MESES.reduce((s,me)=>s+((S.ahorroCumple[m.nombre]?.[me])||0),0);
-    const aR=MESES.reduce((s,me)=>s+((S.ahorroRifa[m.nombre]?.[me])||0),0);
+    const aR=riParticip;
     const ahorroTotal=aN+aC+aR;
     const cumpleTotal=S.cumpleMeses.reduce((s,c)=>s+((S.cumpleAportes[c]?.[m.nombre])||0),0);
     const cumpleFechaObj=S.cumpleFechas.find(cf=>cf.nombre===m.nombre);
