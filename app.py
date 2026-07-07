@@ -336,19 +336,22 @@ def get_bingos():
 def add_bingo():
     data = request.json
     db = get_db()
-    total_miembros = len(db.execute("SELECT id FROM miembros").fetchall())
-    asistentes = data.get('asistentes', total_miembros) or total_miembros
     adicional = float(data.get('adicional', 0) or 0)
     try:
-        cur = db.execute("INSERT INTO bingos (fecha, monto, adicional, asistentes) VALUES (?, ?, ?, ?) RETURNING id", (data['fecha'], float(data['monto']), adicional, int(asistentes)))
+        cur = db.execute("INSERT INTO bingos (fecha, monto, adicional, asistentes) VALUES (?, ?, ?, ?) RETURNING id",
+                         (data['fecha'], float(data['monto']), adicional, int(data.get('asistentes', 0))))
         bingo_id = cur.fetchone()['id']
-        # auto-crear distribución: todos reciben, monto = total / asistentes
-        todos = db.execute("SELECT id FROM miembros").fetchall()
+        # Quiénes asistieron ese día (asistencias con valor=1)
+        attendees = {r['miembro_id'] for r in db.execute(
+            "SELECT miembro_id FROM asistencias WHERE fecha=? AND valor=1", (data['fecha'],)).fetchall()}
+        asistentes = len(attendees) or int(data.get('asistentes', 0))
         total = float(data['monto']) + adicional
-        coge = total / int(asistentes) if int(asistentes) > 0 else 0
+        coge = round(total / asistentes, 2) if asistentes > 0 else 0
+        todos = db.execute("SELECT id FROM miembros").fetchall()
         for m in todos:
-            db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado) VALUES (?, ?, TRUE, ?)",
-                       (bingo_id, m['id'], round(coge, 2)))
+            recibe = m['id'] in attendees
+            db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado) VALUES (?, ?, ?, ?)",
+                       (bingo_id, m['id'], recibe, coge if recibe else 0))
         try:
             db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (data['fecha'],))
         except psycopg2.IntegrityError:
@@ -356,7 +359,7 @@ def add_bingo():
         db.commit()
         return jsonify({'ok': True}), 201
     except psycopg2.IntegrityError:
-        return jsonify({'error':'La fecha ya existe'}), 409
+        return jsonify({'error': 'La fecha ya existe'}), 409
 
 @app.route('/api/bingos/<int:id>', methods=['PUT'])
 @login_required
@@ -403,7 +406,7 @@ def get_distribucion(id):
             for r in db.execute("SELECT miembro_id, recibe, monto_asignado, personalizado FROM bingo_distribucion WHERE bingo_id=?", (id,)).fetchall()}
     miembros = db.execute("SELECT id, nombre FROM miembros ORDER BY nombre").fetchall()
     return jsonify([{'miembro_id': m['id'], 'nombre': m['nombre'],
-                     'recibe': dist.get(m['id'], {}).get('recibe', True),
+                     'recibe': dist.get(m['id'], {}).get('recibe', False),
                      'monto': dist.get(m['id'], {}).get('monto', 0),
                      'personalizado': dist.get(m['id'], {}).get('personalizado', False)} for m in miembros])
 
