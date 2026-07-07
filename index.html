@@ -516,8 +516,12 @@ function computeEstadoCuenta(){
       const d=(b.distribucion||[]).find(x=>x.miembro_id===m.id);
       if(!d||!d.recibe)return s;
       const a=b.asistentes||S.miembros.length||1;
-      const coge=(b.monto+parseFloat(b.adicional||0))/a;
-      return s+coge;
+      const cogeDefault=(b.monto+parseFloat(b.adicional||0))/a;
+      // Usa el monto realmente asignado (personalizado en el reparto) si existe;
+      // si no fue personalizado, usa el "Coge c/u" por defecto.
+      const asignado=parseFloat(d.monto_asignado);
+      const monto=(!isNaN(asignado)&&asignado!==0)?asignado:cogeDefault;
+      return s+monto;
     },0);
     const saldoNeto=ahorroTotal-pendiente;
     let estadoGeneral='al_dia';

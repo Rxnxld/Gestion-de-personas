@@ -668,17 +668,18 @@ def _calcular_estado_cuenta(db):
         asis[r['miembro_id']] = r['s'] or 0
 
     bingo_dist = {}
-    for r in db.execute("SELECT miembro_id, recibe FROM bingo_distribucion WHERE recibe=TRUE"):
-        bingo_dist[r['miembro_id']] = 0
     all_bingos = [dict(r) for r in db.execute("SELECT id, monto, adicional, asistentes FROM bingos").fetchall()]
     for b in all_bingos:
         a = b['asistentes'] or 1
-        coge = (b['monto'] + (b['adicional'] or 0)) / a
-        excluidos = db.execute("SELECT miembro_id FROM bingo_distribucion WHERE bingo_id=? AND recibe=FALSE", (b['id'],)).fetchall()
-        excl_set = {r['miembro_id'] for r in excluidos}
-        for mid in list(bingo_dist.keys()):
-            if mid not in excl_set:
-                bingo_dist[mid] += round(coge, 2)
+        coge_default = round((b['monto'] + (b['adicional'] or 0)) / a, 2)
+        dist_rows = db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE bingo_id=?", (b['id'],)).fetchall()
+        for d in dist_rows:
+            if not d['recibe']:
+                continue
+            # Usa el monto realmente asignado (personalizado en el reparto) si existe;
+            # si no fue personalizado, usa el "Coge c/u" (reparto parejo) por defecto.
+            monto = d['monto_asignado'] if d['monto_asignado'] else coge_default
+            bingo_dist[d['miembro_id']] = bingo_dist.get(d['miembro_id'], 0) + monto
 
     rifa = {}
     for r in db.execute("SELECT miembro_id, SUM(valor) s FROM rifas GROUP BY miembro_id"):
