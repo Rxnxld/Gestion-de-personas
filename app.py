@@ -424,13 +424,24 @@ def get_distribucion(id):
 def save_distribucion(id):
     data = request.json
     db = get_db()
+    b = db.execute("SELECT monto, adicional, asistentes FROM bingos WHERE id=?", (id,)).fetchone()
+    a = (b['asistentes'] or 1) if b else 1
+    coge = round(((b['monto'] + (b['adicional'] or 0)) / a), 2) if b else 0
     db.execute("DELETE FROM bingo_distribucion WHERE bingo_id=?", (id,))
     for item in data:
-        # Guardar desde el modal de Reparto siempre marca la fila como
-        # personalizada, así los recálculos automáticos (asistencia, monto,
-        # adicional, asistentes) ya no la pisan.
-        db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado, personalizado) VALUES (?, ?, ?, ?, TRUE)",
-                   (id, item['miembro_id'], item.get('recibe', True), float(item.get('monto', 0))))
+        recibe = item.get('recibe', True)
+        if not recibe:
+            monto, personalizado = 0, False
+        else:
+            enviado = round(float(item.get('monto', coge)), 2)
+            # Si el monto que llega es distinto al "Coge c/u" automático, es que
+            # lo personalizaron a mano (ganó un extra ese día, etc.). Se marca
+            # como personalizado para que los recálculos automáticos (cambios
+            # de asistencia, monto, adicional o asistentes) no lo pisen.
+            personalizado = abs(enviado - coge) > 0.001
+            monto = enviado if personalizado else coge
+        db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado, personalizado) VALUES (?, ?, ?, ?, ?)",
+                   (id, item['miembro_id'], recibe, monto, personalizado))
     db.commit()
     return jsonify({'ok': True})
 
