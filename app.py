@@ -687,7 +687,7 @@ def _calcular_estado_cuenta(db):
         bingo_dist[r['miembro_id']] = bingo_dist.get(r['miembro_id'], 0) + (r['monto_asignado'] or 0)
 
     rifa = {}
-    for r in db.execute("SELECT miembro_id, SUM(valor) s FROM rifas GROUP BY miembro_id"):
+    for r in db.execute("SELECT miembro_id, SUM((valor & 1) + ((valor >> 1) & 1)) s FROM rifas GROUP BY miembro_id"):
         rifa[r['miembro_id']] = r['s'] or 0
 
     ahorros = {'normal': {}, 'cumple': {}, 'rifa': {}}

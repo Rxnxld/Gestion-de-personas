@@ -170,11 +170,6 @@ tbody tr:nth-child(even){background:#f8fafc}
 .tb-cell.nopagado{color:var(--text3)}
 .tb-cell.nopagado:hover{color:var(--accent);background:var(--accent-l)}
 
-/* Loading overlay */
-.loading-overlay{display:none;position:fixed;z-index:150;inset:0;background:rgba(255,255,255,.65);backdrop-filter:blur(2px);align-items:center;justify-content:center}
-.loading-overlay.show{display:flex}
-.loading-spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .65s linear infinite}
-.loading-text{margin-top:10px;font-size:12px;color:var(--text2);font-weight:600}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
@@ -406,7 +401,6 @@ tbody tr:nth-child(even){background:#f8fafc}
 <!-- MODAL -->
 <div class="modal-bg" id="modalBg"><div class="modal" id="modalBody"></div></div>
 <div class="toast-box" id="toastBox"></div>
-<div class="loading-overlay" id="loadingOverlay"><div><div class="loading-spinner"></div><div class="loading-text" id="loadingText">Cargando…</div></div></div>
 
 <script>
 const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
@@ -448,10 +442,6 @@ async function logout(){
   document.getElementById('loginPass').value='';document.getElementById('loginErr').textContent=''
 }
 
-let _loadingCounter=0;
-function showLoading(msg){document.getElementById('loadingText').textContent=msg||'Cargando…';document.getElementById('loadingOverlay').classList.add('show')}
-function hideLoading(){document.getElementById('loadingOverlay').classList.remove('show')}
-
 function toggleSidebar(){
   const s=document.getElementById('sidebar');
   if(window.innerWidth<=900){s.classList.toggle('open')}else{s.classList.toggle('collapsed')}
@@ -460,18 +450,15 @@ function toggleSidebar(){
 // ─── API ───
 async function api(m,p,b){
   const opts={method:m,headers:{'Content-Type':'application/json'}};if(b)opts.body=JSON.stringify(b);
-  _loadingCounter++;if(_loadingCounter===1)showLoading();
   try{
     const r=await fetch(p,opts);
     const badge=document.getElementById('connBadge');badge.className='bdg-g';badge.textContent='● OK';
-    if(r.status===401){logout();throw new Error('Sesi\u00f3n expirada')}
+    if(r.status===401){logout();throw new Error('Sesión expirada')}
     if(!r.ok){const e=await r.json();throw new Error(e.error||'Error')}
     return await r.json()
   }catch(e){
-    const badge=document.getElementById('connBadge');badge.className='bdg';badge.style.background='#fef2f2';badge.style.color='#dc2626';badge.textContent='\u25cf Error';
+    const badge=document.getElementById('connBadge');badge.className='bdg';badge.style.background='#fef2f2';badge.style.color='#dc2626';badge.textContent='● Error';
     throw e
-  }finally{
-    _loadingCounter=Math.max(0,_loadingCounter-1);if(!_loadingCounter)hideLoading()
   }
 }
 
@@ -518,7 +505,7 @@ function computeEstadoCuenta(){
     const totalFechas=S.fechasTablas.length;
     const asOk=S.fechasTablas.reduce((s,f)=>s+((S.asistencias[m.nombre]?.[f])||0),0);
     const asPct=totalFechas?Math.round((asOk/totalFechas)*1000)/10:0;
-    const riParticip=S.fechasRifa.reduce((s,f)=>s+((S.rifas[m.nombre]?.[f])||0),0);
+    const riParticip=S.fechasRifa.reduce((s,f)=>{const v=(S.rifas[m.nombre]?.[f])||0;return s+(v&1)+((v>>1)&1)},0);
     const aN=MESES.reduce((s,me)=>s+((S.ahorroNormal[m.nombre]?.[me])||0),0);
     const aC=MESES.reduce((s,me)=>s+((S.ahorroCumple[m.nombre]?.[me])||0),0);
     const aR=MESES.reduce((s,me)=>s+((S.ahorroRifa[m.nombre]?.[me])||0),0);
@@ -846,7 +833,7 @@ function renderRifa(){
       return `<td class="tb-cell ${s1?'pagado':'nopagado'}" onclick="toggleRifaSlot(${m.id},'${me}',1)" title="${s1?'Quitar':'Poner'} slot 1">${s1?'✓':'○'}</td>
               <td class="tb-cell ${s2?'pagado':'nopagado'}" onclick="toggleRifaSlot(${m.id},'${me}',2)" title="${s2?'Quitar':'Poner'} slot 2">${s2?'✓':'○'}</td>`
     }).join('');
-    const total=meses.reduce((s,me)=>s+((S.rifas[m.nombre]?.[me])||0),0);
+    const total=meses.reduce((s,me)=>{const v=(S.rifas[m.nombre]?.[me])||0;return s+(v&1)+((v>>1)&1)},0);
     gl+=total;
     return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${cells}<td class="fw6">$${$f(total)}</td></tr>`
   }).join('')||'<tr><td colspan="26" class="emp"><div class="big">⊡</div>Sin miembros</td></tr>';
@@ -855,7 +842,7 @@ function renderRifa(){
     const foot='<tr style="background:var(--border-l);font-weight:700">'+
       '<td></td><td class="tl">Total Mes</td>'+
       meses.map(me=>{
-        const t=S.miembros.reduce((s,m)=>s+((S.rifas[m.nombre]?.[me])||0),0);
+        const t=S.miembros.reduce((s,m)=>{const v=(S.rifas[m.nombre]?.[me])||0;return s+(v&1)+((v>>1)&1)},0);
         return `<td style="font-size:12px;font-weight:700;color:var(--accent)" colspan="2">$${$f(t)}</td>`
       }).join('')+
       `<td class="tr" style="color:var(--accent)">$${$f(gl)}</td></tr>`;
