@@ -315,18 +315,6 @@ def set_asistencia():
     db.execute("INSERT INTO asistencias (miembro_id, fecha, valor) VALUES (?, ?, ?) ON CONFLICT(miembro_id, fecha) DO UPDATE SET valor=excluded.valor",
                (miembro['id'], data['fecha'], int(data.get('valor', 0))))
     db.commit()
-    # Auto-calcular monto del bingo: sumar Sí × $1 para esta fecha
-    cur = db.execute("SELECT COUNT(*) as cnt FROM asistencias WHERE fecha=? AND valor=1", (data['fecha'],))
-    total = cur.fetchone()['cnt']
-    db.execute("UPDATE bingos SET monto=? WHERE fecha=?", (float(total), data['fecha']))
-    # Actualizar distribución automática con el nuevo monto
-    b = db.execute("SELECT id, monto, adicional, asistentes FROM bingos WHERE fecha=?", (data['fecha'],)).fetchone()
-    if b:
-        t = b['monto'] + (b['adicional'] or 0)
-        a = b['asistentes'] or 1
-        coge = round(t / a, 2) if a > 0 else 0
-        db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE AND personalizado=FALSE", (coge, b['id']))
-    db.commit()
     return jsonify({'ok': True})
 
 # ═══════════════════════════════════════════
