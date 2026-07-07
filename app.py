@@ -722,12 +722,14 @@ def _calcular_estado_cuenta(db):
         p = prest.get(mid, {'pendiente': 0, 'pagado': 0})
         saldo_neto = round(ahorro_total - p['pendiente'], 2)
         estado_general = 'moroso' if p['pendiente'] > 0 and as_pct < 50 else ('con_deuda' if p['pendiente'] > 0 else 'al_dia')
-        bingo_val = round(bingo_dist.get(mid, 0) / 100, 2)
+        bingo_ganado = round(bingo_dist.get(mid, 0), 2)
+        bingo_debe = max(total_fechas_tablas - as_ok, 0)
+        bingo_total = round(bingo_ganado - bingo_debe, 2)
         resultado.append({
             'id': mid, 'nombre': m['nombre'], 'apodo': m['apodo'],
             'asistencia': {'asistidas': as_ok, 'total': total_fechas_tablas, 'pct': as_pct},
             'rifa': {'participaciones': rifa.get(mid, 0), 'totalFechas': total_fechas_rifa},
-            'bingo': bingo_val, 'bingoGanado': bingo_val, 'bingoDebe': 0,
+            'bingo': bingo_total, 'bingoGanado': bingo_ganado, 'bingoDebe': bingo_debe,
             'ahorros': {'normal': round(aN, 2), 'cumple': round(aC, 2), 'rifa': round(aR, 2), 'total': round(ahorro_total, 2)},
             'cumpleAportes': cumple.get(mid, 0),
             'cumpleFecha': cumple_fecha.get(mid),
@@ -753,7 +755,7 @@ def export_estado_cuenta_xlsx():
     ws = wb.active
     ws.title = "Estado de Cuenta"
     cols = ['N°','Nombre','Asist. (Si/Total)','Asist. %','Rifa (Participaciones)',
-            'Recibido de Bingo ($)','Ahorro Normal','Ahorro Cumple','Ahorro Rifa','Total Ahorros',
+            'Bingo Ganado','Tablas No Pagadas ($)','Bingo Neto ($)','Ahorro Normal','Ahorro Cumple','Ahorro Rifa','Total Ahorros',
             'Aportes Cumple','Préstamo Pendiente','Préstamo Pagado','Saldo Neto','Estado']
     hf = Font(bold=True, color='FFFFFF', size=11)
     hfill = PatternFill(start_color='0F172A', end_color='0F172A', fill_type='solid')
@@ -765,7 +767,7 @@ def export_estado_cuenta_xlsx():
     for i, d in enumerate(datos, 1):
         row = [
             i, d['nombre'], f"{d['asistencia']['asistidas']}/{d['asistencia']['total']}", f"{d['asistencia']['pct']}%",
-            d['rifa']['participaciones'], d['bingo'], d['ahorros']['normal'], d['ahorros']['cumple'], d['ahorros']['rifa'],
+            d['rifa']['participaciones'], d['bingoGanado'], d['bingoDebe'], d['bingo'], d['ahorros']['normal'], d['ahorros']['cumple'], d['ahorros']['rifa'],
             d['ahorros']['total'], d['cumpleAportes'], d['prestamos']['pendiente'], d['prestamos']['pagado'],
             d['saldoNeto'], estado_lbl.get(d['estadoGeneral'], d['estadoGeneral'])
         ]
