@@ -7,10 +7,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--primary:#0f172a;--accent:#4f46e5;--accent-h:#4338ca;--success:#059669;--warning:#d97706;--danger:#dc2626;--bg:#f0f2f7;--card:#fff;--border:#e2e8f0;--text:#1e293b;--text2:#64748b;--radius:10px;--rs:6px;--sh:0 1px 2px rgba(0,0,0,.05);--sh-md:0 4px 12px rgba(0,0,0,.07);--side:220px}
-html{font-size:14px}
-body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+:root{--primary:#0f172a;--accent:#4f46e5;--accent-h:#4338ca;--accent-l:#eef2ff;--success:#059669;--success-l:#ecfdf5;--warning:#d97706;--warning-l:#fffbeb;--danger:#dc2626;--danger-l:#fef2f2;--bg:#f4f5f9;--card:#fff;--border:#e8ecf2;--border-l:#f1f3f8;--text:#1a1d29;--text2:#64748b;--text3:#94a3b8;--radius:12px;--rs:6px;--sh:0 1px 3px rgba(15,23,42,.06);--sh-md:0 4px 16px rgba(15,23,42,.07);--sh-lg:0 8px 32px rgba(15,23,42,.1);--side:230px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;scroll-behavior:smooth}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5;text-rendering:optimizeLegibility;--webkit-font-smoothing:antialiased}
 
 /* LOGIN */
 @keyframes loginBg{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
@@ -45,7 +45,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .app-page{display:none}
 .app-page.show{display:block}
 
-.sidebar{width:var(--side);background:var(--primary);color:#fff;display:flex;flex-direction:column;position:fixed;inset:0;right:auto;z-index:50;transition:transform .25s}
+.sidebar{width:var(--side);background:var(--primary);color:#fff;display:flex;flex-direction:column;position:fixed;inset:0;right:auto;z-index:50;transition:transform .25s ease}
 .sidebar.collapsed{transform:translateX(calc(var(--side)*-1))}
 .sidebar-brand{padding:20px 18px 12px;border-bottom:1px solid rgba(255,255,255,.08)}
 .sidebar-brand h1{font-size:14px;font-weight:700}
@@ -62,36 +62,42 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 .main{margin-left:var(--side);flex:1;min-height:100vh;transition:margin-left .25s}
 .sidebar.collapsed+.main{margin-left:0}
-.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:40}
-.topbar .menu-btn{background:0 0;border:none;font-size:20px;cursor:pointer;color:var(--text);padding:4px 6px;border-radius:4px}
-.topbar .menu-btn:hover{background:#f1f5f9}
-.topbar h2{font-size:16px;font-weight:700;margin-right:auto}
-.content{padding:20px 24px}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:40}
+.topbar .menu-btn{background:0 0;border:none;font-size:18px;cursor:pointer;color:var(--text);padding:6px 8px;border-radius:var(--rs);transition:background .12s}
+.topbar .menu-btn:hover{background:var(--border-l)}
+.topbar h2{font-size:17px;font-weight:800;margin-right:auto;letter-spacing:-.2px}
+.content{padding:24px 28px}
 
 .page-h{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .page-h h3{font-size:17px;font-weight:700;margin-right:auto}
 
-.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:16px}
-.card-t{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;padding:12px 18px;border-bottom:1px solid var(--border);background:#f8fafc}
-.card-b{padding:14px 18px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:16px;transition:box-shadow .2s,border-color .2s}
+.card:hover{box-shadow:var(--sh-md);border-color:#d0d6e0}
+.card-t{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--border-l)}
+.card-b{padding:16px 20px}
 
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-.stat{background:var(--card);border-radius:var(--radius);box-shadow:var(--sh);border:1px solid var(--border);padding:14px 16px;border-left:3px solid var(--border)}
-.stat .l{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);font-weight:600}
-.stat .v{font-size:22px;font-weight:800;margin-top:1px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border-radius:var(--radius);box-shadow:var(--sh);border:1px solid var(--border);padding:16px 18px;border-left:3px solid var(--border);transition:box-shadow .2s,transform .15s}
+.stat:hover{box-shadow:var(--sh-md);transform:translateY(-1px)}
+.stat .l{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);font-weight:700;margin-bottom:2px}
+.stat .v{font-size:24px;font-weight:800;line-height:1.2}
 .stat.blue{border-left-color:var(--accent)}.stat.gr{border-left-color:var(--success)}.stat.or{border-left-color:var(--warning)}.stat.re{border-left-color:var(--danger)}
 
-.tw{overflow-x:auto}
+.tw{overflow-x:auto;margin:0}
 table{width:100%;border-collapse:collapse;font-size:12px}
-thead th{padding:8px 10px;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.3px;color:var(--text2);background:#f8fafc;border-bottom:2px solid var(--border);text-align:center;white-space:nowrap}
-td{padding:7px 10px;border-bottom:1px solid var(--border);text-align:center}
-tbody tr:hover{background:#f8fafc}
+thead th{padding:10px 12px;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);background:var(--border-l);border-bottom:2px solid var(--border);text-align:center;white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid var(--border-l);text-align:center;transition:background .12s}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:var(--accent-l)}
+tbody tr:nth-child(even){background:#f8fafc}
+tbody tr:nth-child(even):hover{background:var(--accent-l)}
 .tw table th:first-child,.tw table td:first-child{position:sticky;left:0;z-index:2;background:#fff}
-.tw table thead th:first-child{background:#f8fafc;z-index:3}
-.tw table th:nth-child(2),.tw table td:nth-child(2){position:sticky;left:30px;z-index:2;background:#fff}
-.tw table thead th:nth-child(2){background:#f8fafc;z-index:3}
-.tw table tbody tr:hover td:first-child,.tw table tbody tr:hover td:nth-child(2){background:#f8fafc}
-.tw table tbody tr:hover td.tb-cell{background:inherit}
+.tw table thead th:first-child{background:var(--border-l);z-index:3}
+.tw table th:nth-child(2),.tw table td:nth-child(2){position:sticky;left:34px;z-index:2;background:#fff}
+.tw table thead th:nth-child(2){background:var(--border-l);z-index:3}
+.tw table tbody tr:hover td:first-child,.tw table tbody tr:hover td:nth-child(2){background:var(--accent-l)}
+.tw table tbody tr:nth-child(even) td:first-child,.tw table tbody tr:nth-child(even) td:nth-child(2){background:#f8fafc}
+.tw table tbody tr:nth-child(even):hover td:first-child,.tw table tbody tr:nth-child(even):hover td:nth-child(2){background:var(--accent-l)}
 .tl{text-align:left}.tr{text-align:right}.fw6{font-weight:600}
 
 .form-inline{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
@@ -100,26 +106,26 @@ tbody tr:hover{background:#f8fafc}
 .form-inline input,.form-inline select{padding:6px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;background:#fff}
 .form-inline input:focus,.form-inline select:focus{outline:none;border-color:var(--accent)}
 
-.btn{display:inline-flex;align-items:center;gap:4px;padding:7px 14px;border:none;border-radius:var(--rs);cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:.12s;white-space:nowrap}
-.btn:active{transform:scale(.97)}
-.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:var(--accent-h)}
-.btn-g{background:var(--success);color:#fff}.btn-g:hover{background:#047857}
-.btn-r{background:var(--danger);color:#fff}.btn-r:hover{background:#b91c1c}
-.btn-o{background:var(--warning);color:#fff}.btn-o:hover{background:#b45309}
-.btn-gh{background:0 0;color:var(--text2);border:1px solid var(--border)}.btn-gh:hover{background:#f8fafc}
-.btn-xs{padding:2px 7px;font-size:10px;border-radius:3px}
-.btn-sm{padding:5px 10px;font-size:11px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:var(--rs);cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:all .15s ease;white-space:nowrap;user-select:none}
+.btn:active{transform:scale(.96)}
+.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:var(--accent-h);box-shadow:0 2px 8px rgba(79,70,229,.3)}
+.btn-g{background:var(--success);color:#fff}.btn-g:hover{background:#047857;box-shadow:0 2px 8px rgba(5,150,105,.3)}
+.btn-r{background:var(--danger);color:#fff}.btn-r:hover{background:#b91c1c;box-shadow:0 2px 8px rgba(220,38,38,.3)}
+.btn-o{background:var(--warning);color:#fff}.btn-o:hover{background:#b45309;box-shadow:0 2px 8px rgba(217,119,6,.3)}
+.btn-gh{background:0 0;color:var(--text2);border:1.5px solid var(--border)}.btn-gh:hover{background:var(--border-l);border-color:var(--text3)}
+.btn-xs{padding:3px 8px;font-size:10px;border-radius:4px}
+.btn-sm{padding:6px 12px;font-size:11px}
 
-.modal-bg{display:none;position:fixed;z-index:100;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);align-items:center;justify-content:center}
+.modal-bg{display:none;position:fixed;z-index:100;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);align-items:center;justify-content:center}
 .modal-bg.open{display:flex}
-.modal{background:var(--card);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.1);width:92%;max-width:460px;padding:22px;animation:up .2s;max-height:90vh;overflow-y:auto}
-@keyframes up{from{opacity:0;transform:translateY(10px)scale(.98)}to{opacity:1;transform:translateY(0)scale(1)}}
-.modal h3{font-size:16px;font-weight:700;margin-bottom:16px}
-.modal .fr{margin-bottom:10px}
-.modal .fr label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:2px}
-.modal .fr input,.modal .fr select{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit}
-.modal .fr input:focus,.modal .fr select:focus{outline:none;border-color:var(--accent)}
-.modal .ma{display:flex;gap:8px;margin-top:14px;justify-content:end}
+.modal{background:var(--card);border-radius:var(--radius);box-shadow:var(--sh-lg);width:92%;max-width:480px;padding:28px;animation:up .2s ease;max-height:90vh;overflow-y:auto}
+@keyframes up{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.modal h3{font-size:17px;font-weight:800;margin-bottom:20px;letter-spacing:-.2px}
+.modal .fr{margin-bottom:12px}
+.modal .fr label{display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+.modal .fr input,.modal .fr select{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;background:var(--border-l);transition:border-color .15s,box-shadow .15s}
+.modal .fr input:focus,.modal .fr select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.1);background:#fff}
+.modal .ma{display:flex;gap:10px;margin-top:20px;justify-content:end}
 
 
 .bdg{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:10px;font-size:10px;font-weight:700;background:#f1f5f9;color:#64748b}
@@ -130,21 +136,23 @@ tbody tr:hover{background:#f8fafc}
 .pill-ok{background:#ecfdf5;color:#059669}
 .pill-warn{background:#fffbeb;color:#d97706}
 .pill-danger{background:#fef2f2;color:#dc2626}
-.ec-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
-.ec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.ec-head h4{font-size:18px;font-weight:800}
-.ec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
-.ec-item{border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px}
-.ec-item .l{font-size:10px;text-transform:uppercase;letter-spacing:.3px;color:var(--text2);font-weight:700;margin-bottom:4px}
-.ec-item .v{font-size:19px;font-weight:800}
+.ec-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;box-shadow:var(--sh)}
+.ec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.ec-head h4{font-size:20px;font-weight:800;letter-spacing:-.3px}
+.ec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.ec-item{border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:box-shadow .2s,transform .15s}
+.ec-item:hover{box-shadow:var(--sh-md);transform:translateY(-1px)}
+.ec-item .l{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);font-weight:700;margin-bottom:4px}
+.ec-item .v{font-size:20px;font-weight:800}
 .ec-bar{background:#f1f5f9;border-radius:20px;height:8px;overflow:hidden;margin-top:6px}
 .ec-bar-fill{height:100%;background:var(--accent);border-radius:20px;transition:.3s}
 @media print{
-  .sidebar,.topbar,.page-h button,#ecSelMiembro,.form-inline label,.modal-bg,.toast-box{display:none!important}
+  .sidebar,.topbar,.page-h button,#ecSelMiembro,.form-inline label,.modal-bg,.toast-box,.loading-overlay{display:none!important}
   .main{margin-left:0!important}
   body{background:#fff!important}
   #ecTablaGeneral,#ecStatsGrid{display:none!important}
-  .card,.ec-card{box-shadow:none!important;border:1px solid #ccc!important}
+  .card,.ec-card{box-shadow:none!important;border:1px solid #d0d6e0!important;break-inside:avoid}
+  .ec-grid{break-inside:avoid}
 }
 .tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;background:#f1f5f9;color:#64748b}
 .emp{text-align:center;padding:28px;color:#94a3b8;font-size:13px}
@@ -152,10 +160,17 @@ tbody tr:hover{background:#f8fafc}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .grup{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 
-.toast-box{position:fixed;bottom:16px;right:16px;z-index:200;display:flex;flex-direction:column;gap:5px}
-.toast{padding:9px 16px;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:500;box-shadow:var(--sh-md);animation:ti .2s}
+.toast-box{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:600;box-shadow:var(--sh-lg);animation:ti .25s ease;pointer-events:auto;max-width:360px;line-height:1.4}
 .toast.s{background:var(--success)}.toast.e{background:var(--danger)}.toast.i{background:var(--accent)}
-@keyframes ti{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+.toast.fade{opacity:0;transition:opacity .35s ease}
+@keyframes ti{from{opacity:0;transform:translateX(24px) scale(.95)}to{opacity:1;transform:translateX(0) scale(1)}}
+
+/* Loading overlay */
+.loading-overlay{display:none;position:fixed;z-index:150;inset:0;background:rgba(255,255,255,.65);backdrop-filter:blur(2px);align-items:center;justify-content:center}
+.loading-overlay.show{display:flex}
+.loading-spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .65s linear infinite}
+.loading-text{margin-top:10px;font-size:12px;color:var(--text2);font-weight:600}
 
 /* UI refinements */
 .tb{display:none;animation:fadeIn .25s ease}.tb.show{display:block}
@@ -163,12 +178,12 @@ tbody tr:hover{background:#f8fafc}
 tbody tr:nth-child(even){background:#f8fafc}
 .card{transition:box-shadow .2s}
 .card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.tb-cell{cursor:pointer;text-align:center;padding:6px 10px;border-bottom:1px solid var(--border);transition:all .15s;font-size:15px;font-weight:700;user-select:none}
-.tb-cell:hover{background:#eef2ff;transform:scale(1.08)}
-.tb-cell.pagado{color:#059669;background:#ecfdf5}
+.tb-cell{cursor:pointer;text-align:center;padding:8px 12px;border-bottom:1px solid var(--border-l);transition:all .12s;font-size:15px;font-weight:700;user-select:none}
+.tb-cell:hover{background:var(--accent-l);transform:scale(1.06)}
+.tb-cell.pagado{color:#059669;background:var(--success-l)}
 .tb-cell.pagado:hover{background:#d1fae5}
-.tb-cell.nopagado{color:#94a3b8}
-.tb-cell.nopagado:hover{color:#4f46e5;background:#eef2ff}
+.tb-cell.nopagado{color:var(--text3)}
+.tb-cell.nopagado:hover{color:var(--accent);background:var(--accent-l)}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
@@ -179,9 +194,19 @@ tbody tr:nth-child(even){background:#f8fafc}
   .sidebar.open{transform:translateX(0)}
   .main{margin-left:0}
   .topbar .menu-btn{display:block}
-  .content{padding:12px 14px}
+  .content{padding:14px 14px}
   .g2{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
+  .modal{padding:20px;max-width:96%}
+  .ec-grid{grid-template-columns:1fr 1fr}
+  .topbar{padding:10px 14px}
+  .topbar h2{font-size:14px}
+}
+@media(max-width:520px){
+  .stats{grid-template-columns:1fr}
+  .ec-grid{grid-template-columns:1fr}
+  .stat .v{font-size:20px}
+  .topbar h2{font-size:13px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
 </style>
 </head>
@@ -345,7 +370,7 @@ tbody tr:nth-child(even){background:#f8fafc}
           <div class="card-b" style="padding:0">
             <div class="tw">
               <table>
-                <thead><tr><th>#</th><th class="tl">Nombre</th><th>Tablas</th><th>Rifa</th><th class="tr">Bingo</th><th class="tr">Ahorros</th><th class="tr">Aportes Cumple</th><th class="tr">Préstamo Pend.</th><th class="tr">Saldo Neto</th><th>Estado</th></tr></thead>
+                <thead><tr><th>#</th><th class="tl">Nombre</th><th>Tablas</th><th>Rifa</th><th class="tr">Cuota</th><th class="tr">Utilidad</th><th class="tr">Bingo Neto</th><th class="tr">Ahorros</th><th class="tr">Aportes Cumple</th><th class="tr">Préstamo Pend.</th><th class="tr">Saldo Neto</th><th>Estado</th></tr></thead>
                 <tbody id="ecBody"></tbody>
               </table>
             </div>
@@ -400,10 +425,19 @@ tbody tr:nth-child(even){background:#f8fafc}
 <!-- MODAL -->
 <div class="modal-bg" id="modalBg"><div class="modal" id="modalBody"></div></div>
 <div class="toast-box" id="toastBox"></div>
+<div class="loading-overlay" id="loadingOverlay"><div><div class="loading-spinner"></div><div class="loading-text" id="loadingText">Cargando…</div></div></div>
 
 <script>
 const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
 let S={miembros:[],fechasTablas:[],asistencias:{},bingos:[],fechasRifa:[],rifas:{},ahorroNormal:{},ahorroCumple:{},ahorroRifa:{},cumpleMeses:[],cumpleAportes:{},cumpleFechas:[],prestamos:[]};
+
+// ─── GLOBAL HELPERS ───
+function $f(n){const v=Number(n||0);return v.toFixed(2)}
+function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39'})[c])}
+function fd(f){if(!f)return'';const d=new Date(f+'T12:00:00');return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}
+function selM(val){return MESES.map(m=>`<option value="${m}"${m===val?' selected':''}>${m.toLowerCase()}</option>`).join('')}
+function selMi(val){return S.miembros.map(m=>`<option value="${esc(m.nombre)}"${m.nombre===val?' selected':''}>${esc(m.nombre)}${m.apodo?' ('+esc(m.apodo)+')':''}</option>`).join('')}
+let _loadingCounter=0;
 
 // ─── AUTH ───
 async function checkAuth(){
@@ -441,6 +475,12 @@ async function logout(){
   document.getElementById('loginPass').value='';document.getElementById('loginErr').textContent=''
 }
 
+function showLoading(msg){
+  document.getElementById('loadingText').textContent=msg||'Cargando…';
+  document.getElementById('loadingOverlay').classList.add('show')
+}
+function hideLoading(){document.getElementById('loadingOverlay').classList.remove('show')}
+
 function toggleSidebar(){
   const s=document.getElementById('sidebar');
   if(window.innerWidth<=900){s.classList.toggle('open')}else{s.classList.toggle('collapsed')}
@@ -449,6 +489,7 @@ function toggleSidebar(){
 // ─── API ───
 async function api(m,p,b){
   const opts={method:m,headers:{'Content-Type':'application/json'}};if(b)opts.body=JSON.stringify(b);
+  _loadingCounter++;if(_loadingCounter===1)showLoading();
   try{
     const r=await fetch(p,opts);
     const badge=document.getElementById('connBadge');badge.className='bdg-g';badge.textContent='● OK';
@@ -458,6 +499,8 @@ async function api(m,p,b){
   }catch(e){
     const badge=document.getElementById('connBadge');badge.className='bdg';badge.style.background='#fef2f2';badge.style.color='#dc2626';badge.textContent='● Error';
     throw e
+  }finally{
+    _loadingCounter=Math.max(0,_loadingCounter-1);if(!_loadingCounter)hideLoading()
   }
 }
 
@@ -467,8 +510,9 @@ async function loadAll(){
 
 function toast(m,t='s'){
   const box=document.getElementById('toastBox');const el=document.createElement('div');
-  el.className='toast '+t;el.textContent=m;box.appendChild(el);
-  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300)},2200)
+  const icons={s:'✓',e:'✕',i:'ℹ'};
+  el.className='toast '+t;el.innerHTML='<span style="font-size:14px;font-weight:700;flex-shrink:0;opacity:.85">'+(icons[t]||'')+'</span><span>'+m+'</span>';box.appendChild(el);
+  setTimeout(()=>{el.classList.add('fade');setTimeout(()=>{if(el.parentNode)el.remove()},400)},2600)
 }
 
 // ─── NAV ───
@@ -487,12 +531,6 @@ document.querySelectorAll('.sidebar-nav button[data-t]').forEach(b=>{
 function modal(html){document.getElementById('modalBody').innerHTML=html;document.getElementById('modalBg').classList.add('open')}
 function closeModal(){document.getElementById('modalBg').classList.remove('open')}
 document.getElementById('modalBg').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()})
-
-function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39'})[c])}
-function fd(f){if(!f)return'';const d=new Date(f+'T12:00:00');return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}
-function selM(val){return MESES.map(m=>`<option value="${m}"${m===val?' selected':''}>${m.toLowerCase()}</option>`).join('')}
-function selMi(val){return S.miembros.map(m=>`<option value="${esc(m.nombre)}"${m.nombre===val?' selected':''}>${esc(m.nombre)}${m.apodo?' ('+esc(m.apodo)+')':''}</option>`).join('')}
-
 // ─── RENDER ───
 function renderAll(){renderDashboard();renderMiembros();renderTablas();renderBingos();renderRifa();renderAhorros();renderCumple();renderCumpleFechas();renderPrestamos();renderEstadoCuenta()}
 
@@ -521,14 +559,15 @@ function computeEstadoCuenta(){
     // Conecta Tablas con Bingo: toda fecha que el miembro NO tenga marcada
     // como "Sí" (la marcó "No" o nunca la tocó) cuenta como no pagada.
     const bingoDebe=Math.max(totalFechas-asOk,0);
-    const bingoTotal=Math.round((bingoGanado-bingoDebe)*100)/100;
+    const tablasPagadas=asOk;
+    const bingoTotal=tablasPagadas+bingoGanado-bingoDebe;
     const saldoNeto=ahorroTotal-pendiente;
     let estadoGeneral='al_dia';
     if(pendiente>0&&asPct<50)estadoGeneral='moroso';else if(pendiente>0)estadoGeneral='con_deuda';
     return {id:m.id,nombre:m.nombre,apodo:m.apodo,
       asistencia:{asistidas:asOk,total:totalFechas,pct:asPct},
       rifa:{participaciones:riParticip,totalFechas:S.fechasRifa.length},
-      bingo:bingoTotal,bingoGanado:Math.round(bingoGanado*100)/100,bingoDebe,
+      bingo:bingoTotal,bingoGanado,bingoDebe,tablasPagadas,
       ahorros:{normal:aN,cumple:aC,rifa:aR,total:ahorroTotal},
       cumpleAportes:cumpleTotal,cumpleFecha:cumpleFechaObj?cumpleFechaObj.fecha:null,
       prestamos:{pendiente,pagado},saldoNeto,estadoGeneral,prestamosDetalle:prestamosM}
@@ -542,9 +581,9 @@ function renderEstadoCuenta(){
   const totalAhorros=data.reduce((s,d)=>s+d.ahorros.total,0);
   const morosos=data.filter(d=>d.estadoGeneral==='moroso').length;
   document.getElementById('ecStatsGrid').innerHTML=
-    `<div class="stat blue"><div class="l">Tablas Pagadas</div><div class="v">${avgAsis}%</div></div>
-     <div class="stat gr"><div class="l">Ahorros Totales</div><div class="v">$${totalAhorros.toFixed(2)}</div></div>
-     <div class="stat re"><div class="l">Préstamos Pendientes</div><div class="v">$${totalPend.toFixed(2)}</div></div>
+    `<div class="stat blue"><div class="l">Asistencia Promedio</div><div class="v">${avgAsis}%</div></div>
+     <div class="stat gr"><div class="l">Ahorros Totales</div><div class="v">$${$f(totalAhorros)}</div></div>
+     <div class="stat re"><div class="l">Préstamos Pendientes</div><div class="v">$${$f(totalPend)}</div></div>
      <div class="stat ${morosos>0?'re':'gr'}"><div class="l">Miembros en Mora</div><div class="v">${morosos}</div></div>`;
   const sel=document.getElementById('ecSelMiembro');
   const cur=sel.value;
@@ -554,9 +593,8 @@ function renderEstadoCuenta(){
     const pill=d.estadoGeneral==='al_dia'?'<span class="pill pill-ok">Al día</span>':d.estadoGeneral==='con_deuda'?'<span class="pill pill-warn">Con deuda</span>':'<span class="pill pill-danger">Moroso</span>';
     const abdg=d.asistencia.pct>=70?'bdg-g':d.asistencia.pct>=40?'bdg-w':'bdg-r';
     const bingoColor=d.bingo>0?'color:var(--success)':d.bingo<0?'color:var(--danger)':'color:var(--text2)';
-    const bingoTitle=d.bingoDebe>0?`title="Ganado $${d.bingoGanado.toFixed(2)} − $${d.bingoDebe.toFixed(2)} (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} no pagada${d.bingoDebe===1?'':'s'})"`:'';
-    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${abdg}">${d.asistencia.pct}%</span></td><td>${d.rifa.participaciones}</td><td class="tr fw6" style="${bingoColor}" ${bingoTitle}>${d.bingo!==0?'$'+d.bingo.toFixed(2):'—'}</td><td class="tr">$${d.ahorros.total.toFixed(2)}</td><td class="tr">${d.cumpleAportes}</td><td class="tr">$${d.prestamos.pendiente.toFixed(2)}</td><td class="tr fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">$${d.saldoNeto.toFixed(2)}</td><td>${pill}</td></tr>`
-  }).join('')||'<tr><td colspan="10" class="emp"><div class="big">◈</div>Sin datos</td></tr>';
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${abdg}">${d.asistencia.pct}%</span></td><td>${d.rifa.participaciones}</td><td class="tr">$${$f(d.tablasPagadas)}</td><td class="tr fw6" style="color:var(--success)">$${$f(d.bingoGanado)}</td><td class="tr fw6" style="${bingoColor}" title="Cuota $${$f(d.tablasPagadas)} + Utilidad $${$f(d.bingoGanado)} − Debe $${$f(d.bingoDebe)} = Neto $${$f(d.bingo)}">$${$f(d.bingo)}</td><td class="tr">$${$f(d.ahorros.total)}</td><td class="tr">${d.cumpleAportes}</td><td class="tr">$${$f(d.prestamos.pendiente)}</td><td class="tr fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">$${$f(d.saldoNeto)}</td><td>${pill}</td></tr>`
+  }).join('')||'<tr><td colspan="12" class="emp"><div class="big">◈</div>Sin datos</td></tr>';
   renderEstadoIndividual();
 }
 
@@ -572,7 +610,7 @@ function renderEstadoIndividual(){
   tabla.style.display='none';
   const pillMap={al_dia:['Al día','pill-ok'],con_deuda:['Con deuda','pill-warn'],moroso:['Moroso','pill-danger']};
   const [plabel,pclass]=pillMap[d.estadoGeneral];
-  const prestamosRows=d.prestamosDetalle.length?d.prestamosDetalle.map(p=>`<tr><td class="tl">${p.fecha?fd(p.fecha):'—'}</td><td class="tr">$${p.monto.toFixed(2)}</td><td class="tl">${p.obs||'—'}</td><td>${p.estado==='pagado'?'<span class="pill pill-ok">Pagado</span>':'<span class="pill pill-warn">Pendiente</span>'}</td></tr>`).join(''):'<tr><td colspan="4" class="emp">Sin préstamos registrados</td></tr>';
+  const prestamosRows=d.prestamosDetalle.length?d.prestamosDetalle.map(p=>`<tr><td class="tl">${p.fecha?fd(p.fecha):'—'}</td><td class="tr">$${$f(p.monto)}</td><td class="tl">${p.obs||'—'}</td><td>${p.estado==='pagado'?'<span class="pill pill-ok">Pagado</span>':'<span class="pill pill-warn">Pendiente</span>'}</td></tr>`).join(''):'<tr><td colspan="4" class="emp">Sin préstamos registrados</td></tr>';
   box.innerHTML=`
     <div class="ec-card">
       <div class="ec-head">
@@ -582,17 +620,20 @@ function renderEstadoIndividual(){
       <div class="ec-grid">
         <div class="ec-item"><div class="l">Tablas Pagadas</div><div class="v">${d.asistencia.asistidas}/${d.asistencia.total}</div><div class="ec-bar"><div class="ec-bar-fill" style="width:${d.asistencia.pct}%"></div></div><div style="font-size:11px;color:var(--text2);margin-top:3px">${d.asistencia.pct}%</div></div>
         <div class="ec-item"><div class="l">Rifa Grupal</div><div class="v">${d.rifa.participaciones}</div><div style="font-size:11px;color:var(--text2)">participaciones de ${d.rifa.totalFechas}</div></div>
-        <div class="ec-item" style="background:${d.bingo<0?'#fef2f2':'#ecfdf5'};border-color:${d.bingo<0?'var(--danger)':'var(--success)'}"><div class="l">Bingo (neto)</div><div class="v" style="color:${d.bingo<0?'var(--danger)':'var(--success)'}">$${d.bingo.toFixed(2)}</div>${d.bingoDebe>0?`<div style="font-size:11px;color:var(--text2);margin-top:2px">Ganado $${d.bingoGanado.toFixed(2)} − $${d.bingoDebe.toFixed(2)} (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} no pagada${d.bingoDebe===1?'':'s'})</div>`:''}</div>
-        <div class="ec-item"><div class="l">Ahorro Normal</div><div class="v">$${d.ahorros.normal.toFixed(2)}</div></div>
-        <div class="ec-item"><div class="l">Ahorro Cumpleaños</div><div class="v">$${d.ahorros.cumple.toFixed(2)}</div></div>
-        <div class="ec-item"><div class="l">Ahorro Rifa</div><div class="v">$${d.ahorros.rifa.toFixed(2)}</div></div>
-        <div class="ec-item" style="background:#eef2ff;border-color:var(--accent)"><div class="l">Total Ahorros</div><div class="v" style="color:var(--accent)">$${d.ahorros.total.toFixed(2)}</div></div>
+        <div class="ec-item" style="background:var(--success-l);border-color:var(--success)"><div class="l">Cuota Pagada</div><div class="v" style="color:var(--success)">$${$f(d.tablasPagadas)}</div></div>
+        <div class="ec-item" style="background:var(--success-l);border-color:var(--success)"><div class="l">Utilidad del Bingo</div><div class="v" style="color:var(--success)">$${$f(d.bingoGanado)}</div></div>
+        <div class="ec-item" style="background:${d.bingoDebe>0?'var(--danger-l)':'var(--border-l)'};border-color:${d.bingoDebe>0?'var(--danger)':'var(--border)'}"><div class="l">Debe (cuotas sin pagar)</div><div class="v" style="color:${d.bingoDebe>0?'var(--danger)':'var(--text2)'}">${d.bingoDebe>0?'−':''}$${$f(d.bingoDebe)}</div></div>
+        <div class="ec-item" style="background:var(--accent-l);border-color:var(--accent)"><div class="l">Neto del Bingo</div><div class="v" style="color:var(--accent)">$${$f(d.bingo)}</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Cuota + Utilidad − Debe</div></div>
+        <div class="ec-item"><div class="l">Ahorro Normal</div><div class="v">$${$f(d.ahorros.normal)}</div></div>
+        <div class="ec-item"><div class="l">Ahorro Cumpleaños</div><div class="v">$${$f(d.ahorros.cumple)}</div></div>
+        <div class="ec-item"><div class="l">Ahorro Rifa</div><div class="v">$${$f(d.ahorros.rifa)}</div></div>
+        <div class="ec-item" style="background:var(--accent-l);border-color:var(--accent)"><div class="l">Total Ahorros</div><div class="v" style="color:var(--accent)">$${$f(d.ahorros.total)}</div></div>
         <div class="ec-item"><div class="l">Aportes Cumpleaños</div><div class="v">${d.cumpleAportes}</div></div>
-        <div class="ec-item" style="background:#fef2f2;border-color:var(--danger)"><div class="l">Préstamo Pendiente</div><div class="v" style="color:var(--danger)">$${d.prestamos.pendiente.toFixed(2)}</div></div>
-        <div class="ec-item" style="background:${d.saldoNeto<0?'#fef2f2':'#ecfdf5'};border-color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}"><div class="l">Saldo Neto</div><div class="v" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">$${d.saldoNeto.toFixed(2)}</div></div>
+        <div class="ec-item" style="background:var(--danger-l);border-color:var(--danger)"><div class="l">Préstamo Pendiente</div><div class="v" style="color:var(--danger)">$${$f(d.prestamos.pendiente)}</div></div>
+        <div class="ec-item" style="background:${d.saldoNeto<0?'var(--danger-l)':'var(--success-l)'};border-color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}"><div class="l">Saldo Neto</div><div class="v" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">$${$f(d.saldoNeto)}</div></div>
       </div>
-      <div style="margin-top:16px">
-        <div class="card-t" style="border-radius:6px;margin-bottom:0">Detalle de Préstamos</div>
+      <div style="margin-top:20px">
+        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Detalle de Préstamos</div>
         <div class="tw"><table><thead><tr><th class="tl">Fecha</th><th class="tr">Monto</th><th class="tl">Obs.</th><th>Estado</th></tr></thead><tbody>${prestamosRows}</tbody></table></div>
       </div>
     </div>`;
@@ -606,15 +647,15 @@ function renderDashboard(){
   document.getElementById('statsGrid').innerHTML=
     `<div class="stat blue"><div class="l">Miembros</div><div class="v">${m.length}</div></div>
      <div class="stat gr"><div class="l">Tablas</div><div class="v">${S.fechasTablas.length}</div></div>
-     <div class="stat"><div class="l">Bingo</div><div class="v">$${tb.toFixed(2)}</div></div>
-     <div class="stat or"><div class="l">Rifa</div><div class="v">$${tr.toFixed(2)}</div></div>
-     <div class="stat gr"><div class="l">Ahorros</div><div class="v">$${ta.toFixed(2)}</div></div>
-     <div class="stat re"><div class="l">Préstamos Pend.</div><div class="v">$${tp.toFixed(2)}</div></div>`;
+     <div class="stat"><div class="l">Bingo</div><div class="v">$${$f(tb)}</div></div>
+     <div class="stat or"><div class="l">Rifa</div><div class="v">$${$f(tr)}</div></div>
+     <div class="stat gr"><div class="l">Ahorros</div><div class="v">$${$f(ta)}</div></div>
+     <div class="stat re"><div class="l">Préstamos Pend.</div><div class="v">$${$f(tp)}</div></div>`;
   const data=computeEstadoCuenta();
   const pillMap={al_dia:['Al día','pill-ok'],con_deuda:['Con deuda','pill-warn'],moroso:['Moroso','pill-danger']};
   document.getElementById('dashBody').innerHTML=data.map((d,i)=>{
     const [plabel,pclass]=pillMap[d.estadoGeneral];
-    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.asistidas>0?'bdg-g':''}">${d.asistencia.asistidas}</span></td><td>${d.rifa.participaciones}</td><td>$${d.ahorros.normal.toFixed(2)}</td><td>$${d.ahorros.cumple.toFixed(2)}</td><td>$${d.ahorros.rifa.toFixed(2)}</td><td class="fw6">$${d.ahorros.total.toFixed(2)}</td><td>$${d.prestamos.pendiente.toFixed(2)}</td><td class="fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">$${d.saldoNeto.toFixed(2)}</td><td><span class="pill ${pclass}">${plabel}</span></td></tr>`
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.asistidas>0?'bdg-g':''}">${d.asistencia.asistidas}</span></td><td>${d.rifa.participaciones}</td><td>$${$f(d.ahorros.normal)}</td><td>$${$f(d.ahorros.cumple)}</td><td>$${$f(d.ahorros.rifa)}</td><td class="fw6">$${$f(d.ahorros.total)}</td><td>$${$f(d.prestamos.pendiente)}</td><td class="fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">$${$f(d.saldoNeto)}</td><td><span class="pill ${pclass}">${plabel}</span></td></tr>`
   }).join('')||'<tr><td colspan="11" class="emp"><div class="big">⊙</div>Sin miembros</td></tr>'
 }
 
@@ -648,7 +689,7 @@ function renderTablas(){
     }).join('')+'<td></td></tr>'+
     '<tr style="background:#eef2ff;font-weight:700"><td></td><td class="tl">Monto Bingo</td>'+fs.map(f=>{
       const total=S.miembros.reduce((s,m)=>s+((S.asistencias[m.nombre]?.[f])||0),0);
-      return `<td>$${total.toFixed(2)}</td>`
+      return `<td>$${$f(total)}</td>`
     }).join('')+'<td></td></tr>';
     document.getElementById('tablasBody').insertAdjacentHTML('beforeend', footer);
   }
@@ -697,14 +738,14 @@ function renderBingos(){
   document.getElementById('bingoBody').innerHTML=S.bingos.map(b=>{
     const a=b.asistentes||S.miembros.length||1, ad=parseFloat(b.adicional||0), total=b.monto+ad;
     return `<tr><td><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarFechaBingo(${b.id},'${b.fecha}')" title="Click para cambiar fecha">${fd(b.fecha)} ✎</span></td>
-      <td class="tr fw6">$${b.monto.toFixed(2)}</td>
-      <td class="tr"><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarAdicional(${b.id},${ad})" title="Click para editar">$${ad.toFixed(2)} ✎</span></td>
-      <td class="tr fw6" style="color:var(--accent)">$${total.toFixed(2)}</td>
-      <td class="tr">$${(total/a).toFixed(2)}</td>
-      <td><span class="bdg" style="cursor:pointer;background:#f1f5f9;color:var(--text);padding:2px 8px" onclick="editarAsistentes(${b.id},${a})" title="Click para cambiar">${a} ✎</span></td>
+      <td class="tr fw6">$${$f(b.monto)}</td>
+      <td class="tr"><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarAdicional(${b.id},${ad})" title="Click para editar">$${$f(ad)} ✎</span></td>
+      <td class="tr fw6" style="color:var(--accent)">$${$f(total)}</td>
+      <td class="tr">$${$f(total/a)}</td>
+      <td><span class="bdg" style="cursor:pointer;background:var(--border-l);color:var(--text);padding:2px 10px" onclick="editarAsistentes(${b.id},${a})" title="Click para cambiar">${a} ✎</span></td>
       <td><button class="btn btn-gh btn-xs" onclick="modalReparto(${b.id})" title="Distribuir">⊞ Reparto</button> <button class="btn btn-r btn-xs" onclick="delBingo(${b.id})">✕</button></td></tr>`
   }).join('')||'<tr><td colspan="8" class="emp"><div class="big">⊟</div>Sin bingos</td></tr>';
-  document.getElementById('bingoTotal').textContent=S.bingos.reduce((s,b)=>s+b.monto+(parseFloat(b.adicional||0)),0).toFixed(2)
+  document.getElementById('bingoTotal').textContent=$f(S.bingos.reduce((s,b)=>s+b.monto+(parseFloat(b.adicional||0)),0))
 }
 
 function editarAsistentes(id, actual){
@@ -727,11 +768,11 @@ async function modalReparto(id){
       <label for="repCk_${m.miembro_id}" style="flex:1;margin:0;font-size:13px;cursor:pointer">${esc(m.nombre)}</label>
       ${badge}
       <span style="font-size:11px;color:var(--text2)">$</span>
-      <input type="number" id="repM_${m.miembro_id}" step="0.01" min="0" value="${monto.toFixed(2)}" ${recibe?'':'disabled'} style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:13px;text-align:right" oninput="repSuma()">
+      <input type="number" id="repM_${m.miembro_id}" step="0.01" min="0" value="${$f(monto)}" ${recibe?'':'disabled'} style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:13px;text-align:right" oninput="repSuma()">
     </div>`
   }).join('');
-  modal(`<h3>Reparto — Total: $${total.toFixed(2)}</h3>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:8px">Cada uno que recibe se lleva <strong>$${coge.toFixed(2)}</strong> por defecto. Desmarcá a quien NO recibe, o cambiá el monto si ese día ganó algo extra (queda fijo y ya no se recalcula solo).</p>
+  modal(`<h3>Reparto — Total: $${$f(total)}</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:8px">Cada uno que recibe se lleva <strong>$${$f(coge)}</strong> por defecto. Desmarcá a quien NO recibe, o cambiá el monto si ese día ganó algo extra (queda fijo y ya no se recalcula solo).</p>
     <div style="margin-bottom:6px;font-size:13px;font-weight:600">Distribuido: <span id="repSuma" style="color:var(--accent)">$0.00</span></div>
     ${items}
     <div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="guardarReparto(${id})">Guardar</button></div>`);
@@ -742,7 +783,7 @@ function repToggle(miembroId){
   const ck=document.getElementById('repCk_'+miembroId);
   const inp=document.getElementById('repM_'+miembroId);
   inp.disabled=!ck.checked;
-  inp.value=ck.checked?_repartoCoge.toFixed(2):'0';
+  inp.value=$f(ck.checked?_repartoCoge:0);
   repSuma();
 }
 
@@ -752,7 +793,7 @@ function repSuma(){
   const inputs=document.querySelectorAll('[id^="repM_"]');
   let suma=0;
   inputs.forEach(i=>{if(!i.disabled)suma+=parseFloat(i.value)||0});
-  s.textContent='$'+suma.toFixed(2);
+  s.textContent='$'+$f(suma);
 }
 
 async function guardarReparto(id){
@@ -826,7 +867,7 @@ function renderRifa(){
     const s=fs.reduce((s,f)=>s+((S.rifas[m.nombre]?.[f])||0),0);tg+=s;
     return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${c}<td class="fw6">${s}</td></tr>`
   }).join('')||'<tr><td colspan="20" class="emp"><div class="big">⊡</div>Sin registros</td></tr>';
-  document.getElementById('rifaTotal').textContent=tg.toFixed(2)
+  document.getElementById('rifaTotal').textContent=$f(tg)
 }
 function modalRifa(){
   modal(`<h3>Registrar Rifa</h3><div class="fr"><label>Fecha</label><input type="date" id="fRiFecha"></div><div class="fr"><label>Miembro</label><select id="fRiMiembro"><option value="">Seleccionar...</option>${selMi()}</select></div><div class="fr"><label>Cantidad</label><input type="number" id="fRiVal" min="0" step="1" value="1"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveRifa()">Guardar</button></div>`)
@@ -841,13 +882,13 @@ function renderAhorros(){
   [['ahNHead','ahNBody','ahorroNormal'],['ahCHead','ahCBody','ahorroCumple'],['ahRHead','ahRBody','ahorroRifa']].forEach(([hid,bid,key])=>{
     document.getElementById(hid).innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+MESES.map(m=>`<th>${m.slice(0,3)}</th>`).join('')+'<th class="tr">Total</th></tr>';
     document.getElementById(bid).innerHTML=S.miembros.map((mi,i)=>{
-      const c=MESES.map(me=>{const v=(S[key][mi.nombre]?.[me])||0;return `<td>${v?`$${v.toFixed(2)}`:'—'}</td>`}).join('');
+      const c=MESES.map(me=>{const v=(S[key][mi.nombre]?.[me])||0;return `<td>${v?`$${$f(v)}`:'—'}</td>`}).join('');
       const s=MESES.reduce((s,me)=>s+((S[key][mi.nombre]?.[me])||0),0);
-      return `<tr><td>${i+1}</td><td class="tl fw6">${esc(mi.nombre)}</td>${c}<td class="tr fw6">$${s.toFixed(2)}</td></tr>`
+      return `<tr><td>${i+1}</td><td class="tl fw6">${esc(mi.nombre)}</td>${c}<td class="tr fw6">$${$f(s)}</td></tr>`
     }).join('')||'<tr><td colspan="15" class="emp"><div class="big">⊠</div>Sin datos</td></tr>'
   });
   let tg=0;S.miembros.forEach(mi=>{['ahorroNormal','ahorroCumple','ahorroRifa'].forEach(k=>{tg+=MESES.reduce((s,me)=>s+((S[k][mi.nombre]?.[me])||0),0)})});
-  document.getElementById('ahorroGral').textContent=tg.toFixed(2)
+  document.getElementById('ahorroGral').textContent=$f(tg)
 }
 function modalAhorro(tipo){
   const lb={normal:'Ahorro Normal',cumple:'Ahorro Cumpleaños',rifa:'Ahorro Rifa'};
@@ -898,9 +939,9 @@ function renderPrestamos(){
   document.getElementById('prestamosBody').innerHTML=S.prestamos.map((p,i)=>{
     if(p.estado!=='pagado')t+=p.monto;
     const pill=p.estado==='pagado'?'<span class="pill pill-ok">✓ Pagado</span>':'<span class="pill pill-warn">⏳ Pendiente</span>';
-    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(p.nombre)}</td><td class="tr fw6">$${p.monto.toFixed(2)}</td><td class="tl">${p.obs?'<span class="tag">'+esc(p.obs)+'</span>':'<span class="tag">—</span>'}</td><td><span style="cursor:pointer" onclick="togglePrestamo(${p.id})" title="Click para cambiar estado">${pill}</span></td><td><button class="btn btn-r btn-xs" onclick="delPrestamo(${p.id})">✕</button></td></tr>`
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(p.nombre)}</td><td class="tr fw6">$${$f(p.monto)}</td><td class="tl">${p.obs?'<span class="tag">'+esc(p.obs)+'</span>':'<span class="tag">—</span>'}</td><td><span style="cursor:pointer" onclick="togglePrestamo(${p.id})" title="Click para cambiar estado">${pill}</span></td><td><button class="btn btn-r btn-xs" onclick="delPrestamo(${p.id})">✕</button></td></tr>`
   }).join('')||'<tr><td colspan="6" class="emp"><div class="big">⊡</div>Sin préstamos</td></tr>';
-  document.getElementById('prestamosTotal').textContent=t.toFixed(2)
+  document.getElementById('prestamosTotal').textContent=$f(t)
 }
 async function togglePrestamo(id){
   try{await api('POST',`/api/prestamos/${id}/estado`);toast('Estado actualizado');await loadAll()}catch(e){toast(e.message,'e')}
