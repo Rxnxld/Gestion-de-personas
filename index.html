@@ -512,24 +512,18 @@ function computeEstadoCuenta(){
     const prestamosM=S.prestamos.filter(p=>p.nombre===m.nombre);
     const pendiente=prestamosM.filter(p=>p.estado!=='pagado').reduce((s,p)=>s+p.monto,0);
     const pagado=prestamosM.filter(p=>p.estado==='pagado').reduce((s,p)=>s+p.monto,0);
-    const bingoGanado=S.bingos.reduce((s,b)=>{
+    const bingoTotal=S.bingos.reduce((s,b)=>{
       const d=(b.distribucion||[]).find(x=>x.miembro_id===m.id);
       if(!d||!d.recibe)return s;
-      const a=b.asistentes||S.miembros.length||1;
-      const coge=Math.round(100*((b.monto+parseFloat(b.adicional||0))/a))/100;
-      return s+coge;
-    },0);
-    // Conecta Tablas con Bingo: toda fecha que el miembro NO tenga marcada
-    // como "Sí" (la marcó "No" o nunca la tocó) cuenta como no pagada.
-    const bingoDebe=Math.max(totalFechas-asOk,0);
-    const bingoTotal=Math.round((bingoGanado-bingoDebe)*100)/100;
+      return s+Math.round(100*(parseFloat(d.monto_asignado)||0));
+    },0)/100;
     const saldoNeto=ahorroTotal-pendiente;
     let estadoGeneral='al_dia';
     if(pendiente>0&&asPct<50)estadoGeneral='moroso';else if(pendiente>0)estadoGeneral='con_deuda';
     return {id:m.id,nombre:m.nombre,apodo:m.apodo,
       asistencia:{asistidas:asOk,total:totalFechas,pct:asPct},
       rifa:{participaciones:riParticip,totalFechas:S.fechasRifa.length},
-      bingo:bingoTotal,bingoGanado:Math.round(bingoGanado*100)/100,bingoDebe,
+      bingo:bingoTotal,bingoGanado:bingoTotal,bingoDebe:0,
       ahorros:{normal:aN,cumple:aC,rifa:aR,total:ahorroTotal},
       cumpleAportes:cumpleTotal,cumpleFecha:cumpleFechaObj?cumpleFechaObj.fecha:null,
       prestamos:{pendiente,pagado},saldoNeto,estadoGeneral,prestamosDetalle:prestamosM}
@@ -555,8 +549,7 @@ function renderEstadoCuenta(){
     const pill=d.estadoGeneral==='al_dia'?'<span class="pill pill-ok">Al día</span>':d.estadoGeneral==='con_deuda'?'<span class="pill pill-warn">Con deuda</span>':'<span class="pill pill-danger">Moroso</span>';
     const abdg=d.asistencia.pct>=70?'bdg-g':d.asistencia.pct>=40?'bdg-w':'bdg-r';
     const bingoColor=d.bingo>0?'color:var(--success)':d.bingo<0?'color:var(--danger)':'color:var(--text2)';
-    const bingoTitle=d.bingoDebe>0?`title="Ganado $${d.bingoGanado.toFixed(2)} − $${d.bingoDebe.toFixed(2)} (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} no pagada${d.bingoDebe===1?'':'s'})"`:'';
-    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${abdg}">${d.asistencia.pct}%</span></td><td>${d.rifa.participaciones}</td><td class="tr fw6" style="${bingoColor}" ${bingoTitle}>${d.bingo!==0?'$'+d.bingo.toFixed(2):'—'}</td><td class="tr">$${d.ahorros.total.toFixed(2)}</td><td class="tr">${d.cumpleAportes}</td><td class="tr">$${d.prestamos.pendiente.toFixed(2)}</td><td class="tr fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">$${d.saldoNeto.toFixed(2)}</td><td>${pill}</td></tr>`
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${abdg}">${d.asistencia.pct}%</span></td><td>${d.rifa.participaciones}</td><td class="tr fw6" style="${bingoColor}">${d.bingo!==0?'$'+d.bingo.toFixed(2):'—'}</td><td class="tr">$${d.ahorros.total.toFixed(2)}</td><td class="tr">${d.cumpleAportes}</td><td class="tr">$${d.prestamos.pendiente.toFixed(2)}</td><td class="tr fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">$${d.saldoNeto.toFixed(2)}</td><td>${pill}</td></tr>`
   }).join('')||'<tr><td colspan="10" class="emp"><div class="big">◈</div>Sin datos</td></tr>';
   renderEstadoIndividual();
 }

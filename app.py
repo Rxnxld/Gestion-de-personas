@@ -686,19 +686,9 @@ def _calcular_estado_cuenta(db):
     for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):
         asis[r['miembro_id']] = r['s'] or 0
 
-    # Calcular bingo ganado por miembro usando Coge c/u directamente,
-    # para evitar errores de precisión con valores almacenados.
     bingo_dist = {}
-    all_miembros = [r['id'] for r in db.execute("SELECT id FROM miembros").fetchall()]
-    for mid in all_miembros:
-        bingo_dist[mid] = 0.0
-    for b in db.execute("SELECT id, monto, adicional, asistentes FROM bingos").fetchall():
-        a = b['asistentes'] or 1
-        coge = round((b['monto'] + (b['adicional'] or 0)) / a, 2)
-        excl = {r['miembro_id'] for r in db.execute("SELECT miembro_id FROM bingo_distribucion WHERE bingo_id=? AND recibe=FALSE", (b['id'],)).fetchall()}
-        for mid in all_miembros:
-            if mid not in excl:
-                bingo_dist[mid] = round(bingo_dist[mid] + coge, 2)
+    for r in db.execute("SELECT miembro_id, SUM(monto_asignado) s FROM bingo_distribucion WHERE recibe=TRUE GROUP BY miembro_id"):
+        bingo_dist[r['miembro_id']] = round(r['s'] or 0, 2)
 
     rifa = {}
     for r in db.execute("SELECT miembro_id, SUM(valor) s FROM rifas GROUP BY miembro_id"):
@@ -732,17 +722,12 @@ def _calcular_estado_cuenta(db):
         p = prest.get(mid, {'pendiente': 0, 'pagado': 0})
         saldo_neto = round(ahorro_total - p['pendiente'], 2)
         estado_general = 'moroso' if p['pendiente'] > 0 and as_pct < 50 else ('con_deuda' if p['pendiente'] > 0 else 'al_dia')
-        bingo_ganado = round(bingo_dist.get(mid, 0), 2)
-        # Conecta la tabla de Asistencias con la de Bingo: cualquier fecha de
-        # "Tablas de Bingo" que el miembro NO tenga marcada como "Sí" (ya sea
-        # que la marcó "No" o que nunca la tocó) cuenta como no pagada.
-        bingo_debe = max(total_fechas_tablas - as_ok, 0)
-        bingo_total = round(bingo_ganado - bingo_debe, 2)
+        bingo_val = round(bingo_dist.get(mid, 0) / 100, 2)
         resultado.append({
             'id': mid, 'nombre': m['nombre'], 'apodo': m['apodo'],
             'asistencia': {'asistidas': as_ok, 'total': total_fechas_tablas, 'pct': as_pct},
             'rifa': {'participaciones': rifa.get(mid, 0), 'totalFechas': total_fechas_rifa},
-            'bingo': bingo_total, 'bingoGanado': bingo_ganado, 'bingoDebe': bingo_debe,
+            'bingo': bingo_val, 'bingoGanado': bingo_val, 'bingoDebe': 0,
             'ahorros': {'normal': round(aN, 2), 'cumple': round(aC, 2), 'rifa': round(aR, 2), 'total': round(ahorro_total, 2)},
             'cumpleAportes': cumple.get(mid, 0),
             'cumpleFecha': cumple_fecha.get(mid),
@@ -768,7 +753,7 @@ def export_estado_cuenta_xlsx():
     ws = wb.active
     ws.title = "Estado de Cuenta"
     cols = ['N°','Nombre','Asist. (Si/Total)','Asist. %','Rifa (Participaciones)',
-            'Bingo Ganado','Tablas No Pagadas ($)','Bingo Neto ($)','Ahorro Normal','Ahorro Cumple','Ahorro Rifa','Total Ahorros',
+            'Recibido de Bingo ($)','Ahorro Normal','Ahorro Cumple','Ahorro Rifa','Total Ahorros',
             'Aportes Cumple','Préstamo Pendiente','Préstamo Pagado','Saldo Neto','Estado']
     hf = Font(bold=True, color='FFFFFF', size=11)
     hfill = PatternFill(start_color='0F172A', end_color='0F172A', fill_type='solid')
@@ -780,7 +765,7 @@ def export_estado_cuenta_xlsx():
     for i, d in enumerate(datos, 1):
         row = [
             i, d['nombre'], f"{d['asistencia']['asistidas']}/{d['asistencia']['total']}", f"{d['asistencia']['pct']}%",
-            d['rifa']['participaciones'], d['bingoGanado'], d['bingoDebe'], d['bingo'], d['ahorros']['normal'], d['ahorros']['cumple'], d['ahorros']['rifa'],
+            d['rifa']['participaciones'], d['bingo'], d['ahorros']['normal'], d['ahorros']['cumple'], d['ahorros']['rifa'],
             d['ahorros']['total'], d['cumpleAportes'], d['prestamos']['pendiente'], d['prestamos']['pagado'],
             d['saldoNeto'], estado_lbl.get(d['estadoGeneral'], d['estadoGeneral'])
         ]
