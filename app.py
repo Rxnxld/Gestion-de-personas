@@ -630,7 +630,7 @@ def get_datos_completos():
     for b in bingos:
         dist = db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE bingo_id=?", (b['id'],)).fetchall()
         b['distribucion'] = [dict(d) for d in dist] if dist else []
-    fechas_rifa = [r['nombre'] for r in db.execute("SELECT nombre FROM meses_ahorro ORDER BY orden").fetchall()]
+    fechas_rifa = [str(i) for i in range(1, 19)]
 
     ri_raw = db.execute("SELECT m.nombre, r.fecha, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id").fetchall()
     rifas = {}
@@ -673,7 +673,7 @@ def _calcular_estado_cuenta(db):
     préstamos) para producir un estado de cuenta único por miembro."""
     miembros = [dict(r) for r in db.execute("SELECT id, nombre, apodo FROM miembros ORDER BY id").fetchall()]
     total_fechas_tablas = db.execute("SELECT COUNT(*) c FROM fechas_tablas").fetchone()['c']
-    total_fechas_rifa = 12
+    total_fechas_rifa = 18
 
     asis = {}
     for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):
