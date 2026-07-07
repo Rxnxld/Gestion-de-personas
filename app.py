@@ -127,6 +127,7 @@ def init_db():
             miembro_id INTEGER NOT NULL REFERENCES miembros(id) ON DELETE CASCADE,
             recibe BOOLEAN DEFAULT TRUE,
             monto_asignado REAL DEFAULT 0,
+            personalizado BOOLEAN DEFAULT FALSE,
             UNIQUE(bingo_id, miembro_id)
         );
         -- backfill distribucion para bingos existentes sin distribucion
@@ -194,6 +195,9 @@ def init_db():
     # Migraciones para bases ya existentes (columnas nuevas en prestamos)
     c.execute("ALTER TABLE prestamos ADD COLUMN IF NOT EXISTS estado TEXT NOT NULL DEFAULT 'pendiente'")
     c.execute("ALTER TABLE prestamos ADD COLUMN IF NOT EXISTS fecha TEXT DEFAULT NULL")
+    # Marca si el monto de un miembro en un bingo fue personalizado a mano en el
+    # modal de Reparto; si es así, los recálculos automáticos no deben pisarlo.
+    c.execute("ALTER TABLE bingo_distribucion ADD COLUMN IF NOT EXISTS personalizado BOOLEAN DEFAULT FALSE")
     conn.close()
 
 # ═══════════════════════════════════════════
@@ -321,7 +325,7 @@ def set_asistencia():
         t = b['monto'] + (b['adicional'] or 0)
         a = b['asistentes'] or 1
         coge = round(t / a, 2) if a > 0 else 0
-        db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE", (coge, b['id']))
+        db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE AND personalizado=FALSE", (coge, b['id']))
     db.commit()
     return jsonify({'ok': True})
 
@@ -335,7 +339,7 @@ def get_bingos():
     db = get_db()
     bingos = [dict(r) for r in db.execute("SELECT id, fecha, monto, adicional, asistentes FROM bingos ORDER BY fecha").fetchall()]
     for b in bingos:
-        dist = db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE bingo_id=?", (b['id'],)).fetchall()
+        dist = db.execute("SELECT miembro_id, recibe, monto_asignado, personalizado FROM bingo_distribucion WHERE bingo_id=?", (b["id"],)).fetchall()
         b['distribucion'] = [dict(d) for d in dist] if dist else []
     return jsonify(bingos)
 
@@ -392,7 +396,7 @@ def update_bingo(id):
             total = b['monto'] + (b['adicional'] or 0)
             a = b['asistentes'] or 1
             coge = round(total / a, 2) if a > 0 else 0
-            db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE", (coge, id))
+            db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE AND personalizado=FALSE", (coge, id))
     db.commit()
     return jsonify({'ok': True})
 
@@ -407,12 +411,13 @@ def delete_bingo(id):
 @login_required
 def get_distribucion(id):
     db = get_db()
-    dist = {r['miembro_id']: {'recibe': r['recibe'], 'monto': r['monto_asignado']}
-            for r in db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE bingo_id=?", (id,)).fetchall()}
+    dist = {r['miembro_id']: {'recibe': r['recibe'], 'monto': r['monto_asignado'], 'personalizado': r['personalizado']}
+            for r in db.execute("SELECT miembro_id, recibe, monto_asignado, personalizado FROM bingo_distribucion WHERE bingo_id=?", (id,)).fetchall()}
     miembros = db.execute("SELECT id, nombre FROM miembros ORDER BY nombre").fetchall()
     return jsonify([{'miembro_id': m['id'], 'nombre': m['nombre'],
                      'recibe': dist.get(m['id'], {}).get('recibe', True),
-                     'monto': dist.get(m['id'], {}).get('monto', 0)} for m in miembros])
+                     'monto': dist.get(m['id'], {}).get('monto', 0),
+                     'personalizado': dist.get(m['id'], {}).get('personalizado', False)} for m in miembros])
 
 @app.route('/api/bingos/<int:id>/distribucion', methods=['PUT'])
 @login_required
@@ -421,7 +426,10 @@ def save_distribucion(id):
     db = get_db()
     db.execute("DELETE FROM bingo_distribucion WHERE bingo_id=?", (id,))
     for item in data:
-        db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado) VALUES (?, ?, ?, ?)",
+        # Guardar desde el modal de Reparto siempre marca la fila como
+        # personalizada, así los recálculos automáticos (asistencia, monto,
+        # adicional, asistentes) ya no la pisan.
+        db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado, personalizado) VALUES (?, ?, ?, ?, TRUE)",
                    (id, item['miembro_id'], item.get('recibe', True), float(item.get('monto', 0))))
     db.commit()
     return jsonify({'ok': True})
@@ -667,19 +675,12 @@ def _calcular_estado_cuenta(db):
     for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):
         asis[r['miembro_id']] = r['s'] or 0
 
+    # monto_asignado en bingo_distribucion ya refleja el valor real que a cada
+    # miembro le toca (auto-calculado o personalizado a mano en el Reparto),
+    # así que basta con sumarlo directamente para quienes reciben.
     bingo_dist = {}
-    all_bingos = [dict(r) for r in db.execute("SELECT id, monto, adicional, asistentes FROM bingos").fetchall()]
-    for b in all_bingos:
-        a = b['asistentes'] or 1
-        coge_default = round((b['monto'] + (b['adicional'] or 0)) / a, 2)
-        dist_rows = db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE bingo_id=?", (b['id'],)).fetchall()
-        for d in dist_rows:
-            if not d['recibe']:
-                continue
-            # Usa el monto realmente asignado (personalizado en el reparto) si existe;
-            # si no fue personalizado, usa el "Coge c/u" (reparto parejo) por defecto.
-            monto = d['monto_asignado'] if d['monto_asignado'] else coge_default
-            bingo_dist[d['miembro_id']] = bingo_dist.get(d['miembro_id'], 0) + monto
+    for r in db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE recibe=TRUE"):
+        bingo_dist[r['miembro_id']] = bingo_dist.get(r['miembro_id'], 0) + (r['monto_asignado'] or 0)
 
     rifa = {}
     for r in db.execute("SELECT miembro_id, SUM(valor) s FROM rifas GROUP BY miembro_id"):

@@ -515,13 +515,8 @@ function computeEstadoCuenta(){
     const bingoTotal=S.bingos.reduce((s,b)=>{
       const d=(b.distribucion||[]).find(x=>x.miembro_id===m.id);
       if(!d||!d.recibe)return s;
-      const a=b.asistentes||S.miembros.length||1;
-      const cogeDefault=(b.monto+parseFloat(b.adicional||0))/a;
-      // Usa el monto realmente asignado (personalizado en el reparto) si existe;
-      // si no fue personalizado, usa el "Coge c/u" por defecto.
-      const asignado=parseFloat(d.monto_asignado);
-      const monto=(!isNaN(asignado)&&asignado!==0)?asignado:cogeDefault;
-      return s+monto;
+      // monto_asignado ya refleja el valor real (auto o personalizado en el Reparto)
+      return s+(parseFloat(d.monto_asignado)||0);
     },0);
     const saldoNeto=ahorroTotal-pendiente;
     let estadoGeneral='al_dia';
@@ -719,15 +714,17 @@ async function modalReparto(id){
   const items=r.map(m=>{
     const recibe=m.recibe!==false;
     const monto=recibe?(m.monto||coge):0;
+    const badge=m.personalizado?'<span title="Monto personalizado: no se recalcula automáticamente" style="font-size:10px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px">personalizado</span>':'';
     return `<div class="fr" style="display:flex;flex-direction:row;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
       <input type="checkbox" id="repCk_${m.miembro_id}" ${recibe?'checked':''} onchange="repToggle(${m.miembro_id},${total/a})" style="width:16px;height:16px">
       <label for="repCk_${m.miembro_id}" style="flex:1;margin:0;font-size:13px;cursor:pointer">${esc(m.nombre)}</label>
+      ${badge}
       <span style="font-size:11px;color:var(--text2)">$</span>
       <input type="number" id="repM_${m.miembro_id}" step="0.01" min="0" value="${monto.toFixed(2)}" ${recibe?'':'disabled'} style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:13px;text-align:right" oninput="repSuma()">
     </div>`
   }).join('');
   modal(`<h3>Reparto — Total: $${total.toFixed(2)}</h3>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:8px">Cada uno recibe <strong>$${coge.toFixed(2)}</strong>. Desactivá quienes no reciben.</p>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:8px">Cada uno recibe <strong>$${coge.toFixed(2)}</strong>. Desactivá quienes no reciben, o cambiá el monto para personalizarlo (queda fijo y ya no se recalcula solo).</p>
     <div style="margin-bottom:6px;font-size:13px;font-weight:600">Distribuido: <span id="repSuma" style="color:var(--accent)">$0.00</span></div>
     ${items}
     <div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="guardarReparto(${id})">Guardar</button></div>`);
