@@ -324,7 +324,7 @@ def set_asistencia():
     if b:
         t = b['monto'] + (b['adicional'] or 0)
         a = b['asistentes'] or 1
-        coge = round(t / a, 2) if a > 0 else 0
+        coge = t / a if a > 0 else 0
         db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE AND personalizado=FALSE", (coge, b['id']))
     db.commit()
     return jsonify({'ok': True})
@@ -360,7 +360,7 @@ def add_bingo():
         coge = total / int(asistentes) if int(asistentes) > 0 else 0
         for m in todos:
             db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado) VALUES (?, ?, TRUE, ?)",
-                       (bingo_id, m['id'], round(coge, 2)))
+                       (bingo_id, m['id'], coge))
         try:
             db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (data['fecha'],))
         except psycopg2.IntegrityError:
@@ -395,7 +395,7 @@ def update_bingo(id):
         if b:
             total = b['monto'] + (b['adicional'] or 0)
             a = b['asistentes'] or 1
-            coge = round(total / a, 2) if a > 0 else 0
+            coge = total / a if a > 0 else 0
             db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE AND personalizado=FALSE", (coge, id))
     db.commit()
     return jsonify({'ok': True})
@@ -688,7 +688,7 @@ def _calcular_estado_cuenta(db):
 
     bingo_dist = {}
     for r in db.execute("SELECT miembro_id, SUM(monto_asignado) s FROM bingo_distribucion WHERE recibe=TRUE GROUP BY miembro_id"):
-        bingo_dist[r['miembro_id']] = round(r['s'] or 0, 2)
+        bingo_dist[r['miembro_id']] = r['s'] or 0
 
     rifa = {}
     for r in db.execute("SELECT miembro_id, SUM(valor) s FROM rifas GROUP BY miembro_id"):
@@ -722,9 +722,9 @@ def _calcular_estado_cuenta(db):
         p = prest.get(mid, {'pendiente': 0, 'pagado': 0})
         saldo_neto = round(ahorro_total - p['pendiente'], 2)
         estado_general = 'moroso' if p['pendiente'] > 0 and as_pct < 50 else ('con_deuda' if p['pendiente'] > 0 else 'al_dia')
-        bingo_ganado = round(bingo_dist.get(mid, 0), 2)
+        bingo_ganado = bingo_dist.get(mid, 0)
         bingo_debe = max(total_fechas_tablas - as_ok, 0)
-        bingo_total = round(bingo_ganado - bingo_debe, 2)
+        bingo_total = bingo_ganado - bingo_debe
         resultado.append({
             'id': mid, 'nombre': m['nombre'], 'apodo': m['apodo'],
             'asistencia': {'asistidas': as_ok, 'total': total_fechas_tablas, 'pct': as_pct},
