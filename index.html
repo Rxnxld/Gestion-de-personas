@@ -1007,7 +1007,7 @@ async function saveAbono(id){
   const m=parseFloat(document.getElementById('fAbonoMonto').value);
   if(isNaN(m)||m<=0){toast('Ingresá un monto válido','e');return}
   const f=document.getElementById('fAbonoFecha').value;
-  try{const r=await api('POST','/api/prestamos/'+id+'/abono',{prestamo_id:id,monto:m,fecha:f||null});toast('Abono registrado · Saldo: $'+r.saldo);closeModal();await loadAll()}
+  try{const r=await api('POST','/api/prestamos/'+id+'/abono',{monto:m,fecha:f||null});toast('Abono registrado · Saldo: $'+r.saldo);closeModal();await loadAll()}
   catch(e){toast(e.message,'e')}
 }
 function modalPrestamo(){

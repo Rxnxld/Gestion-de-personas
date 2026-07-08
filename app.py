@@ -623,10 +623,10 @@ def toggle_prestamo_estado(id):
 
 @app.route('/api/prestamos/<int:id>/abono', methods=['POST'])
 @login_required
-def add_abono():
+def add_abono(id):
     data = request.json
     db = get_db()
-    row = db.execute("SELECT id, monto, COALESCE(pagado,0) as pagado FROM prestamos WHERE id=?", (data['prestamo_id'],)).fetchone()
+    row = db.execute("SELECT id, monto, COALESCE(pagado,0) as pagado FROM prestamos WHERE id=?", (id,)).fetchone()
     if not row: return jsonify({'error':'Préstamo no encontrado'}), 404
     monto = float(data['monto'])
     if monto <= 0: return jsonify({'error':'Monto debe ser positivo'}), 400
