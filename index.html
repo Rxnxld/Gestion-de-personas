@@ -338,7 +338,7 @@ tbody tr:nth-child(even){background:#f8fafc}
       <!-- PRÉSTAMOS -->
       <div id="tb-prestamos" class="tb">
         <div class="page-h"><h3>Préstamos</h3><button class="btn btn-p btn-sm" onclick="modalPrestamo()">+ Nuevo</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/prestamos')">⬇ Excel</button></div>
-        <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th class="tr">Monto</th><th class="tl">Obs</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="prestamosBody"></tbody></table></div></div></div>
+        <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th class="tr">Monto</th><th class="tr">Pagado</th><th class="tr">Saldo</th><th class="tl">Obs</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="prestamosBody"></tbody></table></div></div></div>
         <div class="card" style="background:#fef2f2;border-color:var(--danger)"><div style="font-size:15px;font-weight:700;color:var(--danger)">Total Pendiente: $<span id="prestamosTotal">0.00</span></div></div>
       </div>
 
@@ -597,7 +597,10 @@ function renderEstadoIndividual(){
   tabla.style.display='none';
   function b(t){return t==='al_dia'?'ok':t==='con_deuda'?'warn':'danger'}
   function bl(t){return t==='al_dia'?'Al día':t==='con_deuda'?'Con deuda':'Moroso'}
-  const prestamosRows=d.prestamosDetalle.length?d.prestamosDetalle.map(p=>`<tr><td class="tl">${p.fecha?fd(p.fecha):'—'}</td><td class="tr" style="font-weight:600">$${$f(p.monto)}</td><td class="tl">${esc(p.obs||'—')}</td><td>${p.estado==='pagado'?'<span class="ec-badge ok">Pagado</span>':'<span class="ec-badge warn">Pendiente</span>'}</td></tr>`).join(''):'<tr><td colspan="4" class="emp" style="padding:16px">Sin préstamos registrados</td></tr>';
+  const prestamosRows=d.prestamosDetalle.length?d.prestamosDetalle.map(p=>{
+    const saldo=p.monto-(p.pagado||0);
+    return `<tr><td class="tl">${p.fecha?fd(p.fecha):'—'}</td><td class="tr" style="font-weight:600">$${$f(p.monto)}</td><td class="tr">${p.pagado?'$'+$f(p.pagado):'—'}</td><td class="tr fw6" style="color:${saldo>0?'var(--danger)':'var(--success)'}">$${$f(saldo)}</td><td class="tl">${esc(p.obs||'—')}</td><td>${p.estado==='pagado'?'<span class="ec-badge ok">Pagado</span>':'<span class="ec-badge warn">Pendiente</span>'}</td></tr>`
+  }).join(''):'<tr><td colspan="6" class="emp" style="padding:16px">Sin préstamos registrados</td></tr>';
   const bnetoColor=d.bingo>0?'var(--success)':d.bingo<0?'var(--danger)':'var(--text2)';
   const bnetoBg=d.bingo>0?'#ecfdf5':d.bingo<0?'#fef2f2':'#f8fafc';
   box.innerHTML=`
@@ -661,7 +664,7 @@ function renderEstadoIndividual(){
       </div>
       <div style="margin-top:20px;padding-top:16px;border-top:2px solid #f1f5f9">
         <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text)">📋 Historial de Préstamos</div>
-        <div class="tw" style="border:1px solid var(--border-l);border-radius:8px"><table style="font-size:12px"><thead><tr><th class="tl" style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Fecha</th><th class="tr" style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Monto</th><th class="tl" style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Obs.</th><th style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Estado</th></tr></thead><tbody>${prestamosRows}</tbody></table></div>
+        <div class="tw" style="border:1px solid var(--border-l);border-radius:8px"><table style="font-size:12px"><thead><tr><th class="tl" style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Fecha</th><th class="tr" style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Monto</th><th class="tr" style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Pagado</th><th class="tr" style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Saldo</th><th class="tl" style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Obs.</th><th style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Estado</th></tr></thead><tbody>${prestamosRows}</tbody></table></div>
       </div>
     </div>`;
 }
@@ -986,14 +989,26 @@ async function delCumpleFecha(i){
 function renderPrestamos(){
   let t=0;
   document.getElementById('prestamosBody').innerHTML=S.prestamos.map((p,i)=>{
-    if(p.estado!=='pagado')t+=p.monto;
+    const saldo=p.monto-(p.pagado||0);
+    if(p.estado!=='pagado')t+=saldo;
     const pill=p.estado==='pagado'?'<span class="pill pill-ok">✓ Pagado</span>':'<span class="pill pill-warn">⏳ Pendiente</span>';
-    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(p.nombre)}</td><td class="tr fw6">$${p.monto.toFixed(2)}</td><td class="tl">${p.obs?'<span class="tag">'+esc(p.obs)+'</span>':'<span class="tag">—</span>'}</td><td><span style="cursor:pointer" onclick="togglePrestamo(${p.id})" title="Click para cambiar estado">${pill}</span></td><td><button class="btn btn-r btn-xs" onclick="delPrestamo(${p.id})">✕</button></td></tr>`
-  }).join('')||'<tr><td colspan="6" class="emp"><div class="big">⊡</div>Sin préstamos</td></tr>';
-  document.getElementById('prestamosTotal').textContent=t.toFixed(2)
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(p.nombre)}</td><td class="tr fw6">$${$f(p.monto)}</td><td class="tr">${p.pagado?$f(p.pagado):'—'}</td><td class="tr fw6" style="color:${saldo>0?'var(--danger)':'var(--text2)'}">$${$f(saldo)}</td><td class="tl">${p.obs?'<span class="tag">'+esc(p.obs)+'</span>':'<span class="tag">—</span>'}</td><td><span style="cursor:pointer" onclick="togglePrestamo(${p.id})" title="Click para cambiar estado">${pill}</span></td><td>${p.estado!=='pagado'?`<button class="btn btn-p btn-xs" onclick="modalAbono(${p.id})">Abonar</button>`:''}<button class="btn btn-r btn-xs" onclick="delPrestamo(${p.id})" style="margin-left:4px">✕</button></td></tr>`
+  }).join('')||'<tr><td colspan="8" class="emp"><div class="big">⊡</div>Sin préstamos</td></tr>';
+  document.getElementById('prestamosTotal').textContent=$f(t)
 }
 async function togglePrestamo(id){
   try{await api('POST',`/api/prestamos/${id}/estado`);toast('Estado actualizado');await loadAll()}catch(e){toast(e.message,'e')}
+}
+function modalAbono(id){
+  modal(`<h3>Registrar Abono</h3><div class="fr"><label>Monto a abonar ($)</label><input type="number" id="fAbonoMonto" step="0.01" min="0.01" placeholder="0.00" autofocus></div><div class="fr"><label>Fecha</label><input type="date" id="fAbonoFecha"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveAbono(${id})">Guardar</button></div>`);
+  setTimeout(()=>document.getElementById('fAbonoMonto').focus(),100)
+}
+async function saveAbono(id){
+  const m=parseFloat(document.getElementById('fAbonoMonto').value);
+  if(isNaN(m)||m<=0){toast('Ingresá un monto válido','e');return}
+  const f=document.getElementById('fAbonoFecha').value;
+  try{const r=await api('POST','/api/prestamos/'+id+'/abono',{prestamo_id:id,monto:m,fecha:f||null});toast('Abono registrado · Saldo: $'+r.saldo);closeModal();await loadAll()}
+  catch(e){toast(e.message,'e')}
 }
 function modalPrestamo(){
   modal(`<h3>Nuevo Préstamo</h3><div class="fr"><label>Miembro</label><select id="fPMiembro"><option value="">Seleccionar...</option>${selMi()}</select></div><div class="fr"><label>Fecha</label><input type="date" id="fPFecha"></div><div class="fr"><label>Monto ($)</label><input type="number" id="fPMonto" step="0.01" placeholder="0.00"></div><div class="fr"><label>Observación</label><input type="text" id="fPObs" placeholder="Opcional"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="savePrestamo()">Guardar</button></div>`)

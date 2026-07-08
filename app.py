@@ -182,6 +182,13 @@ def init_db():
             estado TEXT NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente','pagado')),
             fecha TEXT DEFAULT NULL
         );
+        ALTER TABLE prestamos ADD COLUMN IF NOT EXISTS pagado REAL DEFAULT 0;
+        CREATE TABLE IF NOT EXISTS abonos (
+            id SERIAL PRIMARY KEY,
+            prestamo_id INTEGER NOT NULL REFERENCES prestamos(id) ON DELETE CASCADE,
+            monto REAL NOT NULL,
+            fecha TEXT DEFAULT NULL
+        );
         INSERT INTO meses_ahorro (id, nombre, orden) VALUES
             (1,'ENERO',1),(2,'FEBRERO',2),(3,'MARZO',3),(4,'ABRIL',4),
             (5,'MAYO',5),(6,'JUNIO',6),(7,'JULIO',7),(8,'AGOSTO',8),
@@ -577,7 +584,9 @@ def delete_cumple_fecha(id):
 @app.route('/api/prestamos', methods=['GET'])
 @login_required
 def get_prestamos():
-    return jsonify([dict(r) for r in get_db().execute("SELECT p.id, m.nombre, p.monto, p.obs, p.estado, p.fecha FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id").fetchall()])
+    return jsonify([dict(r) for r in get_db().execute(
+        "SELECT p.id, m.nombre, p.monto, p.obs, p.estado, p.fecha, COALESCE(p.pagado,0) as pagado "
+        "FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id").fetchall()])
 
 @app.route('/api/prestamos', methods=['POST'])
 @login_required
@@ -602,12 +611,33 @@ def delete_prestamo(id):
 @login_required
 def toggle_prestamo_estado(id):
     db = get_db()
-    row = db.execute("SELECT estado FROM prestamos WHERE id=?", (id,)).fetchone()
+    row = db.execute("SELECT estado, monto FROM prestamos WHERE id=?", (id,)).fetchone()
     if not row: return jsonify({'error':'Préstamo no encontrado'}), 404
     nuevo = 'pagado' if row['estado'] == 'pendiente' else 'pendiente'
-    db.execute("UPDATE prestamos SET estado=? WHERE id=?", (nuevo, id))
+    if nuevo == 'pagado':
+        db.execute("UPDATE prestamos SET estado=?, pagado=monto WHERE id=?", (nuevo, id))
+    else:
+        db.execute("UPDATE prestamos SET estado=?, pagado=0 WHERE id=?", (nuevo, id))
     db.commit()
     return jsonify({'ok': True, 'estado': nuevo})
+
+@app.route('/api/prestamos/<int:id>/abono', methods=['POST'])
+@login_required
+def add_abono():
+    data = request.json
+    db = get_db()
+    row = db.execute("SELECT id, monto, COALESCE(pagado,0) as pagado FROM prestamos WHERE id=?", (data['prestamo_id'],)).fetchone()
+    if not row: return jsonify({'error':'Préstamo no encontrado'}), 404
+    monto = float(data['monto'])
+    if monto <= 0: return jsonify({'error':'Monto debe ser positivo'}), 400
+    nuevo_pagado = row['pagado'] + monto
+    if nuevo_pagado > row['monto']: return jsonify({'error':'El abono excede la deuda pendiente'}), 400
+    db.execute("INSERT INTO abonos (prestamo_id, monto, fecha) VALUES (?, ?, ?)",
+               (row['id'], monto, data.get('fecha') or None))
+    nuevo_estado = 'pagado' if nuevo_pagado >= row['monto'] else 'pendiente'
+    db.execute("UPDATE prestamos SET pagado=?, estado=? WHERE id=?", (nuevo_pagado, nuevo_estado, row['id']))
+    db.commit()
+    return jsonify({'ok': True, 'saldo': round(row['monto'] - nuevo_pagado, 2), 'estado': nuevo_estado})
 
 # ═══════════════════════════════════════════
 #  DATOS COMPLETOS
@@ -654,7 +684,7 @@ def get_datos_completos():
         ca[r['clave']][r['nombre']] = r['valor']
 
     cf = [dict(r) for r in db.execute("SELECT m.nombre, cf.fecha FROM cumple_fechas cf JOIN miembros m ON cf.miembro_id = m.id").fetchall()]
-    prestamos = [dict(r) for r in db.execute("SELECT p.id, m.nombre, p.monto, p.obs, p.estado, p.fecha FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id").fetchall()]
+    prestamos = [dict(r) for r in db.execute("SELECT p.id, m.nombre, p.monto, p.obs, p.estado, p.fecha, COALESCE(p.pagado,0) as pagado FROM prestamos p JOIN miembros m ON p.miembro_id = m.id ORDER BY p.id").fetchall()]
 
     return jsonify({
         'miembros': miembros, 'fechasTablas': fechas_tablas, 'asistencias': asistencias,
@@ -703,8 +733,10 @@ def _calcular_estado_cuenta(db):
         cumple_fecha[r['miembro_id']] = r['fecha']
 
     prest = {}
-    for r in db.execute("SELECT miembro_id, estado, SUM(monto) s FROM prestamos GROUP BY miembro_id, estado"):
-        prest.setdefault(r['miembro_id'], {'pendiente': 0, 'pagado': 0})[r['estado']] = r['s'] or 0
+    for r in db.execute("SELECT miembro_id, SUM(monto - COALESCE(pagado,0)) as s FROM prestamos WHERE estado!='pagado' GROUP BY miembro_id"):
+        prest.setdefault(r['miembro_id'], {'pendiente': 0, 'pagado': 0})['pendiente'] = r['s'] or 0
+    for r in db.execute("SELECT miembro_id, SUM(COALESCE(pagado,0)) as s FROM prestamos GROUP BY miembro_id"):
+        prest.setdefault(r['miembro_id'], {'pendiente': 0, 'pagado': 0})['pagado'] = r['s'] or 0
 
     resultado = []
     for m in miembros:
