@@ -543,9 +543,9 @@ function computeEstadoCuenta(){
       if(!d||!d.recibe)return s;
       return s+(parseFloat(d.monto_asignado)||0);
     },0);
-    const bingoDebe=Math.max(totalFechas-asOk,0);
+const bingoDebe=Math.max(totalFechas-asOk,0);
     const bingoTotal=Math.round((bingoGanado-bingoDebe)*100)/100;
-    const saldoNeto=ahorroTotal-pendiente;
+    const saldoNeto=ahorroTotal;
     const totalGeneral=Math.round((bingoTotal+ahorroTotal)*100)/100;
     let estadoGeneral='al_dia';
     if(pendiente>0&&asPct<50)estadoGeneral='moroso';else if(pendiente>0)estadoGeneral='con_deuda';
