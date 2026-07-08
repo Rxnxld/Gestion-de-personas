@@ -287,7 +287,7 @@ tbody tr:nth-child(even){background:#f8fafc}
         <div class="stats" id="statsGrid"></div>
         <div class="card">
           <div class="card-t">Resumen por Miembro</div>
-          <div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th>Tablas</th><th>Rifa</th><th>A.Normal</th><th>A.Cumple</th><th>A.Rifa</th><th>Total Ahorros</th><th>Préstamo Pend.</th><th>Saldo Neto</th><th>Estado</th></tr></thead><tbody id="dashBody"></tbody></table></div></div>
+          <div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th>Tablas</th><th>Rifa</th><th>A.Normal</th><th>A.Cumple</th><th>A.Rifa</th><th>Total Ahorros</th><th>Préstamo Pend.</th><th>Saldo Neto</th><th>Total Gral</th><th>Estado</th></tr></thead><tbody id="dashBody"></tbody></table></div></div>
         </div>
       </div>
 
@@ -365,7 +365,7 @@ tbody tr:nth-child(even){background:#f8fafc}
           <div class="card-b" style="padding:0">
             <div class="ec-table-wrap">
               <table>
-                <thead><tr><th>#</th><th class="tl">Nombre</th><th>Tablas</th><th>Rifa</th><th class="tr">Bingo</th><th class="tr">Ahorros</th><th class="tr">Aportes Cumple</th><th class="tr">Préstamo Pend.</th><th class="tr">Saldo Neto</th><th>Estado</th></tr></thead>
+                <thead><tr><th>#</th><th class="tl">Nombre</th><th>Tablas</th><th>Rifa</th><th class="tr">Bingo</th><th class="tr">Ahorros</th><th class="tr">Aportes Cumple</th><th class="tr">Préstamo Pend.</th><th class="tr">Saldo Neto</th><th class="tr">Total Gral</th><th>Estado</th></tr></thead>
                 <tbody id="ecBody"></tbody>
               </table>
             </div>
@@ -528,6 +528,7 @@ function computeEstadoCuenta(){
     const asOk=S.fechasTablas.reduce((s,f)=>s+((S.asistencias[m.nombre]?.[f])||0),0);
     const asPct=totalFechas?Math.round((asOk/totalFechas)*1000)/10:0;
     const riParticip=S.fechasRifa.reduce((s,f)=>{const v=(S.rifas[m.nombre]?.[f])||0;return s+(v&1)+((v>>1)&1)},0);
+    const totalRifaSlots=S.fechasRifa.length*2;
     const aN=MESES.reduce((s,me)=>s+((S.ahorroNormal[m.nombre]?.[me])||0),0);
     const aC=MESES.reduce((s,me)=>s+((S.ahorroCumple[m.nombre]?.[me])||0),0);
     const aR=riParticip;
@@ -535,28 +536,26 @@ function computeEstadoCuenta(){
     const cumpleTotal=S.cumpleMeses.reduce((s,c)=>s+((S.cumpleAportes[c]?.[m.nombre])||0),0);
     const cumpleFechaObj=S.cumpleFechas.find(cf=>cf.nombre===m.nombre);
     const prestamosM=S.prestamos.filter(p=>p.nombre===m.nombre);
-    const pendiente=prestamosM.filter(p=>p.estado!=='pagado').reduce((s,p)=>s+p.monto,0);
-    const pagado=prestamosM.filter(p=>p.estado==='pagado').reduce((s,p)=>s+p.monto,0);
+    const pendiente=prestamosM.reduce((s,p)=>s+Math.max(p.monto-(p.pagado||0),0),0);
+    const pagadoTotal=prestamosM.reduce((s,p)=>s+(p.pagado||0),0);
     const bingoGanado=S.bingos.reduce((s,b)=>{
       const d=(b.distribucion||[]).find(x=>x.miembro_id===m.id);
       if(!d||!d.recibe)return s;
-      // monto_asignado ya refleja el valor real (auto o personalizado en el Reparto)
       return s+(parseFloat(d.monto_asignado)||0);
     },0);
-    // Conecta Tablas con Bingo: toda fecha que el miembro NO tenga marcada
-    // como "Sí" (la marcó "No" o nunca la tocó) cuenta como no pagada.
     const bingoDebe=Math.max(totalFechas-asOk,0);
     const bingoTotal=Math.round((bingoGanado-bingoDebe)*100)/100;
     const saldoNeto=ahorroTotal-pendiente;
+    const totalGeneral=Math.round((bingoTotal+ahorroTotal-pendiente)*100)/100;
     let estadoGeneral='al_dia';
     if(pendiente>0&&asPct<50)estadoGeneral='moroso';else if(pendiente>0)estadoGeneral='con_deuda';
     return {id:m.id,nombre:m.nombre,apodo:m.apodo,
       asistencia:{asistidas:asOk,total:totalFechas,pct:asPct},
-      rifa:{participaciones:riParticip,totalFechas:S.fechasRifa.length},
+      rifa:{participaciones:riParticip,totalFechas:S.fechasRifa.length,totalSlots:totalRifaSlots},
       bingo:bingoTotal,bingoGanado:Math.round(bingoGanado*100)/100,bingoDebe,
       ahorros:{normal:aN,cumple:aC,rifa:aR,total:ahorroTotal},
       cumpleAportes:cumpleTotal,cumpleFecha:cumpleFechaObj?cumpleFechaObj.fecha:null,
-      prestamos:{pendiente,pagado},saldoNeto,estadoGeneral,prestamosDetalle:prestamosM}
+      prestamos:{pendiente,pagado:pagadoTotal},saldoNeto,totalGeneral,estadoGeneral,prestamosDetalle:prestamosM}
   })
 }
 
@@ -580,8 +579,9 @@ function renderEstadoCuenta(){
     const pill=d.estadoGeneral==='al_dia'?'<span class="ec-badge ok">● Al día</span>':d.estadoGeneral==='con_deuda'?'<span class="ec-badge warn">● Con deuda</span>':'<span class="ec-badge danger">● Moroso</span>';
     const bCl=d.bingo>0?'var(--success)':d.bingo<0?'var(--danger)':'var(--text2)';
     const bTitle=d.bingoDebe>0?`title="Ganado $${$f(d.bingoGanado)} − $${$f(d.bingoDebe)} (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} no pagada${d.bingoDebe===1?'':'s'})"`:'';
-    return `<tr><td style="color:var(--text2);font-weight:500">${i+1}</td><td class="tl" style="font-weight:600">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.pct>=70?'bdg-g':d.asistencia.pct>=40?'bdg-w':'bdg-r'}">${d.asistencia.pct}%</span></td><td style="font-weight:600">${d.rifa.participaciones}</td><td class="tr fw6" style="color:${bCl}" ${bTitle}>${d.bingo!==0?'$'+$f(d.bingo):'—'}</td><td class="tr">$${$f(d.ahorros.total)}</td><td class="tr">${d.cumpleAportes}</td><td class="tr" style="color:${d.prestamos.pendiente>0?'var(--danger)':'var(--text2)'}">$${$f(d.prestamos.pendiente)}</td><td class="tr fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'};font-size:13px">$${$f(d.saldoNeto)}</td><td>${pill}</td></tr>`
-  }).join('')||'<tr><td colspan="10" class="emp"><div class="big">◈</div>Sin datos</td></tr>';
+    const tCl=d.totalGeneral<0?'var(--danger)':'var(--success)';
+    return `<tr><td style="color:var(--text2);font-weight:500">${i+1}</td><td class="tl" style="font-weight:600">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.pct>=70?'bdg-g':d.asistencia.pct>=40?'bdg-w':'bdg-r'}">${d.asistencia.pct}%</span></td><td style="font-weight:600">${d.rifa.participaciones}</td><td class="tr fw6" style="color:${bCl}" ${bTitle}>${d.bingo!==0?'$'+$f(d.bingo):'—'}</td><td class="tr">$${$f(d.ahorros.total)}</td><td class="tr">${d.cumpleAportes}</td><td class="tr" style="color:${d.prestamos.pendiente>0?'var(--danger)':'var(--text2)'}">$${$f(d.prestamos.pendiente)}</td><td class="tr fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'};font-size:13px">$${$f(d.saldoNeto)}</td><td class="tr fw6" style="color:${tCl};font-size:13px">$${$f(d.totalGeneral)}</td><td>${pill}</td></tr>`
+  }).join('')||'<tr><td colspan="11" class="emp"><div class="big">◈</div>Sin datos</td></tr>';
   renderEstadoIndividual();
 }
 
@@ -623,8 +623,8 @@ function renderEstadoIndividual(){
         </div>
         <div class="ec-item">
           <div class="l">Rifa Grupal</div>
-          <div class="v" style="font-size:28px">${d.rifa.participaciones}</div>
-          <div class="s">cupos de ${d.rifa.totalFechas} meses</div>
+          <div class="v" style="font-size:28px">${d.rifa.participaciones}<span style="font-size:13px;font-weight:400;color:var(--text2)">/${d.rifa.totalSlots}</span></div>
+          <div class="s">cupos de ${d.rifa.totalSlots} disponibles</div>
         </div>
         <div class="ec-item" style="background:${bnetoBg};border-color:${bnetoColor}">
           <div class="l">Bingo Neto</div>
@@ -649,7 +649,8 @@ function renderEstadoIndividual(){
         </div>
         <div class="ec-item">
           <div class="l">Aportes Cumpleaños</div>
-          <div class="v" style="font-size:24px">${d.cumpleAportes}</div>
+          <div class="v" style="font-size:24px">${d.cumpleAportes}<span style="font-size:13px;font-weight:400;color:var(--text2)">/${S.cumpleMeses.length}</span></div>
+          <div class="s">meses de ${S.cumpleMeses.length} aportados</div>
         </div>
         <div class="ec-item" style="${d.prestamos.pendiente>0?'background:#fef2f2;border-color:var(--danger)':''}">
           <div class="l">Préstamo Pendiente</div>
@@ -660,6 +661,11 @@ function renderEstadoIndividual(){
           <div class="l">Saldo Neto</div>
           <div class="v" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'};font-size:24px">${d.saldoNeto<0?'−':'+'}$${$f(Math.abs(d.saldoNeto))}</div>
           <div class="s">Ahorros − Préstamos</div>
+        </div>
+        <div class="ec-item" style="grid-column:1/-1;background:${d.totalGeneral<0?'#fef2f2':'#f0fdf4'};border-color:${d.totalGeneral<0?'var(--danger)':'var(--success)'};border-width:2px">
+          <div class="l" style="font-size:11px">Total General</div>
+          <div class="v" style="color:${d.totalGeneral<0?'var(--danger)':'var(--success)'};font-size:28px">${d.totalGeneral<0?'−':'+'}$${$f(Math.abs(d.totalGeneral))}</div>
+          <div class="s">Bingo Neto + Ahorros − Préstamos</div>
         </div>
       </div>
       <div style="margin-top:20px;padding-top:16px;border-top:2px solid #f1f5f9">
@@ -686,7 +692,7 @@ function renderDashboard(){
   const pillMap={al_dia:['Al día','pill-ok'],con_deuda:['Con deuda','pill-warn'],moroso:['Moroso','pill-danger']};
   document.getElementById('dashBody').innerHTML=data.map((d,i)=>{
     const [plabel,pclass]=pillMap[d.estadoGeneral];
-    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.asistidas>0?'bdg-g':''}">${d.asistencia.asistidas}</span></td><td>${d.rifa.participaciones}</td><td>$${$f(d.ahorros.normal)}</td><td>$${$f(d.ahorros.cumple)}</td><td>$${$f(d.ahorros.rifa)}</td><td class="fw6">$${$f(d.ahorros.total)}</td><td>$${$f(d.prestamos.pendiente)}</td><td class="fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">$${$f(d.saldoNeto)}</td><td><span class="pill ${pclass}">${plabel}</span></td></tr>`
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.asistidas>0?'bdg-g':''}">${d.asistencia.asistidas}</span></td><td>${d.rifa.participaciones}</td><td>$${$f(d.ahorros.normal)}</td><td>$${$f(d.ahorros.cumple)}</td><td>$${$f(d.ahorros.rifa)}</td><td class="fw6">$${$f(d.ahorros.total)}</td><td>$${$f(d.prestamos.pendiente)}</td><td class="fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">$${$f(d.saldoNeto)}</td><td class="fw6" style="color:${d.totalGeneral<0?'var(--danger)':'var(--success)'}">$${$f(d.totalGeneral)}</td><td><span class="pill ${pclass}">${plabel}</span></td></tr>`
   }).join('')||'<tr><td colspan="11" class="emp"><div class="big">⊙</div>Sin miembros</td></tr>'
 }
 
