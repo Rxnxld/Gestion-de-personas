@@ -546,7 +546,7 @@ function computeEstadoCuenta(){
     const bingoDebe=Math.max(totalFechas-asOk,0);
     const bingoTotal=Math.round((bingoGanado-bingoDebe)*100)/100;
     const saldoNeto=ahorroTotal-pendiente;
-    const totalGeneral=Math.round((bingoTotal+ahorroTotal-pendiente)*100)/100;
+    const totalGeneral=Math.round((bingoTotal+ahorroTotal)*100)/100;
     let estadoGeneral='al_dia';
     if(pendiente>0&&asPct<50)estadoGeneral='moroso';else if(pendiente>0)estadoGeneral='con_deuda';
     return {id:m.id,nombre:m.nombre,apodo:m.apodo,
@@ -665,7 +665,7 @@ function renderEstadoIndividual(){
         <div class="ec-item" style="grid-column:1/-1;background:${d.totalGeneral<0?'#fef2f2':'#f0fdf4'};border-color:${d.totalGeneral<0?'var(--danger)':'var(--success)'};border-width:2px">
           <div class="l" style="font-size:11px">Total General</div>
           <div class="v" style="color:${d.totalGeneral<0?'var(--danger)':'var(--success)'};font-size:28px">${d.totalGeneral<0?'−':'+'}$${$f(Math.abs(d.totalGeneral))}</div>
-          <div class="s">Bingo Neto + Ahorros − Préstamos</div>
+          <div class="s">Bingo Neto + Ahorros</div>
         </div>
       </div>
       <div style="margin-top:20px;padding-top:16px;border-top:2px solid #f1f5f9">
