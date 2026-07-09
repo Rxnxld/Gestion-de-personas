@@ -511,7 +511,7 @@ async function loadAll(){
       return s+(v&1)+((v>>1)&1)
     },0);
     S.ahorroRifa[m.nombre]={};
-    RIFA_NUM.forEach(me=>{S.ahorroRifa[m.nombre][me]=totalRecibido})
+    S.ahorroRifa[m.nombre][RIFA_NUM[0]]=totalRecibido
   });
   renderAll()}catch(e){toast('Error: '+e.message,'e')}
 }
