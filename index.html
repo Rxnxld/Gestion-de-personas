@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--primary:#0f172a;--primary-2:#1e2a44;--accent:#4f46e5;--accent-h:#4338ca;--accent-l:#eef2ff;--accent-2:#7c3aed;--success:#10b981;--success-l:#ecfdf5;--danger:#ef4444;--danger-l:#fef2f2;--warning:#d97706;--warning-l:#fffbeb;--bg:#f8fafc;--card:#fff;--border:#e2e8f0;--border-l:#f1f5f9;--text:#0f172a;--text2:#475569;--text3:#94a3b8;--radius:12px;--rs:8px;--sh:0 1px 3px 0 rgb(0 0 0 / 0.1),0 1px 2px -1px rgb(0 0 0 / 0.1);--sh-md:0 8px 24px rgba(15,23,42,.08);--sh-lg:0 20px 48px rgba(15,23,42,.14);--side:236px;--font-d:'Plus Jakarta Sans',Inter,-apple-system,sans-serif}
@@ -206,6 +207,13 @@ tbody tr:hover{background:#f8fafc}
 .ec-badge.ok{background:#ecfdf5;color:#059669;border:1px solid #a7f3d0}
 .ec-badge.warn{background:#fffbeb;color:#d97706;border:1px solid #fde68a}
 .ec-badge.danger{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+
+/* CHARTS */
+.chart-card .card-b{padding:18px 20px 14px}
+.chart-wrap{position:relative;width:100%;height:280px}
+.chart-wrap.sm{height:240px}
+.chart-legend-note{font-size:11px;color:var(--text2);margin-top:10px;text-align:center}
+@media(max-width:640px){.chart-wrap{height:230px}.chart-wrap.sm{height:220px}}
 .ec-table-wrap{overflow-x:auto;border:1px solid var(--border-l);border-radius:8px}
 .ec-table-wrap table{width:100%;border-collapse:collapse;font-size:12px}
 .ec-table-wrap th{background:#f8fafc;padding:10px 12px;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:2px solid var(--border);text-align:center;white-space:nowrap}
@@ -398,6 +406,23 @@ tbody tr:nth-child(even){background:#f8fafc}
           <div class="wb-deco"><i data-lucide="trending-up" style="width:44px;height:44px;"></i></div>
         </div>
         <div class="stats" id="statsGrid"></div>
+
+        <div class="g2">
+          <div class="card chart-card">
+            <div class="card-t"><i data-lucide="bar-chart-3" style="width:13px;height:13px;vertical-align:-2px;margin-right:5px"></i>Ahorros Totales por Miembro</div>
+            <div class="card-b">
+              <div class="chart-wrap"><canvas id="miGraficoPrincipal"></canvas></div>
+            </div>
+          </div>
+          <div class="card chart-card">
+            <div class="card-t"><i data-lucide="pie-chart" style="width:13px;height:13px;vertical-align:-2px;margin-right:5px"></i>Estado General del Grupo</div>
+            <div class="card-b">
+              <div class="chart-wrap sm"><canvas id="graficoEstadoGrupo"></canvas></div>
+              <div class="chart-legend-note">Basado en asistencia y préstamos pendientes de cada miembro</div>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-t">Resumen por Miembro</div>
           <div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th>Tablas</th><th>Rifa</th><th>A.Normal</th><th>A.Cumple</th><th>A.Rifa</th><th>Total Ahorros</th><th>Préstamo Pend.</th><th>Saldo Neto</th><th>Total Gral</th><th>Estado</th></tr></thead><tbody id="dashBody"></tbody></table></div></div>
@@ -538,6 +563,7 @@ tbody tr:nth-child(even){background:#f8fafc}
 const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
 const RIFA_NUM=Array.from({length:18},(_,i)=>(i+1).toString());
 let S={miembros:[],fechasTablas:[],asistencias:{},bingos:[],fechasRifa:[],rifas:{},ahorroNormal:{},ahorroCumple:{},ahorroRifa:{},cumpleMeses:[],cumpleAportes:{},cumpleFechas:[],prestamos:[]};
+let chartAhorros=null,chartEstado=null;
 
 // ─── AUTH ───
 async function checkAuth(){
@@ -817,6 +843,84 @@ function renderDashboard(){
     const [plabel,pclass]=pillMap[d.estadoGeneral];
     return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.asistidas>0?'bdg-g':''}">${d.asistencia.asistidas}</span></td><td>${d.rifa.participaciones}</td><td>$${$f(d.ahorros.normal)}</td><td>$${$f(d.ahorros.cumple)}</td><td>$${$f(d.ahorros.rifa)}</td><td class="fw6">$${$f(d.ahorros.total)}</td><td>$${$f(d.prestamos.pendiente)}</td><td class="fw6" style="color:${d.totalGeneral<0?'var(--danger)':'var(--success)'}">$${$f(d.totalGeneral)}</td><td><span class="pill ${pclass}">${plabel}</span></td></tr>`
   }).join('')||'<tr><td colspan="11" class="emp"><div class="big"><i data-lucide="users" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin miembros</td></tr>'
+  renderizarGraficos(data)
+}
+
+// ─── GRÁFICOS (Chart.js) ───
+function renderizarGraficos(datos){
+  if(typeof Chart==='undefined')return; // Chart.js aún no cargó
+  const CHART_COLORS={indigo:'#4f46e5',indigoSoft:'rgba(79,70,229,.12)',emerald:'#10b981',cyan:'#06b6d4',amber:'#d97706',rose:'#ef4444',grid:'#f1f5f9',text:'#475569'};
+  Chart.defaults.font.family="'Inter',-apple-system,sans-serif";
+  Chart.defaults.font.size=11;
+  Chart.defaults.color=CHART_COLORS.text;
+
+  // ── Gráfico principal: Ahorros Totales por Miembro (barras) ──
+  const labels=(datos||[]).map(d=>d.nombre);
+  const valores=(datos||[]).map(d=>Math.round((d.ahorros.total)*100)/100);
+  const ctx1=document.getElementById('miGraficoPrincipal');
+  if(ctx1){
+    if(chartAhorros)chartAhorros.destroy();
+    chartAhorros=new Chart(ctx1,{
+      type:'bar',
+      data:{
+        labels,
+        datasets:[{
+          label:'Ahorros totales ($)',
+          data:valores,
+          backgroundColor:CHART_COLORS.indigo,
+          hoverBackgroundColor:'#4338ca',
+          borderRadius:6,
+          maxBarThickness:34
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            backgroundColor:'#0f172a',padding:10,cornerRadius:8,displayColors:false,
+            callbacks:{label:c=>'$'+c.parsed.y.toFixed(2)}
+          }
+        },
+        scales:{
+          x:{grid:{display:false},border:{display:false}},
+          y:{beginAtZero:true,grid:{color:CHART_COLORS.grid},border:{display:false},ticks:{callback:v=>'$'+v}}
+        }
+      }
+    })
+  }
+
+  // ── Gráfico secundario: Estado General del Grupo (dona) ──
+  const alDia=(datos||[]).filter(d=>d.estadoGeneral==='al_dia').length;
+  const conDeuda=(datos||[]).filter(d=>d.estadoGeneral==='con_deuda').length;
+  const moroso=(datos||[]).filter(d=>d.estadoGeneral==='moroso').length;
+  const ctx2=document.getElementById('graficoEstadoGrupo');
+  if(ctx2){
+    if(chartEstado)chartEstado.destroy();
+    chartEstado=new Chart(ctx2,{
+      type:'doughnut',
+      data:{
+        labels:['Al día','Con deuda','Moroso'],
+        datasets:[{
+          data:[alDia,conDeuda,moroso],
+          backgroundColor:[CHART_COLORS.emerald,CHART_COLORS.amber,CHART_COLORS.rose],
+          hoverOffset:6,
+          borderWidth:2,
+          borderColor:'#fff'
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        cutout:'68%',
+        plugins:{
+          legend:{position:'bottom',labels:{boxWidth:10,boxHeight:10,padding:14,usePointStyle:true,pointStyle:'circle'}},
+          tooltip:{backgroundColor:'#0f172a',padding:10,cornerRadius:8}
+        }
+      }
+    })
+  }
 }
 
 function renderMiembros(){
