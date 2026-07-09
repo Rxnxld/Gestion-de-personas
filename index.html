@@ -159,15 +159,14 @@ tbody tr:hover{background:#f8fafc}
 .ec-table-wrap td{padding:9px 12px;border-bottom:1px solid var(--border-l);text-align:center}
 .ec-table-wrap tbody tr:hover{background:#f1f5f9}
 .ec-table-wrap tbody tr:last-child td{border-bottom:none}
-.ec-print-logo{display:none}
+.ec-print-logo{visibility:hidden;height:0;width:0;overflow:hidden}
 @media print{
   .sidebar,.topbar,.page-h button,#ecSelMiembro,.form-inline label,.modal-bg,.toast-box,
   #ecTablaGeneral,#ecStatsGrid,.page-h,.card:not(#ecIndividual .ec-card){display:none!important}
   .main{margin-left:0!important;padding:0!important}
   body{background:#fff!important}
   #ecIndividual .ec-card{display:block!important;box-shadow:none!important;border:none!important;padding:0!important}
-  .ec-head::before{content:'';display:block;width:100px;height:100px;margin-bottom:12px}
-  .ec-print-logo{display:block!important;width:100px;margin-bottom:12px}
+  .ec-print-logo{visibility:visible!important;height:auto!important;width:100px!important;margin-bottom:12px;overflow:visible}
   .ec-item{break-inside:avoid;box-shadow:none!important}
   .ec-head{margin-bottom:20px}
   .ec-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
