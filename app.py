@@ -351,7 +351,9 @@ def add_bingo():
         # Quiénes asistieron ese día (asistencias con valor=1)
         attendees = {r['miembro_id'] for r in db.execute(
             "SELECT miembro_id FROM asistencias WHERE fecha=? AND valor=1", (data['fecha'],)).fetchall()}
-        asistentes = len(attendees) or int(data.get('asistentes', 0))
+        asistentes = len(attendees)
+        if asistentes == 0:
+            asistentes = int(data.get('asistentes', 0))
         total = float(data['monto']) + adicional
         coge = round(total / asistentes, 2) if asistentes > 0 else 0
         todos = db.execute("SELECT id FROM miembros").fetchall()
@@ -359,10 +361,6 @@ def add_bingo():
             recibe = m['id'] in attendees
             db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado) VALUES (?, ?, ?, ?)",
                        (bingo_id, m['id'], recibe, coge if recibe else 0))
-        try:
-            db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (data['fecha'],))
-        except psycopg2.IntegrityError:
-            pass
         db.commit()
         return jsonify({'ok': True}), 201
     except psycopg2.IntegrityError:
@@ -387,12 +385,14 @@ def update_bingo(id):
             db.execute("UPDATE asistencias SET fecha=? WHERE fecha=?", (data['fecha'], old['fecha']))
         except psycopg2.IntegrityError:
             return jsonify({'error': 'La fecha ya existe en bingos'}), 409
-    # si cambió monto/adicional/asistentes, actualizar distribución automática
-    if 'monto' in data or 'adicional' in data or 'asistentes' in data:
-        b = db.execute("SELECT monto, adicional, asistentes FROM bingos WHERE id=?", (id,)).fetchone()
+    if 'monto' in data or 'adicional' in data or 'asistentes' in data or 'fecha' in data:
+        b = db.execute("SELECT fecha, monto, adicional, asistentes FROM bingos WHERE id=?", (id,)).fetchone()
         if b:
             total = b['monto'] + (b['adicional'] or 0)
-            a = b['asistentes'] or 1
+            attendees = {r['miembro_id'] for r in db.execute(
+                "SELECT miembro_id FROM asistencias WHERE fecha=? AND valor=1", (b['fecha'],)).fetchall()}
+            a = len(attendees) or (b['asistentes'] or 1)
+            db.execute("UPDATE bingos SET asistentes=? WHERE id=?", (a, id))
             coge = round(total / a, 2) if a > 0 else 0
             db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE AND personalizado=FALSE", (coge, id))
     db.commit()
@@ -617,7 +617,7 @@ def toggle_prestamo_estado(id):
     if nuevo == 'pagado':
         db.execute("UPDATE prestamos SET estado=?, pagado=monto WHERE id=?", (nuevo, id))
     else:
-        db.execute("UPDATE prestamos SET estado=?, pagado=0 WHERE id=?", (nuevo, id))
+        db.execute("UPDATE prestamos SET estado=? WHERE id=?", (nuevo, id))
     db.commit()
     return jsonify({'ok': True, 'estado': nuevo})
 
@@ -634,7 +634,7 @@ def add_abono(id):
     if nuevo_pagado > row['monto']: return jsonify({'error':'El abono excede la deuda pendiente'}), 400
     db.execute("INSERT INTO abonos (prestamo_id, monto, fecha) VALUES (?, ?, ?)",
                (row['id'], monto, data.get('fecha') or None))
-    nuevo_estado = 'pagado' if nuevo_pagado >= row['monto'] else 'pendiente'
+    nuevo_estado = 'pagado' if nuevo_pagado >= row['monto'] - 0.005 else 'pendiente'
     db.execute("UPDATE prestamos SET pagado=?, estado=? WHERE id=?", (nuevo_pagado, nuevo_estado, row['id']))
     db.commit()
     return jsonify({'ok': True, 'saldo': round(row['monto'] - nuevo_pagado, 2), 'estado': nuevo_estado})
@@ -660,7 +660,7 @@ def get_datos_completos():
     for b in bingos:
         dist = db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE bingo_id=?", (b['id'],)).fetchall()
         b['distribucion'] = [dict(d) for d in dist] if dist else []
-    fechas_rifa = [str(i) for i in range(1, 19)]
+    fechas_rifa = [str(r['fecha']) for r in db.execute("SELECT fecha FROM fechas_rifa ORDER BY fecha").fetchall()] or [str(i) for i in range(1, 19)]
 
     ri_raw = db.execute("SELECT m.nombre, r.fecha, r.valor FROM rifas r JOIN miembros m ON r.miembro_id = m.id").fetchall()
     rifas = {}
@@ -703,7 +703,7 @@ def _calcular_estado_cuenta(db):
     préstamos) para producir un estado de cuenta único por miembro."""
     miembros = [dict(r) for r in db.execute("SELECT id, nombre, apodo FROM miembros ORDER BY id").fetchall()]
     total_fechas_tablas = db.execute("SELECT COUNT(*) c FROM fechas_tablas").fetchone()['c']
-    total_fechas_rifa = 18
+    total_fechas_rifa = len([r for r in db.execute("SELECT fecha FROM fechas_rifa").fetchall()]) or 18
 
     asis = {}
     for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):

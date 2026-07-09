@@ -680,7 +680,7 @@ function renderDashboard(){
   m.forEach(mi=>{S.fechasRifa.forEach(f=>{const v=(S.rifas[mi.nombre]?.[f])||0;tr+=(v&1)+((v>>1)&1)});
     ['ahorroNormal','ahorroCumple'].forEach(k=>{MESES.forEach(mes=>{ta+=(S[k][mi.nombre]?.[mes])||0})});
     RIFA_NUM.forEach(n=>{ta+=(S.ahorroRifa[mi.nombre]?.[n])||0})});
-  const tp=S.prestamos.filter(p=>p.estado!=='pagado').reduce((s,p)=>s+p.monto,0);
+  const tp=S.prestamos.filter(p=>p.estado!=='pagado').reduce((s,p)=>s+Math.max(p.monto-(p.pagado||0),0),0);
   document.getElementById('statsGrid').innerHTML=
     `<div class="stat blue"><div class="l">Miembros</div><div class="v">${m.length}</div></div>
      <div class="stat gr"><div class="l">Tablas</div><div class="v">${S.fechasTablas.length}</div></div>
