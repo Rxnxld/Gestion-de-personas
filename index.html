@@ -384,7 +384,7 @@ tbody tr:nth-child(even){background:#f8fafc}
           <div class="card-b" style="padding:0">
             <div class="ec-table-wrap">
               <table>
-                <thead><tr><th>#</th><th class="tl">Nombre</th><th>Tablas</th><th>Rifa</th><th class="tr">Bingo</th><th class="tr">Ahorros</th><th class="tr">Aportes Cumple</th><th class="tr">Préstamo Pend.</th><th class="tr">Saldo Neto</th><th class="tr">Total Gral</th><th>Estado</th></tr></thead>
+                <thead><tr><th>#</th><th class="tl">Nombre</th><th>Tablas</th><th>Rifa</th><th class="tr">Bingo</th><th class="tr">Ahorros</th><th class="tr">Aportes Cumple</th><th class="tr">Préstamo Pend.</th><th class="tr">Total Gral</th><th>Estado</th></tr></thead>
                 <tbody id="ecBody"></tbody>
               </table>
             </div>
@@ -613,7 +613,7 @@ function renderEstadoCuenta(){
     const bCl=d.bingo>0?'var(--success)':d.bingo<0?'var(--danger)':'var(--text2)';
     const bTitle=d.bingoDebe>0?`title="Ganado $${$f(d.bingoGanado)} − $${$f(d.bingoDebe)} (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} no pagada${d.bingoDebe===1?'':'s'})"`:'';
     const tCl=d.totalGeneral<0?'var(--danger)':'var(--success)';
-    return `<tr><td style="color:var(--text2);font-weight:500">${i+1}</td><td class="tl" style="font-weight:600">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.pct>=70?'bdg-g':d.asistencia.pct>=40?'bdg-w':'bdg-r'}">${d.asistencia.pct}%</span></td><td style="font-weight:600">${d.rifa.participaciones}</td><td class="tr fw6" style="color:${bCl}" ${bTitle}>${d.bingo!==0?'$'+$f(d.bingo):'—'}</td><td class="tr">$${$f(d.ahorros.total)}</td><td class="tr">${d.cumpleAportes}</td><td class="tr" style="color:${d.prestamos.pendiente>0?'var(--danger)':'var(--text2)'}">$${$f(d.prestamos.pendiente)}</td><td class="tr fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'};font-size:13px">$${$f(d.saldoNeto)}</td><td class="tr fw6" style="color:${tCl};font-size:13px">$${$f(d.totalGeneral)}</td><td>${pill}</td></tr>`
+    return `<tr><td style="color:var(--text2);font-weight:500">${i+1}</td><td class="tl" style="font-weight:600">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.pct>=70?'bdg-g':d.asistencia.pct>=40?'bdg-w':'bdg-r'}">${d.asistencia.pct}%</span></td><td style="font-weight:600">${d.rifa.participaciones}</td><td class="tr fw6" style="color:${bCl}" ${bTitle}>${d.bingo!==0?'$'+$f(d.bingo):'—'}</td><td class="tr">$${$f(d.ahorros.total)}</td><td class="tr">${d.cumpleAportes}</td><td class="tr" style="color:${d.prestamos.pendiente>0?'var(--danger)':'var(--text2)'}">$${$f(d.prestamos.pendiente)}</td><td class="tr fw6" style="color:${tCl};font-size:13px">$${$f(d.totalGeneral)}</td><td>${pill}</td></tr>`
   }).join('')||'<tr><td colspan="11" class="emp"><div class="big">◈</div>Sin datos</td></tr>';
   renderEstadoIndividual();
 }
@@ -683,18 +683,13 @@ function renderEstadoIndividual(){
         </div>
         <div class="ec-item">
           <div class="l">Aportes Cumpleaños</div>
-          <div class="v" style="font-size:24px">${d.cumpleAportes}<span style="font-size:13px;font-weight:400;color:var(--text2)">/${S.cumpleMeses.length}</span></div>
-          <div class="s">meses de ${S.cumpleMeses.length} aportados</div>
+          <div class="v" style="font-size:24px">${d.cumpleAportes}<span style="font-size:13px;font-weight:400;color:var(--text2)">/18</span></div>
+          <div class="s">meses de 18 aportados</div>
         </div>
         <div class="ec-item" style="${d.prestamos.pendiente>0?'background:#fef2f2;border-color:var(--danger)':''}">
           <div class="l">Préstamo Pendiente</div>
           <div class="v" style="${d.prestamos.pendiente>0?'color:var(--danger)':'color:var(--text2)'}">${d.prestamos.pendiente>0?'$'+$f(d.prestamos.pendiente):'—'}</div>
           ${d.prestamos.pagado>0?`<div class="s">$${$f(d.prestamos.pagado)} pagados</div>`:''}
-        </div>
-        <div class="ec-item" style="background:${d.saldoNeto<0?'#fef2f2':'#ecfdf5'};border-color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">
-          <div class="l">Saldo Neto</div>
-          <div class="v" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'};font-size:24px">${d.saldoNeto<0?'−':'+'}$${$f(Math.abs(d.saldoNeto))}</div>
-          <div class="s">Ahorros − Préstamos</div>
         </div>
         <div class="ec-item" style="grid-column:1/-1;background:${d.totalGeneral<0?'#fef2f2':'#f0fdf4'};border-color:${d.totalGeneral<0?'var(--danger)':'var(--success)'};border-width:2px">
           <div class="l" style="font-size:11px">Total General</div>
@@ -726,7 +721,7 @@ function renderDashboard(){
   const pillMap={al_dia:['Al día','pill-ok'],con_deuda:['Con deuda','pill-warn'],moroso:['Moroso','pill-danger']};
   document.getElementById('dashBody').innerHTML=data.map((d,i)=>{
     const [plabel,pclass]=pillMap[d.estadoGeneral];
-    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.asistidas>0?'bdg-g':''}">${d.asistencia.asistidas}</span></td><td>${d.rifa.participaciones}</td><td>$${$f(d.ahorros.normal)}</td><td>$${$f(d.ahorros.cumple)}</td><td>$${$f(d.ahorros.rifa)}</td><td class="fw6">$${$f(d.ahorros.total)}</td><td>$${$f(d.prestamos.pendiente)}</td><td class="fw6" style="color:${d.saldoNeto<0?'var(--danger)':'var(--success)'}">$${$f(d.saldoNeto)}</td><td class="fw6" style="color:${d.totalGeneral<0?'var(--danger)':'var(--success)'}">$${$f(d.totalGeneral)}</td><td><span class="pill ${pclass}">${plabel}</span></td></tr>`
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.asistidas>0?'bdg-g':''}">${d.asistencia.asistidas}</span></td><td>${d.rifa.participaciones}</td><td>$${$f(d.ahorros.normal)}</td><td>$${$f(d.ahorros.cumple)}</td><td>$${$f(d.ahorros.rifa)}</td><td class="fw6">$${$f(d.ahorros.total)}</td><td>$${$f(d.prestamos.pendiente)}</td><td class="fw6" style="color:${d.totalGeneral<0?'var(--danger)':'var(--success)'}">$${$f(d.totalGeneral)}</td><td><span class="pill ${pclass}">${plabel}</span></td></tr>`
   }).join('')||'<tr><td colspan="11" class="emp"><div class="big">⊙</div>Sin miembros</td></tr>'
 }
 
