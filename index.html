@@ -965,12 +965,13 @@ async function toggleRifaSlot(miembroId, mes, slot){
 
 function renderAhorros(){
   [['ahNHead','ahNBody','ahorroNormal',MESES],['ahCHead','ahCBody','ahorroCumple',MESES],['ahRHead','ahRBody','ahorroRifa',RIFA_NUM]].forEach(([hid,bid,key,periodos])=>{
-    document.getElementById(hid).innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+periodos.map(m=>`<th>${m.length>3?m.slice(0,3):m}</th>`).join('')+'<th class="tr">Total</th></tr>';
+    const isRifa=key==='ahorroRifa';
+    document.getElementById(hid).innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+(isRifa?'':periodos.map(m=>`<th>${m.length>3?m.slice(0,3):m}</th>`).join(''))+'<th class="tr">Total</th></tr>';
     document.getElementById(bid).innerHTML=S.miembros.map((mi,i)=>{
-      const c=periodos.map(me=>{const v=(S[key][mi.nombre]?.[me])||0;return `<td>${v?`$${v.toFixed(2)}`:'—'}</td>`}).join('');
+      const c=isRifa?'':periodos.map(me=>{const v=(S[key][mi.nombre]?.[me])||0;return `<td>${v?`$${v.toFixed(2)}`:'—'}</td>`}).join('');
       const s=periodos.reduce((s,me)=>s+((S[key][mi.nombre]?.[me])||0),0);
       return `<tr><td>${i+1}</td><td class="tl fw6">${esc(mi.nombre)}</td>${c}<td class="tr fw6">$${s.toFixed(2)}</td></tr>`
-    }).join('')||'<tr><td colspan="'+(periodos.length+2)+'" class="emp"><div class="big">⊠</div>Sin datos</td></tr>'
+    }).join('')||'<tr><td colspan="'+(isRifa?3:periodos.length+2)+'" class="emp"><div class="big">⊠</div>Sin datos</td></tr>'
   });
   let tg=0;S.miembros.forEach(mi=>{['ahorroNormal','ahorroCumple','ahorroRifa'].forEach(k=>{
     const periodos=k==='ahorroRifa'?RIFA_NUM:MESES;
