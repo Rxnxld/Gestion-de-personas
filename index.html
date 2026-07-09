@@ -503,7 +503,12 @@ async function api(m,p,b){
 
 async function loadAll(){
   try{const d=await api('GET','/api/datos/completos');S=d;
-  S.ahorroRifa={};S.miembros.forEach(m=>{S.ahorroRifa[m.nombre]={};RIFA_NUM.forEach(me=>{const v=(S.rifas[m.nombre]?.[me])||0;S.ahorroRifa[m.nombre][me]=(v&1)+((v>>1)&1)})});
+  S.ahorroRifa={};
+  const totalRifaRecaudado=S.miembros.reduce((s,m)=>{
+    return s+RIFA_NUM.reduce((ss,me)=>{const v=(S.rifas[m.nombre]?.[me])||0;return ss+(v&1)+((v>>1)&1)},0)
+  },0);
+  const parte=totalRifaRecaudado/S.miembros.length||0;
+  S.miembros.forEach(m=>{S.ahorroRifa[m.nombre]={};RIFA_NUM.forEach(me=>{S.ahorroRifa[m.nombre][me]=parte})});
   renderAll()}catch(e){toast('Error: '+e.message,'e')}
 }
 
@@ -547,10 +552,14 @@ function computeEstadoCuenta(){
     const asOk=S.fechasTablas.reduce((s,f)=>s+((S.asistencias[m.nombre]?.[f])||0),0);
     const asPct=totalFechas?Math.round((asOk/totalFechas)*1000)/10:0;
     const riParticip=S.fechasRifa.reduce((s,f)=>{const v=(S.rifas[m.nombre]?.[f])||0;return s+(v&1)+((v>>1)&1)},0);
+    const totalRifaRecaudado=S.miembros.reduce((s,mi)=>{
+      return s+S.fechasRifa.reduce((ss,f)=>{const v=(S.rifas[mi.nombre]?.[f])||0;return ss+(v&1)+((v>>1)&1)},0)
+    },0);
+    const parteRifa=totalRifaRecaudado/S.miembros.length||0;
     const totalRifaSlots=S.fechasRifa.length*2;
     const aN=MESES.reduce((s,me)=>s+((S.ahorroNormal[m.nombre]?.[me])||0),0);
     const aC=MESES.reduce((s,me)=>s+((S.ahorroCumple[m.nombre]?.[me])||0),0);
-    const aR=riParticip;
+    const aR=parteRifa;
     const ahorroTotal=aN+aC+aR;
     const cumpleTotal=S.cumpleMeses.reduce((s,c)=>s+((S.cumpleAportes[c]?.[m.nombre])||0),0);
     const cumpleFechaObj=S.cumpleFechas.find(cf=>cf.nombre===m.nombre);

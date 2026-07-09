@@ -717,8 +717,16 @@ def _calcular_estado_cuenta(db):
         bingo_dist[r['miembro_id']] = bingo_dist.get(r['miembro_id'], 0) + (r['monto_asignado'] or 0)
 
     rifa = {}
+    total_rifa = 0
+    rifa_raw = {}
     for r in db.execute("SELECT miembro_id, SUM((valor & 1) + ((valor >> 1) & 1)) s FROM rifas GROUP BY miembro_id"):
-        rifa[r['miembro_id']] = r['s'] or 0
+        rifa_raw[r['miembro_id']] = r['s'] or 0
+        total_rifa += r['s'] or 0
+    total_miembros = len(miembros) or 1
+    parte_rifa = total_rifa / total_miembros
+    for m in miembros:
+        rifa[m['id']] = round(parte_rifa, 2)
+        rifa_raw.setdefault(m['id'], 0)
 
     ahorros = {'normal': {}, 'cumple': {}, 'rifa': {}}
     for r in db.execute("SELECT tipo, miembro_id, SUM(valor) s FROM ahorros GROUP BY tipo, miembro_id"):
@@ -759,7 +767,7 @@ def _calcular_estado_cuenta(db):
         resultado.append({
             'id': mid, 'nombre': m['nombre'], 'apodo': m['apodo'],
             'asistencia': {'asistidas': as_ok, 'total': total_fechas_tablas, 'pct': as_pct},
-            'rifa': {'participaciones': rifa.get(mid, 0), 'totalFechas': total_fechas_rifa},
+            'rifa': {'participaciones': rifa_raw.get(mid, 0), 'totalFechas': total_fechas_rifa},
             'bingo': bingo_total, 'bingoGanado': bingo_ganado, 'bingoDebe': bingo_debe,
             'ahorros': {'normal': round(aN, 2), 'cumple': round(aC, 2), 'rifa': round(aR, 2), 'total': round(ahorro_total, 2)},
             'cumpleAportes': cumple.get(mid, 0),
