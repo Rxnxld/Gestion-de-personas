@@ -130,7 +130,23 @@ def init_db():
             personalizado BOOLEAN DEFAULT FALSE,
             UNIQUE(bingo_id, miembro_id)
         );
+        -- backfill: crea en bingos las fechas que ya existen en fechas_tablas
+        -- pero que todavia no tienen fila espejo (p.ej. fechas creadas antes
+        -- de conectar ambas tablas)
+        INSERT INTO bingos (fecha, monto, adicional, asistentes)
+        SELECT ft.fecha, 0, 0, 0
+        FROM fechas_tablas ft
+        WHERE NOT EXISTS (SELECT 1 FROM bingos b WHERE b.fecha = ft.fecha)
+        ON CONFLICT (fecha) DO NOTHING;
+        -- backfill: crea en fechas_tablas las fechas que ya existen en bingos
+        -- pero que todavia no tienen fila espejo (por si fue al reves)
+        INSERT INTO fechas_tablas (fecha)
+        SELECT b.fecha
+        FROM bingos b
+        WHERE NOT EXISTS (SELECT 1 FROM fechas_tablas ft WHERE ft.fecha = b.fecha)
+        ON CONFLICT (fecha) DO NOTHING;
         -- backfill distribucion para bingos existentes sin distribucion
+        -- (incluye los que se acaban de crear en el paso anterior)
         INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado)
         SELECT b.id, m.id, TRUE, ROUND(((b.monto + COALESCE(b.adicional,0)) / NULLIF(b.asistentes,0))::numeric, 2)::real
         FROM bingos b, miembros m
