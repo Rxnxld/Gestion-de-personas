@@ -1038,7 +1038,7 @@ function renderPrestamos(){
     const saldo=p.monto-(p.pagado||0);
     if(p.estado!=='pagado')t+=saldo;
     const pill=p.estado==='pagado'?'<span class="pill pill-ok">✓ Pagado</span>':'<span class="pill pill-warn">⏳ Pendiente</span>';
-    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(p.nombre)}</td><td class="tr fw6">$${$f(p.monto)}</td><td class="tr">${p.pagado?$f(p.pagado):'—'}</td><td class="tr fw6" style="color:${saldo>0?'var(--danger)':'var(--text2)'}">$${$f(saldo)}</td><td class="tl">${p.obs?'<span class="tag">'+esc(p.obs)+'</span>':'<span class="tag">—</span>'}</td><td><span style="cursor:pointer" onclick="togglePrestamo(${p.id})" title="Click para cambiar estado">${pill}</span></td><td>${p.estado!=='pagado'?`<button class="btn btn-p btn-xs" onclick="modalAbono(${p.id})">Abonar</button>`:''}<button class="btn btn-r btn-xs" onclick="delPrestamo(${p.id})" style="margin-left:4px">✕</button></td></tr>`
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(p.nombre)}</td><td class="tr fw6">$${$f(p.monto)}</td><td class="tr">${p.pagado?$f(p.pagado):'—'}</td><td class="tr fw6" style="color:${saldo>0?'var(--danger)':'var(--text2)'}">$${$f(saldo)}</td><td class="tl">${p.obs?'<span class="tag">'+esc(p.obs)+'</span>':'<span class="tag">—</span>'}</td><td><span style="cursor:pointer" onclick="togglePrestamo(${p.id})" title="Click para cambiar estado">${pill}</span></td><td>${p.estado!=='pagado'?`<button class="btn btn-p btn-xs" onclick="modalAbono(${p.id})">Abonar</button>`:''}<button class="btn btn-gh btn-xs" onclick="modalVerAbonos(${p.id})" title="Ver abonos" style="margin-left:4px">📋</button><button class="btn btn-r btn-xs" onclick="delPrestamo(${p.id})" style="margin-left:4px">✕</button></td></tr>`
   }).join('')||'<tr><td colspan="8" class="emp"><div class="big">⊡</div>Sin préstamos</td></tr>';
   document.getElementById('prestamosTotal').textContent=$f(t)
 }
@@ -1055,6 +1055,30 @@ async function saveAbono(id){
   const f=document.getElementById('fAbonoFecha').value;
   try{const r=await api('POST','/api/prestamos/'+id+'/abono',{monto:m,fecha:f||null});toast('Abono registrado · Saldo: $'+r.saldo);closeModal();await loadAll()}
   catch(e){toast(e.message,'e')}
+}
+async function modalVerAbonos(prestamoId){
+  try{
+    const abonos=await api('GET',`/api/prestamos/${prestamoId}/abonos`);
+    const prestamo=S.prestamos.find(p=>p.id===prestamoId);
+    const rows=abonos.length?abonos.map((a,i)=>`<tr><td>${i+1}</td><td class="tr fw6">$${$f(a.monto)}</td><td>${a.fecha||'—'}</td><td><button class="btn btn-p btn-xs" onclick="editarAbono(${a.id},${prestamoId})">✎</button><button class="btn btn-r btn-xs" onclick="eliminarAbono(${a.id},${prestamoId})" style="margin-left:4px">✕</button></td></tr>`).join(''):'<tr><td colspan="4" class="emp">Sin abonos registrados</td></tr>';
+    modal(`<h3>Abonos · ${esc(prestamo.nombre)}</h3><p style="font-size:12px;color:var(--text2);margin-bottom:8px">Monto total: <strong>$${$f(prestamo.monto)}</strong> · Pagado: <strong>$${$f(prestamo.pagado||0)}</strong> · Saldo: <strong>$${$f(Math.max(prestamo.monto-(prestamo.pagado||0),0))}</strong></p><div class="tw"><table><thead><tr><th>#</th><th class="tr">Monto</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>${rows}</tbody></table></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cerrar</button></div>`)
+  }catch(e){toast(e.message,'e')}
+}
+async function editarAbono(abonoId, prestamoId){
+  const a=await api('GET',`/api/prestamos/${prestamoId}/abonos`);
+  const abono=a.find(x=>x.id===abonoId);
+  if(!abono)return;
+  modal(`<h3>Editar Abono</h3><div class="fr"><label>Monto ($)</label><input type="number" id="fAbonoEditMonto" step="0.01" min="0.01" value="${abono.monto}" autofocus></div><div class="fr"><label>Fecha</label><input type="date" id="fAbonoEditFecha" value="${abono.fecha||''}"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="guardarEditarAbono(${abonoId},${prestamoId})">Guardar</button></div>`)
+}
+async function guardarEditarAbono(abonoId, prestamoId){
+  const m=parseFloat(document.getElementById('fAbonoEditMonto').value);
+  if(isNaN(m)||m<=0){toast('Ingresá un monto válido','e');return}
+  const f=document.getElementById('fAbonoEditFecha').value;
+  try{await api('PUT',`/api/abonos/${abonoId}`,{monto:m,fecha:f||null});toast('Abono actualizado');closeModal();await loadAll()}catch(e){toast(e.message,'e')}
+}
+async function eliminarAbono(abonoId, prestamoId){
+  if(!confirm('¿Eliminar este abono?'))return;
+  try{await api('DELETE',`/api/abonos/${abonoId}`);toast('Abono eliminado');await loadAll()}catch(e){toast(e.message,'e')}
 }
 function modalPrestamo(){
   modal(`<h3>Nuevo Préstamo</h3><div class="fr"><label>Miembro</label><select id="fPMiembro"><option value="">Seleccionar...</option>${selMi()}</select></div><div class="fr"><label>Fecha</label><input type="date" id="fPFecha"></div><div class="fr"><label>Monto ($)</label><input type="number" id="fPMonto" step="0.01" placeholder="0.00"></div><div class="fr"><label>Observación</label><input type="text" id="fPObs" placeholder="Opcional"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="savePrestamo()">Guardar</button></div>`)

@@ -639,6 +639,48 @@ def add_abono(id):
     db.commit()
     return jsonify({'ok': True, 'saldo': round(row['monto'] - nuevo_pagado, 2), 'estado': nuevo_estado})
 
+@app.route('/api/prestamos/<int:id>/abonos', methods=['GET'])
+@login_required
+def get_abonos(id):
+    abonos = [dict(r) for r in get_db().execute("SELECT id, monto, fecha FROM abonos WHERE prestamo_id=? ORDER BY id", (id,)).fetchall()]
+    return jsonify(abonos)
+
+@app.route('/api/abonos/<int:id>', methods=['PUT'])
+@login_required
+def update_abono(id):
+    data = request.json
+    db = get_db()
+    row = db.execute("SELECT a.id, a.prestamo_id, a.monto FROM abonos a WHERE a.id=?", (id,)).fetchone()
+    if not row: return jsonify({'error':'Abono no encontrado'}), 404
+    nuevo_monto = float(data['monto'])
+    if nuevo_monto <= 0: return jsonify({'error':'Monto debe ser positivo'}), 400
+    prestamo = db.execute("SELECT id, monto, COALESCE(pagado,0) as pagado FROM prestamos WHERE id=?", (row['prestamo_id'],)).fetchone()
+    diferencia = nuevo_monto - row['monto']
+    nuevo_pagado = prestamo['pagado'] + diferencia
+    if nuevo_pagado > prestamo['monto']: return jsonify({'error':'El abono excede la deuda pendiente'}), 400
+    db.execute("UPDATE abonos SET monto=? WHERE id=?", (nuevo_monto, id))
+    if 'fecha' in data:
+        db.execute("UPDATE abonos SET fecha=? WHERE id=?", (data['fecha'], id))
+    nuevo_estado = 'pagado' if nuevo_pagado >= prestamo['monto'] else 'pendiente'
+    db.execute("UPDATE prestamos SET pagado=?, estado=? WHERE id=?", (nuevo_pagado, nuevo_estado, prestamo['id']))
+    db.commit()
+    return jsonify({'ok': True, 'saldo': round(prestamo['monto'] - nuevo_pagado, 2), 'estado': nuevo_estado})
+
+@app.route('/api/abonos/<int:id>', methods=['DELETE'])
+@login_required
+def delete_abono(id):
+    db = get_db()
+    row = db.execute("SELECT a.id, a.prestamo_id, a.monto FROM abonos a WHERE a.id=?", (id,)).fetchone()
+    if not row: return jsonify({'error':'Abono no encontrado'}), 404
+    prestamo = db.execute("SELECT id, monto, COALESCE(pagado,0) as pagado FROM prestamos WHERE id=?", (row['prestamo_id'],)).fetchone()
+    nuevo_pagado = prestamo['pagado'] - row['monto']
+    if nuevo_pagado < 0: nuevo_pagado = 0
+    db.execute("DELETE FROM abonos WHERE id=?", (id,))
+    nuevo_estado = 'pagado' if nuevo_pagado >= prestamo['monto'] else 'pendiente'
+    db.execute("UPDATE prestamos SET pagado=?, estado=? WHERE id=?", (nuevo_pagado, nuevo_estado, prestamo['id']))
+    db.commit()
+    return jsonify({'ok': True})
+
 # ═══════════════════════════════════════════
 #  DATOS COMPLETOS
 # ═══════════════════════════════════════════
