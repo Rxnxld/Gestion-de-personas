@@ -333,7 +333,6 @@ tbody tr:nth-child(even){background:#f8fafc}
       <div id="tb-rifa" class="tb">
         <div class="page-h"><h3>Rifa Grupal</h3><div style="font-size:12px;color:var(--text2)">18 números · 2 cupos c/u · $1 cada cupo · Click para marcar</div><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/rifas')">⬇ Excel</button></div>
         <div class="card"><div class="card-t">Registros</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="rifaHead"></thead><tbody id="rifaBody"></tbody></table></div></div></div>
-        <div class="card" style="background:#fffbeb;border-color:var(--warning)"><div style="font-size:15px;font-weight:700;color:var(--warning)">Total Rifa: $<span id="rifaTotal">0.00</span></div></div>
       </div>
 
       <!-- AHORROS -->
@@ -942,6 +941,16 @@ function renderRifa(){
     gl+=total;
     return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${cells}<td class="fw6">$${$f(total)}</td></tr>`
   }).join('')||'<tr><td colspan="39" class="emp"><div class="big">⊡</div>Sin miembros</td></tr>';
+  if(S.miembros.length){
+    const foot='<tr style="background:var(--border-l);font-weight:700">'+
+      '<td></td><td class="tl">Total</td>'+
+      meses.map(me=>{
+        const t=S.miembros.reduce((s,m)=>{const v=(S.rifas[m.nombre]?.[me])||0;return s+(v&1)+((v>>1)&1)},0);
+        return `<td style="font-size:12px;font-weight:700;color:var(--accent)" colspan="2">$${$f(t)}</td>`
+      }).join('')+
+      `<td class="tr" style="color:var(--accent);font-size:14px">$${$f(gl)}</td></tr>`;
+    document.getElementById('rifaBody').insertAdjacentHTML('beforeend',foot);
+  }
   document.getElementById('rifaTotal').textContent=$f(gl)
 }
 
