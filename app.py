@@ -295,12 +295,30 @@ def get_fechas_tablas():
 def add_fecha_tablas():
     fecha = request.json.get('fecha')
     if not fecha: return jsonify({'error':'Fecha requerida'}), 400
+    db = get_db()
     try:
-        get_db().execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (fecha,))
-        get_db().commit()
-        return jsonify({'ok': True}), 201
+        db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (fecha,))
     except psycopg2.IntegrityError:
         return jsonify({'error':'La fecha ya existe'}), 409
+
+    # Conecta con Bingo: crea también la fecha en la tabla de bingos
+    # (si aún no existe) para que ambas tablas queden sincronizadas.
+    cur = db.execute(
+        "INSERT INTO bingos (fecha, monto, adicional, asistentes) VALUES (?, 0, 0, 0) "
+        "ON CONFLICT (fecha) DO NOTHING RETURNING id", (fecha,))
+    row = cur.fetchone()
+    if row:
+        bingo_id = row['id']
+        attendees = {r['miembro_id'] for r in db.execute(
+            "SELECT miembro_id FROM asistencias WHERE fecha=? AND valor=1", (fecha,)).fetchall()}
+        for m in db.execute("SELECT id FROM miembros").fetchall():
+            db.execute(
+                "INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado) "
+                "VALUES (?, ?, ?, 0) ON CONFLICT (bingo_id, miembro_id) DO NOTHING",
+                (bingo_id, m['id'], m['id'] in attendees))
+
+    db.commit()
+    return jsonify({'ok': True}), 201
 
 @app.route('/api/tablas/asistencias', methods=['GET'])
 @login_required
@@ -401,8 +419,17 @@ def update_bingo(id):
 @app.route('/api/bingos/<int:id>', methods=['DELETE'])
 @login_required
 def delete_bingo(id):
-    get_db().execute("DELETE FROM bingos WHERE id=?", (id,))
-    get_db().commit()
+    db = get_db()
+    row = db.execute("SELECT fecha FROM bingos WHERE id=?", (id,)).fetchone()
+    db.execute("DELETE FROM bingos WHERE id=?", (id,))
+    # Mantiene sincronizada Tablas de Asistencia: si esa fecha no tiene
+    # asistencias registradas, se elimina también de fechas_tablas.
+    if row:
+        tiene_asistencias = db.execute(
+            "SELECT 1 FROM asistencias WHERE fecha=? LIMIT 1", (row['fecha'],)).fetchone()
+        if not tiene_asistencias:
+            db.execute("DELETE FROM fechas_tablas WHERE fecha=?", (row['fecha'],))
+    db.commit()
     return jsonify({'ok': True})
 
 @app.route('/api/bingos/<int:id>/distribucion', methods=['GET'])
