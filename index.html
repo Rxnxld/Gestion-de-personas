@@ -7,9 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--primary:#0f172a;--primary-2:#1e2a44;--accent:#4f46e5;--accent-h:#4338ca;--accent-l:#eef2ff;--accent-2:#7c3aed;--success:#059669;--success-l:#ecfdf5;--danger:#dc2626;--danger-l:#fef2f2;--warning:#d97706;--warning-l:#fffbeb;--bg:#f4f5fa;--card:#fff;--border:#e6e9f0;--border-l:#f1f5f9;--text:#1e293b;--text2:#64748b;--text3:#94a3b8;--radius:14px;--rs:8px;--sh:0 1px 2px rgba(15,23,42,.04),0 1px 1px rgba(15,23,42,.03);--sh-md:0 8px 24px rgba(15,23,42,.08);--sh-lg:0 20px 48px rgba(15,23,42,.14);--side:236px;--font-d:'Plus Jakarta Sans',Inter,-apple-system,sans-serif}
+:root{--primary:#0f172a;--primary-2:#1e2a44;--accent:#4f46e5;--accent-h:#4338ca;--accent-l:#eef2ff;--accent-2:#7c3aed;--success:#10b981;--success-l:#ecfdf5;--danger:#ef4444;--danger-l:#fef2f2;--warning:#d97706;--warning-l:#fffbeb;--bg:#f8fafc;--card:#fff;--border:#e2e8f0;--border-l:#f1f5f9;--text:#0f172a;--text2:#475569;--text3:#94a3b8;--radius:12px;--rs:8px;--sh:0 1px 3px 0 rgb(0 0 0 / 0.1),0 1px 2px -1px rgb(0 0 0 / 0.1);--sh-md:0 8px 24px rgba(15,23,42,.08);--sh-lg:0 20px 48px rgba(15,23,42,.14);--side:236px;--font-d:'Plus Jakarta Sans',Inter,-apple-system,sans-serif}
+*{transition:background-color .2s ease-in-out,border-color .2s ease-in-out,color .2s ease-in-out,box-shadow .2s ease-in-out}
 html{font-size:14px}
 body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
 
@@ -284,7 +286,7 @@ tbody tr:nth-child(even){background:#f8fafc}
   <div class="login-visual">
     <div class="login-orb"></div>
     <div class="login-visual-top">
-      <div class="login-visual-badge">◉</div>
+      <div class="login-visual-badge"><i data-lucide="landmark" style="width:20px;height:20px;"></i></div>
       <div>
         <b>Grupo Calle Portoviejo</b>
         <small>Sistema de Gestión 2026</small>
@@ -304,7 +306,7 @@ tbody tr:nth-child(even){background:#f8fafc}
   <div class="login-form-side">
     <div class="login-box">
       <div class="login-brand">
-        <div class="login-icon">◉</div>
+        <div class="login-icon"><i data-lucide="landmark" style="width:22px;height:22px;"></i></div>
         <h1>Bienvenido de vuelta</h1>
         <p class="login-sub">Ingresá tu contraseña para acceder al panel</p>
       </div>
@@ -312,22 +314,22 @@ tbody tr:nth-child(even){background:#f8fafc}
         <div class="login-field">
           <label>Contraseña</label>
           <div class="input-wrap">
-            <span class="input-icon">🔑</span>
+            <span class="input-icon"><i data-lucide="key" style="width:15px;height:15px;"></i></span>
             <input type="password" id="loginPass" placeholder="Ingresá tu contraseña" autofocus onkeydown="if(event.key==='Enter')login()">
           </div>
         </div>
         <button class="login-btn" id="loginBtn" onclick="login()">
-          <span class="btn-text">Ingresar →</span>
+          <span class="btn-text">Ingresar <i data-lucide="arrow-right" style="width:15px;height:15px;vertical-align:-3px;margin-left:2px"></i></span>
           <span class="btn-spinner"></span>
         </button>
         <div id="loginErr" class="login-err"></div>
       </div>
       <div id="setupForm" style="display:none">
-        <p class="setup-info">🔐 Primer inicio — creá una contraseña</p>
+        <p class="setup-info"><i data-lucide="shield-check" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Primer inicio — creá una contraseña</p>
         <div class="login-field">
           <label>Nueva contraseña (mín. 4 caracteres)</label>
           <div class="input-wrap">
-            <span class="input-icon">🔑</span>
+            <span class="input-icon"><i data-lucide="key" style="width:15px;height:15px;"></i></span>
             <input type="password" id="setupPass" placeholder="Crear contraseña" onkeydown="if(event.key==='Enter')setup()">
           </div>
         </div>
@@ -346,7 +348,7 @@ tbody tr:nth-child(even){background:#f8fafc}
 <div id="appPage" class="app-page">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-      <div class="lg">◉</div>
+      <div class="lg"><i data-lucide="landmark" style="width:18px;height:18px;"></i></div>
       <div>
         <h1>Grupo Calle Portoviejo</h1>
         <small>Gestión 2026 · PostgreSQL</small>
@@ -354,34 +356,34 @@ tbody tr:nth-child(even){background:#f8fafc}
     </div>
     <nav class="sidebar-nav">
       <div class="grp-label">Principal</div>
-      <button class="active" data-t="dashboard"><span class="ico">◉</span> Dashboard</button>
-      <button data-t="miembros"><span class="ico">⊙</span> Miembros</button>
-      <button data-t="estadocuenta"><span class="ico">◈</span> Estado de Cuenta</button>
+      <button class="active" data-t="dashboard"><span class="ico"><i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i></span> Dashboard</button>
+      <button data-t="miembros"><span class="ico"><i data-lucide="users" style="width:14px;height:14px;"></i></span> Miembros</button>
+      <button data-t="estadocuenta"><span class="ico"><i data-lucide="file-text" style="width:14px;height:14px;"></i></span> Estado de Cuenta</button>
       <div class="grp-label">Actividades</div>
-      <button data-t="tablas"><span class="ico">⊞</span> Tablas de Bingo</button>
-      <button data-t="bingo"><span class="ico">⊟</span> Bingo</button>
-      <button data-t="rifa"><span class="ico">⊡</span> Rifa</button>
-      <button data-t="ahorros"><span class="ico">⊠</span> Ahorros</button>
-      <button data-t="cumpleanos"><span class="ico">★</span> Cumpleaños</button>
-      <button data-t="prestamos"><span class="ico">⊡</span> Préstamos</button>
+      <button data-t="tablas"><span class="ico"><i data-lucide="dices" style="width:14px;height:14px;"></i></span> Tablas de Bingo</button>
+      <button data-t="bingo"><span class="ico"><i data-lucide="grid-3x3" style="width:14px;height:14px;"></i></span> Bingo</button>
+      <button data-t="rifa"><span class="ico"><i data-lucide="ticket" style="width:14px;height:14px;"></i></span> Rifa</button>
+      <button data-t="ahorros"><span class="ico"><i data-lucide="piggy-bank" style="width:14px;height:14px;"></i></span> Ahorros</button>
+      <button data-t="cumpleanos"><span class="ico"><i data-lucide="cake" style="width:14px;height:14px;"></i></span> Cumpleaños</button>
+      <button data-t="prestamos"><span class="ico"><i data-lucide="hand-coins" style="width:14px;height:14px;"></i></span> Préstamos</button>
       <div class="grp-label">Sistema</div>
-      <button data-t="importar"><span class="ico">⇧</span> Importar / Exportar</button>
+      <button data-t="importar"><span class="ico"><i data-lucide="upload" style="width:14px;height:14px;"></i></span> Importar / Exportar</button>
     </nav>
     <div class="sidebar-foot">
       <div class="av">GP</div>
       <div class="u"><b>Administrador</b><small>Sesión activa</small></div>
-      <button onclick="logout()" title="Cerrar sesión">⏻</button>
+      <button onclick="logout()" title="Cerrar sesión"><i data-lucide="log-out" style="width:15px;height:15px;"></i></button>
     </div>
   </aside>
 
   <div class="main">
     <header class="topbar">
-      <button class="menu-btn" onclick="toggleSidebar()" title="Menú">☰</button>
+      <button class="menu-btn" onclick="toggleSidebar()" title="Menú"><i data-lucide="menu" style="width:18px;height:18px;"></i></button>
       <div class="tb-titles">
         <h2 id="pageTitle">Dashboard</h2>
         <span class="date" id="topDate"></span>
       </div>
-      <span id="connBadge" style="font-size:11px;padding:3px 11px;border-radius:20px;font-weight:600" class="bdg-g">● OK</span>
+      <span id="connBadge" style="font-size:11px;padding:4px 12px;border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:5px" class="bdg-g"><i data-lucide="check-circle-2" style="width:12px;height:12px;"></i> OK</span>
     </header>
 
     <section class="content">
@@ -390,10 +392,10 @@ tbody tr:nth-child(even){background:#f8fafc}
       <div id="tb-dashboard" class="tb show">
         <div class="welcome-banner">
           <div class="wb-text">
-            <h3>Hola 👋, este es el resumen del grupo</h3>
+            <h3>Hola, este es el resumen del grupo</h3>
             <p>Un vistazo rápido a asistencias, bingos, rifas, ahorros y préstamos del Grupo Calle Portoviejo.</p>
           </div>
-          <div class="wb-deco">◉</div>
+          <div class="wb-deco"><i data-lucide="trending-up" style="width:44px;height:44px;"></i></div>
         </div>
         <div class="stats" id="statsGrid"></div>
         <div class="card">
@@ -404,33 +406,33 @@ tbody tr:nth-child(even){background:#f8fafc}
 
       <!-- MIEMBROS -->
       <div id="tb-miembros" class="tb">
-        <div class="page-h"><h3>Miembros</h3><button class="btn btn-p btn-sm" onclick="modalMiembro()">+ Nuevo</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/miembros')">⬇ Excel</button></div>
+        <div class="page-h"><h3>Miembros</h3><button class="btn btn-p btn-sm" onclick="modalMiembro()"><i data-lucide="plus" style="width:13px;height:13px;vertical-align:-2px;"></i> Nuevo</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/miembros')"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Excel</button></div>
         <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>ID</th><th class="tl">Nombre</th><th>Apodo</th><th>Acción</th></tr></thead><tbody id="miembrosBody"></tbody></table></div></div></div>
       </div>
 
       <!-- ASISTENCIAS -->
       <div id="tb-tablas" class="tb">
-        <div class="page-h"><h3>Tablas de Bingo</h3><button class="btn btn-p btn-sm" onclick="modalAsistencia()">+ Nueva Fecha</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/asistencias')">⬇ Excel</button></div>
+        <div class="page-h"><h3>Tablas de Bingo</h3><button class="btn btn-p btn-sm" onclick="modalAsistencia()"><i data-lucide="plus" style="width:13px;height:13px;vertical-align:-2px;"></i> Nueva Fecha</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/asistencias')"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Excel</button></div>
         <div class="card"><div class="card-t">Historial de Pagos</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="tablasHead"></thead><tbody id="tablasBody"></tbody></table></div></div></div>
       </div>
 
       <!-- BINGO -->
       <div id="tb-bingo" class="tb">
-        <div class="page-h"><h3>Bingo</h3><button class="btn btn-p btn-sm" onclick="modalBingo()">+ Registrar</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/bingos')">⬇ Excel</button><button class="btn btn-o btn-sm" onclick="window.open('/api/export/xlsx/bingo_reporte')">📊 Reporte Completo</button></div>
+        <div class="page-h"><h3>Bingo</h3><button class="btn btn-p btn-sm" onclick="modalBingo()"><i data-lucide="plus" style="width:13px;height:13px;vertical-align:-2px;"></i> Registrar</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/bingos')"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Excel</button><button class="btn btn-o btn-sm" onclick="window.open('/api/export/xlsx/bingo_reporte')"><i data-lucide="bar-chart-3" style="width:13px;height:13px;vertical-align:-2px;"></i> Reporte Completo</button></div>
         <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>Fecha</th><th class="tr">Tablas Bingo</th><th class="tr">Adicional</th><th class="tr" style="color:var(--accent)">Total</th><th class="tr">Coge c/u</th><th>Asist.</th><th>Acción</th></tr></thead><tbody id="bingoBody"></tbody></table></div></div></div>
         <div class="card" style="background:#ecfdf5;border-color:var(--success)"><div style="font-size:15px;font-weight:700;color:var(--success)">Total Bingo: $<span id="bingoTotal">0.00</span></div></div>
       </div>
 
       <!-- RIFA -->
       <div id="tb-rifa" class="tb">
-        <div class="page-h"><h3>Rifa Grupal</h3><div style="font-size:12px;color:var(--text2)">18 números · 2 cupos c/u · $1 cada cupo · Click para marcar</div><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/rifas')">⬇ Excel</button></div>
+        <div class="page-h"><h3>Rifa Grupal</h3><div style="font-size:12px;color:var(--text2)">18 números · 2 cupos c/u · $1 cada cupo · Click para marcar</div><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/rifas')"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Excel</button></div>
         <div class="card"><div class="card-t">Registros</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="rifaHead"></thead><tbody id="rifaBody"></tbody></table></div></div></div>
         <div class="card" style="background:#fffbeb;border-color:var(--warning)"><div style="font-size:15px;font-weight:700;color:var(--warning)">Total Rifa: $<span id="rifaTotal">0.00</span></div></div>
       </div>
 
       <!-- AHORROS -->
       <div id="tb-ahorros" class="tb">
-        <div class="page-h"><h3>Ahorros</h3><button class="btn btn-p btn-sm" onclick="modalAhorro('normal')">+ Normal</button><button class="btn btn-g btn-sm" onclick="modalAhorro('cumple')">+ Cumpleaños</button><button class="btn btn-o btn-sm" onclick="modalAhorro('rifa')">+ Rifa</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_normal')">⬇ Normal</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_cumple')">⬇ Cumpleaños</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_rifa')">⬇ Rifa</button></div>
+        <div class="page-h"><h3>Ahorros</h3><button class="btn btn-p btn-sm" onclick="modalAhorro('normal')"><i data-lucide="plus" style="width:13px;height:13px;vertical-align:-2px;"></i> Normal</button><button class="btn btn-g btn-sm" onclick="modalAhorro('cumple')"><i data-lucide="plus" style="width:13px;height:13px;vertical-align:-2px;"></i> Cumpleaños</button><button class="btn btn-o btn-sm" onclick="modalAhorro('rifa')"><i data-lucide="plus" style="width:13px;height:13px;vertical-align:-2px;"></i> Rifa</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_normal')"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Normal</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_cumple')"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Cumpleaños</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/ahorro_rifa')"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Rifa</button></div>
         <div class="card"><div class="card-t">Ahorro Normal</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="ahNHead"></thead><tbody id="ahNBody"></tbody></table></div></div></div>
         <div class="card"><div class="card-t">Ahorro Cumpleaños</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="ahCHead"></thead><tbody id="ahCBody"></tbody></table></div></div></div>
         <div class="card"><div class="card-t">Ahorro Rifa Grupal</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="ahRHead"></thead><tbody id="ahRBody"></tbody></table></div></div></div>
@@ -439,7 +441,7 @@ tbody tr:nth-child(even){background:#f8fafc}
 
       <!-- CUMPLEAÑOS -->
       <div id="tb-cumpleanos" class="tb">
-        <div class="page-h"><h3>Cumpleaños</h3><button class="btn btn-p btn-sm" onclick="modalCumpleAporte()">+ Aporte</button><button class="btn btn-g btn-sm" onclick="modalCumpleFecha()">+ Fecha</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/cumple_aportes')">⬇ Aportes</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/cumple_fechas')">⬇ Fechas</button></div>
+        <div class="page-h"><h3>Cumpleaños</h3><button class="btn btn-p btn-sm" onclick="modalCumpleAporte()"><i data-lucide="plus" style="width:13px;height:13px;vertical-align:-2px;"></i> Aporte</button><button class="btn btn-g btn-sm" onclick="modalCumpleFecha()"><i data-lucide="plus" style="width:13px;height:13px;vertical-align:-2px;"></i> Fecha</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/cumple_aportes')"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Aportes</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/cumple_fechas')"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Fechas</button></div>
         <div class="g2">
           <div class="card"><div class="card-t">Aportes por Mes</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="cumpleHead"></thead><tbody id="cumpleBody"></tbody></table></div></div></div>
           <div class="card"><div class="card-t">Fechas de Cumpleaños</div><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th>Fecha</th><th>Acción</th></tr></thead><tbody id="cumpleFBody"></tbody></table></div></div></div>
@@ -448,14 +450,14 @@ tbody tr:nth-child(even){background:#f8fafc}
 
       <!-- PRÉSTAMOS -->
       <div id="tb-prestamos" class="tb">
-        <div class="page-h"><h3>Préstamos</h3><button class="btn btn-p btn-sm" onclick="modalPrestamo()">+ Nuevo</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/prestamos')">⬇ Excel</button></div>
+        <div class="page-h"><h3>Préstamos</h3><button class="btn btn-p btn-sm" onclick="modalPrestamo()"><i data-lucide="plus" style="width:13px;height:13px;vertical-align:-2px;"></i> Nuevo</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/prestamos')"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Excel</button></div>
         <div class="card"><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th class="tr">Monto</th><th class="tr">Pagado</th><th class="tr">Saldo</th><th class="tl">Obs</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="prestamosBody"></tbody></table></div></div></div>
         <div class="card" style="background:#fef2f2;border-color:var(--danger)"><div style="font-size:15px;font-weight:700;color:var(--danger)">Total Pendiente: $<span id="prestamosTotal">0.00</span></div></div>
       </div>
 
       <!-- ESTADO DE CUENTA -->
       <div id="tb-estadocuenta" class="tb">
-        <div class="page-h"><h3>Estado de Cuenta</h3><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/estado_cuenta')">⬇ Excel General</button></div>
+        <div class="page-h"><h3>Estado de Cuenta</h3><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/estado_cuenta')"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Excel General</button></div>
 
         <div class="stats" id="ecStatsGrid"></div>
 
@@ -464,7 +466,7 @@ tbody tr:nth-child(even){background:#f8fafc}
           <div class="card-b">
             <div class="form-inline">
               <div class="fg"><label>Miembro</label><select id="ecSelMiembro" onchange="renderEstadoIndividual()"><option value="">Ver todos ↓</option></select></div>
-              <button class="btn btn-p btn-sm" id="ecPrintBtn" style="display:none" onclick="window.print()">🖨 Imprimir estado</button>
+              <button class="btn btn-p btn-sm" id="ecPrintBtn" style="display:none" onclick="window.print()"><i data-lucide="printer" style="width:13px;height:13px;vertical-align:-2px;"></i> Imprimir estado</button>
             </div>
           </div>
         </div>
@@ -492,7 +494,7 @@ tbody tr:nth-child(even){background:#f8fafc}
           <div class="card-b">
             <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Subí un archivo .xlsx con hojas nombradas como: Miembros, Tablas, Bingo, Rifa, Ahorro, Ahorro Cumpleaños, Ahorro Rifa, Prestamos.</p>
             <input type="file" id="importFile" accept=".xlsx" style="font-size:12px;margin-bottom:10px;display:block">
-            <button class="btn btn-p btn-sm" onclick="importExcel()">⇧ Importar Excel</button>
+            <button class="btn btn-p btn-sm" onclick="importExcel()"><i data-lucide="upload" style="width:13px;height:13px;vertical-align:-2px;"></i> Importar Excel</button>
             <div id="importResult" style="font-size:12px;margin-top:10px"></div>
           </div>
         </div>
@@ -501,7 +503,7 @@ tbody tr:nth-child(even){background:#f8fafc}
           <div class="card-b">
             <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Descargá todas las tablas en Excel comprimidas en un ZIP.</p>
             <div class="grup">
-              <a href="/api/export/xlsx/todo" class="btn btn-p btn-sm">⬇ Todo en Excel (ZIP)</a>
+              <a href="/api/export/xlsx/todo" class="btn btn-p btn-sm"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Todo en Excel (ZIP)</a>
             </div>
           </div>
         </div>
@@ -509,16 +511,16 @@ tbody tr:nth-child(even){background:#f8fafc}
           <div class="card-t">Exportar tabla individual — Excel</div>
           <div class="card-b">
             <div class="grup">
-              <a href="/api/export/xlsx/miembros" class="btn btn-g btn-sm">⬇ Miembros</a>
-              <a href="/api/export/xlsx/asistencias" class="btn btn-g btn-sm">⬇ Tablas Bingo</a>
-              <a href="/api/export/xlsx/bingos" class="btn btn-g btn-sm">⬇ Bingo</a>
-              <a href="/api/export/xlsx/rifas" class="btn btn-g btn-sm">⬇ Rifa</a>
-              <a href="/api/export/xlsx/ahorro_normal" class="btn btn-g btn-sm">⬇ Ahorro Normal</a>
-              <a href="/api/export/xlsx/ahorro_cumple" class="btn btn-g btn-sm">⬇ Ahorro Cumple</a>
-              <a href="/api/export/xlsx/ahorro_rifa" class="btn btn-g btn-sm">⬇ Ahorro Rifa</a>
-              <a href="/api/export/xlsx/cumple_aportes" class="btn btn-g btn-sm">⬇ Aportes Cumple</a>
-              <a href="/api/export/xlsx/cumple_fechas" class="btn btn-g btn-sm">⬇ Fechas Cumple</a>
-              <a href="/api/export/xlsx/prestamos" class="btn btn-g btn-sm">⬇ Préstamos</a>
+              <a href="/api/export/xlsx/miembros" class="btn btn-g btn-sm"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Miembros</a>
+              <a href="/api/export/xlsx/asistencias" class="btn btn-g btn-sm"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Tablas Bingo</a>
+              <a href="/api/export/xlsx/bingos" class="btn btn-g btn-sm"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Bingo</a>
+              <a href="/api/export/xlsx/rifas" class="btn btn-g btn-sm"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Rifa</a>
+              <a href="/api/export/xlsx/ahorro_normal" class="btn btn-g btn-sm"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Ahorro Normal</a>
+              <a href="/api/export/xlsx/ahorro_cumple" class="btn btn-g btn-sm"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Ahorro Cumple</a>
+              <a href="/api/export/xlsx/ahorro_rifa" class="btn btn-g btn-sm"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Ahorro Rifa</a>
+              <a href="/api/export/xlsx/cumple_aportes" class="btn btn-g btn-sm"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Aportes Cumple</a>
+              <a href="/api/export/xlsx/cumple_fechas" class="btn btn-g btn-sm"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Fechas Cumple</a>
+              <a href="/api/export/xlsx/prestamos" class="btn btn-g btn-sm"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Préstamos</a>
             </div>
           </div>
         </div>
@@ -583,12 +585,12 @@ async function api(m,p,b){
   const opts={method:m,headers:{'Content-Type':'application/json'}};if(b)opts.body=JSON.stringify(b);
   try{
     const r=await fetch(p,opts);
-    const badge=document.getElementById('connBadge');badge.className='bdg-g';badge.textContent='● OK';
+    const badge=document.getElementById('connBadge');badge.className='bdg-g';badge.innerHTML='<i data-lucide="check-circle-2" style="width:12px;height:12px;vertical-align:-2px"></i> OK';if(window.lucide)lucide.createIcons();
     if(r.status===401){logout();throw new Error('Sesión expirada')}
     if(!r.ok){const e=await r.json();throw new Error(e.error||'Error')}
     return await r.json()
   }catch(e){
-    const badge=document.getElementById('connBadge');badge.className='bdg';badge.style.background='#fef2f2';badge.style.color='#dc2626';badge.textContent='● Error';
+    const badge=document.getElementById('connBadge');badge.className='bdg';badge.style.background='#fef2f2';badge.style.color='#dc2626';badge.innerHTML='<i data-lucide="x-circle" style="width:12px;height:12px;vertical-align:-2px"></i> Error';if(window.lucide)lucide.createIcons();
     throw e
   }
 }
@@ -610,8 +612,8 @@ async function loadAll(){
 
 function toast(m,t='s'){
   const box=document.getElementById('toastBox');const el=document.createElement('div');
-  const icons={s:'\u2713',e:'\u2715',i:'\u2139'};
-  el.className='toast '+t;el.innerHTML='<span style="font-size:14px;font-weight:700;flex-shrink:0;opacity:.85">'+(icons[t]||'')+'</span><span>'+m+'</span>';box.appendChild(el);
+  const icons={s:'check-circle',e:'x-circle',i:'info'};
+  el.className='toast '+t;el.innerHTML='<span style="flex-shrink:0;opacity:.9;display:flex"><i data-lucide="'+(icons[t]||'info')+'" style="width:16px;height:16px"></i></span><span>'+m+'</span>';box.appendChild(el);if(window.lucide)lucide.createIcons();
   setTimeout(()=>{el.classList.add('fade');setTimeout(()=>{if(el.parentNode)el.remove()},400)},2600)
 }
 
@@ -628,7 +630,7 @@ document.querySelectorAll('.sidebar-nav button[data-t]').forEach(b=>{
   })
 });
 
-function modal(html){document.getElementById('modalBody').innerHTML=html;document.getElementById('modalBg').classList.add('open')}
+function modal(html){document.getElementById('modalBody').innerHTML=html;document.getElementById('modalBg').classList.add('open');if(window.lucide)lucide.createIcons()}
 function closeModal(){document.getElementById('modalBg').classList.remove('open')}
 document.getElementById('modalBg').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()})
 
@@ -639,7 +641,7 @@ function selM(val){return MESES.map(m=>`<option value="${m}"${m===val?' selected
 function selMi(val){return S.miembros.map(m=>`<option value="${esc(m.nombre)}"${m.nombre===val?' selected':''}>${esc(m.nombre)}${m.apodo?' ('+esc(m.apodo)+')':''}</option>`).join('')}
 
 // ─── RENDER ───
-function renderAll(){renderDashboard();renderMiembros();renderTablas();renderBingos();renderRifa();renderAhorros();renderCumple();renderCumpleFechas();renderPrestamos();renderEstadoCuenta()}
+function renderAll(){renderDashboard();renderMiembros();renderTablas();renderBingos();renderRifa();renderAhorros();renderCumple();renderCumpleFechas();renderPrestamos();renderEstadoCuenta();if(window.lucide)lucide.createIcons()}
 
 // ─── ESTADO DE CUENTA (cruce de todas las tablas) ───
 function computeEstadoCuenta(){
@@ -692,21 +694,21 @@ function renderEstadoCuenta(){
   const morosos=data.filter(d=>d.estadoGeneral==='moroso').length;
   const alDia=data.filter(d=>d.estadoGeneral==='al_dia').length;
   document.getElementById('ecStatsGrid').innerHTML=
-    `<div class="stat ec-stat-card blue"><div class="ico">📊</div><div class="l">Tablas Pagadas</div><div class="v">${avgAsis}%</div></div>
-     <div class="stat ec-stat-card gr"><div class="ico">💰</div><div class="l">Ahorros Totales</div><div class="v">$${$f(totalAhorros)}</div></div>
-     <div class="stat ec-stat-card re"><div class="ico">📋</div><div class="l">Préstamos Pendientes</div><div class="v">$${$f(totalPend)}</div></div>
-     <div class="stat ec-stat-card ${morosos>0?'re':'gr'}"><div class="ico">${morosos>0?'⚠️':'✅'}</div><div class="l">Miembros</div><div class="v">${alDia} al día · ${morosos} en mora</div></div>`;
+    `<div class="stat ec-stat-card blue"><div class="ico"><i data-lucide="bar-chart-3" style="width:20px;height:20px;vertical-align:-2px;"></i></div><div class="l">Tablas Pagadas</div><div class="v">${avgAsis}%</div></div>
+     <div class="stat ec-stat-card gr"><div class="ico"><i data-lucide="wallet" style="width:20px;height:20px;vertical-align:-2px;"></i></div><div class="l">Ahorros Totales</div><div class="v">$${$f(totalAhorros)}</div></div>
+     <div class="stat ec-stat-card re"><div class="ico"><i data-lucide="file-text" style="width:20px;height:20px;vertical-align:-2px;"></i></div><div class="l">Préstamos Pendientes</div><div class="v">$${$f(totalPend)}</div></div>
+     <div class="stat ec-stat-card ${morosos>0?'re':'gr'}"><div class="ico">${morosos>0?'<i data-lucide="alert-triangle" style="width:20px;height:20px;vertical-align:-2px;"></i>':'<i data-lucide="check-circle-2" style="width:20px;height:20px;vertical-align:-2px;"></i>'}</div><div class="l">Miembros</div><div class="v">${alDia} al día · ${morosos} en mora</div></div>`;
   const sel=document.getElementById('ecSelMiembro');
   const cur=sel.value;
   sel.innerHTML='<option value="">Ver todos ↓</option>'+S.miembros.map(m=>`<option value="${esc(m.nombre)}">${esc(m.nombre)}</option>`).join('');
   sel.value=cur;
   document.getElementById('ecBody').innerHTML=data.map((d,i)=>{
-    const pill=d.estadoGeneral==='al_dia'?'<span class="ec-badge ok">● Al día</span>':d.estadoGeneral==='con_deuda'?'<span class="ec-badge warn">● Con deuda</span>':'<span class="ec-badge danger">● Moroso</span>';
+    const pill=d.estadoGeneral==='al_dia'?'<span class="ec-badge ok"><i data-lucide="check-circle-2" style="width:12px;height:12px;vertical-align:-2px;"></i> Al día</span>':d.estadoGeneral==='con_deuda'?'<span class="ec-badge warn"><i data-lucide="alert-circle" style="width:12px;height:12px;vertical-align:-2px;"></i> Con deuda</span>':'<span class="ec-badge danger"><i data-lucide="alert-triangle" style="width:12px;height:12px;vertical-align:-2px;"></i> Moroso</span>';
     const bCl=d.bingo>0?'var(--success)':d.bingo<0?'var(--danger)':'var(--text2)';
     const bTitle=d.bingoDebe>0?`title="Ganado $${$f(d.bingoGanado)} − $${$f(d.bingoDebe)} (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} no pagada${d.bingoDebe===1?'':'s'})"`:'';
     const tCl=d.totalGeneral<0?'var(--danger)':'var(--success)';
     return `<tr><td style="color:var(--text2);font-weight:500">${i+1}</td><td class="tl" style="font-weight:600">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.pct>=70?'bdg-g':d.asistencia.pct>=40?'bdg-w':'bdg-r'}">${d.asistencia.pct}%</span></td><td style="font-weight:600">${d.rifa.participaciones}</td><td class="tr fw6" style="color:${bCl}" ${bTitle}>${d.bingo!==0?'$'+$f(d.bingo):'—'}</td><td class="tr">$${$f(d.ahorros.total)}</td><td class="tr">${d.cumpleAportes}</td><td class="tr" style="color:${d.prestamos.pendiente>0?'var(--danger)':'var(--text2)'}">$${$f(d.prestamos.pendiente)}</td><td class="tr fw6" style="color:${tCl};font-size:13px">$${$f(d.totalGeneral)}</td><td>${pill}</td></tr>`
-  }).join('')||'<tr><td colspan="11" class="emp"><div class="big">◈</div>Sin datos</td></tr>';
+  }).join('')||'<tr><td colspan="11" class="emp"><div class="big"><i data-lucide="file-text" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin datos</td></tr>';
   renderEstadoIndividual();
 }
 
@@ -790,7 +792,7 @@ function renderEstadoIndividual(){
         </div>
       </div>
       <div style="margin-top:20px;padding-top:16px;border-top:2px solid #f1f5f9">
-        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text)">📋 Historial de Préstamos</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text);display:flex;align-items:center;gap:6px"><i data-lucide="file-text" style="width:15px;height:15px;vertical-align:-2px;"></i> Historial de Préstamos</div>
         <div class="tw" style="border:1px solid var(--border-l);border-radius:8px"><table style="font-size:12px"><thead><tr><th class="tl" style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Fecha</th><th class="tr" style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Monto</th><th class="tr" style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Pagado</th><th class="tr" style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Saldo</th><th class="tl" style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Obs.</th><th style="padding:9px 12px;background:#f8fafc;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">Estado</th></tr></thead><tbody>${prestamosRows}</tbody></table></div>
       </div>
     </div>`;
@@ -803,24 +805,24 @@ function renderDashboard(){
     RIFA_NUM.forEach(n=>{ta+=(S.ahorroRifa[mi.nombre]?.[n])||0})});
   const tp=S.prestamos.filter(p=>p.estado!=='pagado').reduce((s,p)=>s+p.monto,0);
   document.getElementById('statsGrid').innerHTML=
-    `<div class="stat blue"><div class="stat-ico">⊙</div><div><div class="l">Miembros</div><div class="v">${m.length}</div></div></div>
-     <div class="stat gr"><div class="stat-ico">⊞</div><div><div class="l">Tablas</div><div class="v">${S.fechasTablas.length}</div></div></div>
-     <div class="stat blue"><div class="stat-ico">⊟</div><div><div class="l">Bingo</div><div class="v">$${$f(tb)}</div></div></div>
-     <div class="stat or"><div class="stat-ico">⊡</div><div><div class="l">Rifa</div><div class="v">$${$f(tr)}</div></div></div>
-     <div class="stat gr"><div class="stat-ico">⊠</div><div><div class="l">Ahorros</div><div class="v">$${$f(ta)}</div></div></div>
-     <div class="stat re"><div class="stat-ico">◈</div><div><div class="l">Préstamos Pend.</div><div class="v">$${$f(tp)}</div></div></div>`;
+    `<div class="stat blue"><div class="stat-ico"><i data-lucide="users" style="width:18px;height:18px;vertical-align:-2px;"></i></div><div><div class="l">Miembros</div><div class="v">${m.length}</div></div></div>
+     <div class="stat gr"><div class="stat-ico"><i data-lucide="dices" style="width:18px;height:18px;vertical-align:-2px;"></i></div><div><div class="l">Tablas</div><div class="v">${S.fechasTablas.length}</div></div></div>
+     <div class="stat blue"><div class="stat-ico"><i data-lucide="grid-3x3" style="width:18px;height:18px;vertical-align:-2px;"></i></div><div><div class="l">Bingo</div><div class="v">$${$f(tb)}</div></div></div>
+     <div class="stat or"><div class="stat-ico"><i data-lucide="ticket" style="width:18px;height:18px;vertical-align:-2px;"></i></div><div><div class="l">Rifa</div><div class="v">$${$f(tr)}</div></div></div>
+     <div class="stat gr"><div class="stat-ico"><i data-lucide="piggy-bank" style="width:18px;height:18px;vertical-align:-2px;"></i></div><div><div class="l">Ahorros</div><div class="v">$${$f(ta)}</div></div></div>
+     <div class="stat re"><div class="stat-ico"><i data-lucide="hand-coins" style="width:18px;height:18px;vertical-align:-2px;"></i></div><div><div class="l">Préstamos Pend.</div><div class="v">$${$f(tp)}</div></div></div>`;
   const data=computeEstadoCuenta();
   const pillMap={al_dia:['Al día','pill-ok'],con_deuda:['Con deuda','pill-warn'],moroso:['Moroso','pill-danger']};
   document.getElementById('dashBody').innerHTML=data.map((d,i)=>{
     const [plabel,pclass]=pillMap[d.estadoGeneral];
     return `<tr><td>${i+1}</td><td class="tl fw6">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.asistidas>0?'bdg-g':''}">${d.asistencia.asistidas}</span></td><td>${d.rifa.participaciones}</td><td>$${$f(d.ahorros.normal)}</td><td>$${$f(d.ahorros.cumple)}</td><td>$${$f(d.ahorros.rifa)}</td><td class="fw6">$${$f(d.ahorros.total)}</td><td>$${$f(d.prestamos.pendiente)}</td><td class="fw6" style="color:${d.totalGeneral<0?'var(--danger)':'var(--success)'}">$${$f(d.totalGeneral)}</td><td><span class="pill ${pclass}">${plabel}</span></td></tr>`
-  }).join('')||'<tr><td colspan="11" class="emp"><div class="big">⊙</div>Sin miembros</td></tr>'
+  }).join('')||'<tr><td colspan="11" class="emp"><div class="big"><i data-lucide="users" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin miembros</td></tr>'
 }
 
 function renderMiembros(){
   document.getElementById('miembrosBody').innerHTML=S.miembros.map(m=>
-    `<tr><td>${m.id}</td><td class="tl fw6">${esc(m.nombre)}</td><td>${m.apodo?`<span class="tag">${esc(m.apodo)}</span>`:'<span class="tag">—</span>'}</td><td><button class="btn btn-r btn-xs" onclick="delMiembro(${m.id})">✕</button></td></tr>`
-  ).join('')||'<tr><td colspan="4" class="emp"><div class="big">⊙</div>Sin miembros</td></tr>'
+    `<tr><td>${m.id}</td><td class="tl fw6">${esc(m.nombre)}</td><td>${m.apodo?`<span class="tag">${esc(m.apodo)}</span>`:'<span class="tag">—</span>'}</td><td><button class="btn btn-r btn-xs" onclick="delMiembro(${m.id})"><i data-lucide="trash-2" style="width:11px;height:11px;vertical-align:-2px;"></i></button></td></tr>`
+  ).join('')||'<tr><td colspan="4" class="emp"><div class="big"><i data-lucide="users" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin miembros</td></tr>'
 }
 
 function modalMiembro(){
@@ -838,8 +840,8 @@ function renderTablas(){
   document.getElementById('tablasHead').innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+fs.map(f=>`<th>${fd(f)}<br><span style="font-weight:400;font-size:9px">(\$1 c/u)</span></th>`).join('')+'<th style="width:50px"></th></tr>';
   document.getElementById('tablasBody').innerHTML=S.miembros.map((m,i)=>{
     const c=fs.map(f=>{const v=(S.asistencias[m.nombre]?.[f])||0;return `<td class="tb-cell ${v?'pagado':'nopagado'}" onclick="toggleTabla(${m.id},'${f}',${v})" title="${v?'Marcar no pagado':'Marcar pagado'}">${v?'✓':'○'}</td>`}).join('');
-    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${c}<td><button class="btn btn-gh btn-xs" onclick="editarTabla(${m.id})" title="Editar pagos">✎</button></td></tr>`
-  }).join('')||'<tr><td colspan="20" class="emp"><div class="big">⊞</div>Sin registros</td></tr>';
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${c}<td><button class="btn btn-gh btn-xs" onclick="editarTabla(${m.id})" title="Editar pagos"><i data-lucide="pencil" style="width:11px;height:11px;vertical-align:-2px;"></i></button></td></tr>`
+  }).join('')||'<tr><td colspan="20" class="emp"><div class="big"><i data-lucide="dices" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin registros</td></tr>';
   if(fs.length){
     const footer='<tr style="background:#f1f5f9;font-weight:700"><td></td><td class="tl">Total Pagos</td>'+fs.map(f=>{
       const total=S.miembros.reduce((s,m)=>s+((S.asistencias[m.nombre]?.[f])||0),0);
@@ -896,14 +898,14 @@ function renderBingos(){
   document.getElementById('bingoBody').innerHTML=S.bingos.map(b=>{
     const montoReal=S.miembros.reduce((s,m)=>s+((S.asistencias[m.nombre]?.[b.fecha])||0),0);
     const a=b.asistentes||S.miembros.length||1, ad=parseFloat(b.adicional||0), total=montoReal+ad;
-    return `<tr><td><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarFechaBingo(${b.id},'${b.fecha}')" title="Click para cambiar fecha">${fd(b.fecha)} ✎</span></td>
+    return `<tr><td><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarFechaBingo(${b.id},'${b.fecha}')" title="Click para cambiar fecha">${fd(b.fecha)} <i data-lucide="pencil" style="width:10px;height:10px;vertical-align:-2px;opacity:.6"></i></span></td>
       <td class="tr fw6">$${montoReal.toFixed(2)}</td>
-      <td class="tr"><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarAdicional(${b.id},${ad})" title="Click para editar">$${ad.toFixed(2)} ✎</span></td>
+      <td class="tr"><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarAdicional(${b.id},${ad})" title="Click para editar">$${ad.toFixed(2)} <i data-lucide="pencil" style="width:10px;height:10px;vertical-align:-2px;opacity:.6"></i></span></td>
       <td class="tr fw6" style="color:var(--accent)">$${total.toFixed(2)}</td>
       <td class="tr">$${(total/a).toFixed(2)}</td>
-      <td><span class="bdg" style="cursor:pointer;background:#f1f5f9;color:var(--text);padding:2px 8px" onclick="editarAsistentes(${b.id},${a})" title="Click para cambiar">${a} ✎</span></td>
-      <td><button class="btn btn-gh btn-xs" onclick="modalReparto(${b.id})" title="Distribuir">⊞ Reparto</button> <button class="btn btn-r btn-xs" onclick="delBingo(${b.id})">✕</button></td></tr>`
-  }).join('')||'<tr><td colspan="8" class="emp"><div class="big">⊟</div>Sin bingos</td></tr>';
+      <td><span class="bdg" style="cursor:pointer;background:#f1f5f9;color:var(--text);padding:2px 8px" onclick="editarAsistentes(${b.id},${a})" title="Click para cambiar">${a} <i data-lucide="pencil" style="width:10px;height:10px;vertical-align:-2px;opacity:.6"></i></span></td>
+      <td><button class="btn btn-gh btn-xs" onclick="modalReparto(${b.id})" title="Distribuir"><i data-lucide="split" style="width:11px;height:11px;vertical-align:-2px;"></i> Reparto</button> <button class="btn btn-r btn-xs" onclick="delBingo(${b.id})"><i data-lucide="trash-2" style="width:11px;height:11px;vertical-align:-2px;"></i></button></td></tr>`
+  }).join('')||'<tr><td colspan="8" class="emp"><div class="big"><i data-lucide="grid-3x3" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin bingos</td></tr>';
   document.getElementById('bingoTotal').textContent=S.bingos.reduce((s,b)=>{
     const mr=S.miembros.reduce((ss,m)=>ss+((S.asistencias[m.nombre]?.[b.fecha])||0),0);
     return s+mr+(parseFloat(b.adicional||0));
@@ -1036,13 +1038,13 @@ function renderRifa(){
     const cells=meses.map(me=>{
       const v=(S.rifas[m.nombre]?.[me])||0;
       const s1=!!(v&1), s2=!!(v&2);
-      return `<td class="tb-cell ${s1?'pagado':'nopagado'}" onclick="toggleRifaSlot(${m.id},'${me}',1)" title="${s1?'Quitar':'Poner'} slot 1">${s1?'✓':'○'}</td>
-              <td class="tb-cell ${s2?'pagado':'nopagado'}" onclick="toggleRifaSlot(${m.id},'${me}',2)" title="${s2?'Quitar':'Poner'} slot 2">${s2?'✓':'○'}</td>`
+      return `<td class="tb-cell ${s1?'pagado':'nopagado'}" onclick="toggleRifaSlot(${m.id},'${me}',1)" title="${s1?'Quitar':'Poner'} slot 1">${s1?'<i data-lucide="check" style="width:13px;height:13px;vertical-align:-2px;"></i>':''}</td>
+              <td class="tb-cell ${s2?'pagado':'nopagado'}" onclick="toggleRifaSlot(${m.id},'${me}',2)" title="${s2?'Quitar':'Poner'} slot 2">${s2?'<i data-lucide="check" style="width:13px;height:13px;vertical-align:-2px;"></i>':''}</td>`
     }).join('');
     const total=meses.reduce((s,me)=>{const v=(S.rifas[m.nombre]?.[me])||0;return s+(v&1)+((v>>1)&1)},0);
     gl+=total;
     return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${cells}<td class="fw6">$${$f(total)}</td></tr>`
-  }).join('')||'<tr><td colspan="39" class="emp"><div class="big">⊡</div>Sin miembros</td></tr>';
+  }).join('')||'<tr><td colspan="39" class="emp"><div class="big"><i data-lucide="ticket" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin miembros</td></tr>';
   if(S.miembros.length){
     const foot='<tr style="background:var(--border-l);font-weight:700">'+
       '<td></td><td class="tl">Total</td>'+
@@ -1072,7 +1074,7 @@ function renderAhorros(){
       const c=isRifa?'':periodos.map(me=>{const v=(S[key][mi.nombre]?.[me])||0;return `<td>${v?`$${v.toFixed(2)}`:'—'}</td>`}).join('');
       const s=periodos.reduce((s,me)=>s+((S[key][mi.nombre]?.[me])||0),0);
       return `<tr><td>${i+1}</td><td class="tl fw6">${esc(mi.nombre)}</td>${c}<td class="tr fw6">$${s.toFixed(2)}</td></tr>`
-    }).join('')||'<tr><td colspan="'+(isRifa?3:periodos.length+2)+'" class="emp"><div class="big">⊠</div>Sin datos</td></tr>'
+    }).join('')||'<tr><td colspan="'+(isRifa?3:periodos.length+2)+'" class="emp"><div class="big"><i data-lucide="piggy-bank" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin datos</td></tr>'
   });
   let tg=0;S.miembros.forEach(mi=>{['ahorroNormal','ahorroCumple','ahorroRifa'].forEach(k=>{
     const periodos=k==='ahorroRifa'?RIFA_NUM:MESES;
@@ -1096,12 +1098,12 @@ function renderCumple(){
   document.getElementById('cumpleBody').innerHTML=S.miembros.map((m,i)=>{
     const c=lb.map(l=>{const v=(S.cumpleAportes[l]?.[m.nombre])||0;return `<td>${v||'—'}</td>`}).join('');
     return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td>${c}</tr>`
-  }).join('')||'<tr><td colspan="20" class="emp"><div class="big">★</div>Sin datos</td></tr>'
+  }).join('')||'<tr><td colspan="20" class="emp"><div class="big"><i data-lucide="cake" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin datos</td></tr>'
 }
 function renderCumpleFechas(){
   document.getElementById('cumpleFBody').innerHTML=S.cumpleFechas.map((cf,i)=>
-    `<tr><td>${i+1}</td><td class="tl fw6">${esc(cf.nombre)}</td><td>${cf.fecha}</td><td><button class="btn btn-r btn-xs" onclick="delCumpleFecha(${i})">✕</button></td></tr>`
-  ).join('')||'<tr><td colspan="4" class="emp"><div class="big">★</div>Sin fechas</td></tr>'
+    `<tr><td>${i+1}</td><td class="tl fw6">${esc(cf.nombre)}</td><td>${cf.fecha}</td><td><button class="btn btn-r btn-xs" onclick="delCumpleFecha(${i})"><i data-lucide="trash-2" style="width:11px;height:11px;vertical-align:-2px;"></i></button></td></tr>`
+  ).join('')||'<tr><td colspan="4" class="emp"><div class="big"><i data-lucide="cake" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin fechas</td></tr>'
 }
 function modalCumpleAporte(){
   modal(`<h3>Registrar Aporte</h3><div class="fr"><label>Miembro</label><select id="fCMiembro"><option value="">Seleccionar...</option>${selMi()}</select></div><div class="fr"><label>Mes</label><select id="fCMes">${S.cumpleMeses.map(m=>`<option value="${m}">${m}</option>`).join('')}</select></div><div class="fr"><label>Cantidad</label><input type="number" id="fCVal" min="0" step="1" value="1"></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveCumpleAporte()">Guardar</button></div>`)
@@ -1129,9 +1131,9 @@ function renderPrestamos(){
   document.getElementById('prestamosBody').innerHTML=S.prestamos.map((p,i)=>{
     const saldo=p.monto-(p.pagado||0);
     if(p.estado!=='pagado')t+=saldo;
-    const pill=p.estado==='pagado'?'<span class="pill pill-ok">✓ Pagado</span>':'<span class="pill pill-warn">⏳ Pendiente</span>';
-    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(p.nombre)}</td><td class="tr fw6">$${$f(p.monto)}</td><td class="tr">${p.pagado?$f(p.pagado):'—'}</td><td class="tr fw6" style="color:${saldo>0?'var(--danger)':'var(--text2)'}">$${$f(saldo)}</td><td class="tl">${p.obs?'<span class="tag">'+esc(p.obs)+'</span>':'<span class="tag">—</span>'}</td><td><span style="cursor:pointer" onclick="togglePrestamo(${p.id})" title="Click para cambiar estado">${pill}</span></td><td>${p.estado!=='pagado'?`<button class="btn btn-p btn-xs" onclick="modalAbono(${p.id})">Abonar</button>`:''}<button class="btn btn-gh btn-xs" onclick="modalVerAbonos(${p.id})" title="Ver abonos" style="margin-left:4px">📋</button><button class="btn btn-r btn-xs" onclick="delPrestamo(${p.id})" style="margin-left:4px">✕</button></td></tr>`
-  }).join('')||'<tr><td colspan="8" class="emp"><div class="big">⊡</div>Sin préstamos</td></tr>';
+    const pill=p.estado==='pagado'?'<span class="pill pill-ok"><i data-lucide="check" style="width:11px;height:11px;vertical-align:-2px;"></i> Pagado</span>':'<span class="pill pill-warn"><i data-lucide="clock" style="width:11px;height:11px;vertical-align:-2px;"></i> Pendiente</span>';
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(p.nombre)}</td><td class="tr fw6">$${$f(p.monto)}</td><td class="tr">${p.pagado?$f(p.pagado):'—'}</td><td class="tr fw6" style="color:${saldo>0?'var(--danger)':'var(--text2)'}">$${$f(saldo)}</td><td class="tl">${p.obs?'<span class="tag">'+esc(p.obs)+'</span>':'<span class="tag">—</span>'}</td><td><span style="cursor:pointer" onclick="togglePrestamo(${p.id})" title="Click para cambiar estado">${pill}</span></td><td>${p.estado!=='pagado'?`<button class="btn btn-p btn-xs" onclick="modalAbono(${p.id})">Abonar</button>`:''}<button class="btn btn-gh btn-xs" onclick="modalVerAbonos(${p.id})" title="Ver abonos" style="margin-left:4px"><i data-lucide="file-text" style="width:11px;height:11px;vertical-align:-2px;"></i></button><button class="btn btn-r btn-xs" onclick="delPrestamo(${p.id})" style="margin-left:4px"><i data-lucide="trash-2" style="width:11px;height:11px;vertical-align:-2px;"></i></button></td></tr>`
+  }).join('')||'<tr><td colspan="8" class="emp"><div class="big"><i data-lucide="hand-coins" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin préstamos</td></tr>';
   document.getElementById('prestamosTotal').textContent=$f(t)
 }
 async function togglePrestamo(id){
@@ -1152,7 +1154,7 @@ async function modalVerAbonos(prestamoId){
   try{
     const abonos=await api('GET',`/api/prestamos/${prestamoId}/abonos`);
     const prestamo=S.prestamos.find(p=>p.id===prestamoId);
-    const rows=abonos.length?abonos.map((a,i)=>`<tr><td>${i+1}</td><td class="tr fw6">$${$f(a.monto)}</td><td>${a.fecha||'—'}</td><td><button class="btn btn-p btn-xs" onclick="editarAbono(${a.id},${prestamoId})">✎</button><button class="btn btn-r btn-xs" onclick="eliminarAbono(${a.id},${prestamoId})" style="margin-left:4px">✕</button></td></tr>`).join(''):'<tr><td colspan="4" class="emp">Sin abonos registrados</td></tr>';
+    const rows=abonos.length?abonos.map((a,i)=>`<tr><td>${i+1}</td><td class="tr fw6">$${$f(a.monto)}</td><td>${a.fecha||'—'}</td><td><button class="btn btn-p btn-xs" onclick="editarAbono(${a.id},${prestamoId})"><i data-lucide="pencil" style="width:11px;height:11px;vertical-align:-2px;"></i></button><button class="btn btn-r btn-xs" onclick="eliminarAbono(${a.id},${prestamoId})" style="margin-left:4px"><i data-lucide="trash-2" style="width:11px;height:11px;vertical-align:-2px;"></i></button></td></tr>`).join(''):'<tr><td colspan="4" class="emp">Sin abonos registrados</td></tr>';
     modal(`<h3>Abonos · ${esc(prestamo.nombre)}</h3><p style="font-size:12px;color:var(--text2);margin-bottom:8px">Monto total: <strong>$${$f(prestamo.monto)}</strong> · Pagado: <strong>$${$f(prestamo.pagado||0)}</strong> · Saldo: <strong>$${$f(Math.max(prestamo.monto-(prestamo.pagado||0),0))}</strong></p><div class="tw"><table><thead><tr><th>#</th><th class="tr">Monto</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>${rows}</tbody></table></div><div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cerrar</button></div>`)
   }catch(e){toast(e.message,'e')}
 }
@@ -1194,12 +1196,12 @@ async function importExcel(){
       const rs=d.resumen;
       const hojas=(d.hojas||[]).join(', ')||'ninguna';
       document.getElementById('importResult').innerHTML=
-        `<div><span style="color:var(--success);font-weight:600">✓ Importado:</span></div>
+        `<div><span style="color:var(--success);font-weight:600;display:inline-flex;align-items:center;gap:5px"><i data-lucide="check-circle-2" style="width:14px;height:14px;vertical-align:-2px;"></i> Importado:</span></div>
          <div style="font-size:11px;color:var(--text2);margin-top:4px">Hojas detectadas: ${hojas}</div>
          <div style="font-size:12px;margin-top:6px">${rs.miembros} miembros · ${rs.asistencias} tablas pagadas · ${rs.bingos} bingos · ${rs.rifas} rifas · ${rs.ahorros} ahorros · ${rs.cumple} cumpleaños · ${rs.prestamos} préstamos</div>`;
       toast('Importación completada');await loadAll()
-    }else{document.getElementById('importResult').innerHTML=`<span style="color:var(--danger)">✕ Error: ${d.error}</span>`;toast('Error al importar','e')}
-  }catch(e){document.getElementById('importResult').innerHTML=`<span style="color:var(--danger)">✕ ${e.message}</span>`;toast('Error de conexión','e')}
+    }else{document.getElementById('importResult').innerHTML=`<span style="color:var(--danger);display:inline-flex;align-items:center;gap:5px"><i data-lucide="x-circle" style="width:14px;height:14px;vertical-align:-2px;"></i> Error: ${d.error}</span>`;toast('Error al importar','e')}
+  }catch(e){document.getElementById('importResult').innerHTML=`<span style="color:var(--danger);display:inline-flex;align-items:center;gap:5px"><i data-lucide="x-circle" style="width:14px;height:14px;vertical-align:-2px;"></i> ${e.message}</span>`;toast('Error de conexión','e')}
 }
 
 // ─── INIT ───
@@ -1210,6 +1212,7 @@ async function importExcel(){
     let s=d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
     el.textContent=s.charAt(0).toUpperCase()+s.slice(1);
   }
+  if(window.lucide)lucide.createIcons();
 })();
 checkAuth();
 </script>
