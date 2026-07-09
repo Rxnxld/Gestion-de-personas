@@ -5,7 +5,7 @@ from flask_cors import CORS
 import psycopg2
 import psycopg2.extras
 
-app = Flask(__name__, static_folder='.')
+app = Flask(__name__, static_folder='.', static_url_path='')
 # Usa una SECRET_KEY fija (variable de entorno en Render) para que las sesiones
 # no se invaliden cada vez que el servidor reinicia o se redespliega.
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
