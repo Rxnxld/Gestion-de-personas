@@ -948,8 +948,7 @@ function renderRifa(){
       meses.map(me=>{
         const t=S.miembros.reduce((s,m)=>{const v=(S.rifas[m.nombre]?.[me])||0;return s+(v&1)+((v>>1)&1)},0);
         return `<td style="font-size:12px;font-weight:700;color:var(--accent)" colspan="2">$${$f(t)}</td>`
-      }).join('')+
-      `<td class="tr" style="color:var(--accent)">$${$f(gl)}</td></tr>`;
+      }).join('')+'</tr>';
     document.getElementById('rifaBody').insertAdjacentHTML('beforeend',foot);
   }
   document.getElementById('rifaTotal').textContent=$f(gl)
