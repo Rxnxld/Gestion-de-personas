@@ -703,7 +703,8 @@ def _calcular_estado_cuenta(db):
     préstamos) para producir un estado de cuenta único por miembro."""
     miembros = [dict(r) for r in db.execute("SELECT id, nombre, apodo FROM miembros ORDER BY id").fetchall()]
     total_fechas_tablas = db.execute("SELECT COUNT(*) c FROM fechas_tablas").fetchone()['c']
-    total_fechas_rifa = 18
+    fechas_rifa_list = [str(r['fecha']) for r in db.execute("SELECT fecha FROM fechas_rifa ORDER BY fecha").fetchall()] or [str(i) for i in range(1, 19)]
+    total_fechas_rifa = len(fechas_rifa_list)
 
     asis = {}
     for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):
@@ -717,16 +718,19 @@ def _calcular_estado_cuenta(db):
         bingo_dist[r['miembro_id']] = bingo_dist.get(r['miembro_id'], 0) + (r['monto_asignado'] or 0)
 
     rifa = {}
-    total_rifa = 0
     rifa_raw = {}
     for r in db.execute("SELECT miembro_id, SUM((valor & 1) + ((valor >> 1) & 1)) s FROM rifas GROUP BY miembro_id"):
         rifa_raw[r['miembro_id']] = r['s'] or 0
-        total_rifa += r['s'] or 0
-    total_miembros = len(miembros) or 1
-    parte_rifa = total_rifa / total_miembros
-    for m in miembros:
-        rifa[m['id']] = round(parte_rifa, 2)
-        rifa_raw.setdefault(m['id'], 0)
+    # Cada miembro recibe el total recolectado en su rifa correspondiente (en orden)
+    rifa = {}
+    for i, m in enumerate(miembros):
+        num_rifa = fechas_rifa_list[i] if i < len(fechas_rifa_list) else fechas_rifa_list[0]
+        total_recibido = sum(
+            ((r['valor'] & 1) + ((r['valor'] >> 1) & 1))
+            for r in db.execute("SELECT valor FROM rifas WHERE fecha=?", (num_rifa,)).fetchall()
+            if r['valor']
+        )
+        rifa[m['id']] = total_recibido
 
     ahorros = {'normal': {}, 'cumple': {}, 'rifa': {}}
     for r in db.execute("SELECT tipo, miembro_id, SUM(valor) s FROM ahorros GROUP BY tipo, miembro_id"):
