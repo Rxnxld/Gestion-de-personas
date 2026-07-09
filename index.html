@@ -159,13 +159,33 @@ tbody tr:hover{background:#f8fafc}
 .ec-table-wrap td{padding:9px 12px;border-bottom:1px solid var(--border-l);text-align:center}
 .ec-table-wrap tbody tr:hover{background:#f1f5f9}
 .ec-table-wrap tbody tr:last-child td{border-bottom:none}
+.ec-print-logo{display:none}
 @media print{
-  .sidebar,.topbar,.page-h button,#ecSelMiembro,.form-inline label,.modal-bg,.toast-box{display:none!important}
-  .main{margin-left:0!important}
+  .sidebar,.topbar,.page-h button,#ecSelMiembro,.form-inline label,.modal-bg,.toast-box,#ecTablaGeneral,#ecStatsGrid{display:none!important}
+  .main{margin-left:0!important;padding:0!important}
   body{background:#fff!important}
-  #ecTablaGeneral,#ecStatsGrid{display:none!important}
-  .card,.ec-card{box-shadow:none!important;border:1px solid #ccc!important}
-  .ec-item:hover{box-shadow:none}
+  #ecContainer .card{display:none!important}
+  #ecContainer .card:last-child{display:block!important}
+  .card,.ec-card{box-shadow:none!important;border:none!important;padding:0!important}
+  .ec-print-logo{display:block!important;width:100px;margin-bottom:12px}
+  .ec-item{break-inside:avoid;box-shadow:none!important}
+  .ec-head{margin-bottom:20px}
+  .ec-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .ec-item{padding:10px;border:1px solid #e2e8f0!important;border-radius:6px;background:#fff!important}
+  .ec-item .l{font-size:11px}
+  .ec-item .v{font-size:22px}
+  .ec-bar{display:none}
+  .ec-item .s{font-size:9px}
+  .ec-item[style*="grid-column"]{grid-column:1/-1}
+  .tw{border:none!important}
+  .tw table{border:none!important;font-size:10px!important}
+  .tw th{padding:6px 8px!important;font-size:9px!important}
+  .tw td{padding:5px 8px!important}
+  .ec-badge{font-size:10px!important;padding:2px 8px!important}
+  h4{font-size:16px!important}
+  .ec-sub{font-size:11px!important}
+  .ma,.btn{display:none!important}
+  .page-h .grup .btn{display:none!important}
 }
 .tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;background:#f1f5f9;color:#64748b}
 .emp{text-align:center;padding:28px;color:#94a3b8;font-size:13px}
@@ -606,6 +626,7 @@ function renderEstadoIndividual(){
   box.innerHTML=`
     <div class="ec-card">
       <div class="ec-head">
+        <img src="logo.jpeg" class="ec-print-logo">
         <div>
           <h4>${esc(d.nombre)}${d.apodo?' <span style="font-weight:500;color:var(--text2);font-size:14px">('+esc(d.apodo)+')</span>':''}</h4>
           <div class="ec-sub">Estado de Cuenta · Grupo Calle Portoviejo 2026${d.cumpleFecha?' · 🎂 '+fd(d.cumpleFecha):''}</div>
