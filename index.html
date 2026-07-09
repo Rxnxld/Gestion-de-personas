@@ -5,81 +5,131 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Grupo Calle Portoviejo — Gestión 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--primary:#0f172a;--accent:#4f46e5;--accent-h:#4338ca;--accent-l:#eef2ff;--success:#059669;--success-l:#ecfdf5;--danger:#dc2626;--danger-l:#fef2f2;--warning:#d97706;--bg:#f0f2f7;--card:#fff;--border:#e2e8f0;--border-l:#f1f5f9;--text:#1e293b;--text2:#64748b;--text3:#94a3b8;--radius:10px;--rs:6px;--sh:0 1px 2px rgba(0,0,0,.05);--sh-md:0 4px 12px rgba(0,0,0,.07);--side:220px}
+:root{--primary:#0f172a;--primary-2:#1e2a44;--accent:#4f46e5;--accent-h:#4338ca;--accent-l:#eef2ff;--accent-2:#7c3aed;--success:#059669;--success-l:#ecfdf5;--danger:#dc2626;--danger-l:#fef2f2;--warning:#d97706;--warning-l:#fffbeb;--bg:#f4f5fa;--card:#fff;--border:#e6e9f0;--border-l:#f1f5f9;--text:#1e293b;--text2:#64748b;--text3:#94a3b8;--radius:14px;--rs:8px;--sh:0 1px 2px rgba(15,23,42,.04),0 1px 1px rgba(15,23,42,.03);--sh-md:0 8px 24px rgba(15,23,42,.08);--sh-lg:0 20px 48px rgba(15,23,42,.14);--side:236px;--font-d:'Plus Jakarta Sans',Inter,-apple-system,sans-serif}
 html{font-size:14px}
-body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
 
 /* LOGIN */
 @keyframes loginBg{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-@keyframes loginFade{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes loginFade{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
-.login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(-45deg,#0f172a,#1e293b,#1e3a5f,#0f172a);background-size:400% 400%;animation:loginBg 15s ease infinite;position:relative;overflow:hidden}
-.login-page::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(79,70,229,.1) 0,transparent 70%);top:-200px;right:-200px;pointer-events:none}
-.login-page::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(5,150,105,.08) 0,transparent 70%);bottom:-100px;left:-100px;pointer-events:none}
-.login-box{background:rgba(255,255,255,.98);backdrop-filter:blur(20px);border-radius:16px;padding:40px 36px;width:92%;max-width:400px;box-shadow:0 25px 80px rgba(0,0,0,.4);animation:loginFade .6s ease;position:relative;z-index:1}
-.login-brand{text-align:center;margin-bottom:28px}
-.login-icon{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 4px 12px rgba(79,70,229,.3)}
-.login-brand h1{font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-.3px}
-.login-sub{font-size:13px;color:#64748b;margin-top:2px}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-14px) rotate(3deg)}}
+@keyframes floaty2{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(14px) rotate(-4deg)}}
+.login-page{display:flex;min-height:100vh;background:var(--bg);position:relative;overflow:hidden}
+.login-visual{flex:1.1;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:52px 56px;background:linear-gradient(-45deg,#0b1220,#161f36,#1b2a52,#0f172a);background-size:400% 400%;animation:loginBg 18s ease infinite;color:#fff;overflow:hidden}
+.login-visual::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:26px 26px;opacity:.5;pointer-events:none}
+.login-visual::after{content:'';position:absolute;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.22) 0,transparent 70%);top:-220px;right:-160px;pointer-events:none}
+.login-orb{position:absolute;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(79,70,229,.28) 0,transparent 70%);bottom:-140px;left:-100px;pointer-events:none;animation:floaty2 9s ease-in-out infinite}
+.login-visual-top{position:relative;z-index:1;display:flex;align-items:center;gap:12px}
+.login-visual-badge{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 8px 20px rgba(79,70,229,.4);flex-shrink:0}
+.login-visual-top b{font-family:var(--font-d);font-size:15px;font-weight:700;letter-spacing:.2px}
+.login-visual-top small{display:block;font-size:11px;color:#93a2c3;margin-top:1px}
+.login-visual-mid{position:relative;z-index:1;max-width:420px}
+.login-visual-mid h2{font-family:var(--font-d);font-size:32px;font-weight:800;line-height:1.25;letter-spacing:-.5px}
+.login-visual-mid h2 span{background:linear-gradient(90deg,#a5b4fc,#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent}
+.login-visual-mid p{font-size:13.5px;color:#a9b4d0;margin-top:14px;line-height:1.6}
+.login-visual-cards{position:relative;z-index:1;display:flex;gap:12px;margin-top:34px}
+.login-vcard{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(6px);border-radius:12px;padding:14px 16px;animation:floaty 7s ease-in-out infinite}
+.login-vcard:nth-child(2){animation-delay:1.2s}
+.login-vcard:nth-child(3){animation-delay:2.4s}
+.login-vcard .n{font-family:var(--font-d);font-size:19px;font-weight:800}
+.login-vcard .l{font-size:10.5px;color:#93a2c3;margin-top:2px;text-transform:uppercase;letter-spacing:.4px}
+.login-visual-foot{position:relative;z-index:1;font-size:11px;color:#7686ac;display:flex;align-items:center;gap:8px}
+.login-visual-foot .dot{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 0 3px rgba(52,211,153,.2)}
+.login-form-side{flex:.9;display:flex;align-items:center;justify-content:center;padding:32px;position:relative;background:var(--card)}
+.login-box{width:100%;max-width:380px;animation:loginFade .5s ease}
+.login-brand{margin-bottom:30px}
+.login-icon{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;font-size:20px;display:none;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 4px 12px rgba(79,70,229,.3)}
+.login-brand h1{font-family:var(--font-d);font-size:23px;font-weight:800;color:#0f172a;letter-spacing:-.4px}
+.login-sub{font-size:13px;color:#64748b;margin-top:4px}
 .login-field{margin-bottom:16px}
-.login-field label{display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:5px}
+.login-field label{display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:6px}
 .input-wrap{position:relative;display:flex;align-items:center}
-.input-icon{position:absolute;left:12px;font-size:14px;color:#94a3b8;pointer-events:none}
-.input-wrap input{width:100%;padding:11px 12px 11px 38px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:inherit;background:#f8fafc;transition:.15s;color:#1e293b;outline:none}
+.input-icon{position:absolute;left:13px;font-size:14px;color:#94a3b8;pointer-events:none}
+.input-wrap input{width:100%;padding:12px 12px 12px 40px;border:1.5px solid #e2e8f0;border-radius:11px;font-size:14px;font-family:inherit;background:#f8fafc;transition:.15s;color:#1e293b;outline:none}
 .input-wrap input::placeholder{color:#94a3b8;font-size:13px}
-.input-wrap input:focus{border-color:#4f46e5;background:#fff;box-shadow:0 0 0 3px rgba(79,70,229,.1)}
-.login-btn{width:100%;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;gap:8px;position:relative}
-.login-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(79,70,229,.35)}
+.input-wrap input:focus{border-color:#4f46e5;background:#fff;box-shadow:0 0 0 4px rgba(79,70,229,.1)}
+.login-btn{width:100%;padding:13px;border:none;border-radius:11px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;gap:8px;position:relative;margin-top:6px;box-shadow:0 4px 14px rgba(79,70,229,.28)}
+.login-btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(79,70,229,.38)}
 .login-btn:active{transform:translateY(0)}
 .login-btn.loading .btn-text{visibility:hidden}
 .login-btn.loading .btn-spinner{display:block}
 .btn-spinner{display:none;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;position:absolute}
-.login-err{color:#dc2626;font-size:12px;margin-top:10px;text-align:center;min-height:18px}
-.setup-info{font-size:13px;color:#64748b;text-align:center;margin-bottom:16px;padding:10px 14px;background:#f1f5f9;border-radius:8px}
-.login-footer{text-align:center;margin-top:20px;font-size:11px;color:#94a3b8;border-top:1px solid #f1f5f9;padding-top:16px}
+.login-err{color:#dc2626;font-size:12px;margin-top:12px;text-align:center;min-height:18px}
+.setup-info{font-size:13px;color:#4338ca;text-align:center;margin-bottom:18px;padding:11px 14px;background:var(--accent-l);border:1px solid #e0e2ff;border-radius:10px;font-weight:500}
+.login-footer{text-align:center;margin-top:26px;font-size:11px;color:#94a3b8;border-top:1px solid #f1f5f9;padding-top:18px}
+@media(max-width:860px){
+  .login-visual{display:none}
+  .login-form-side{flex:1}
+  .login-icon{display:flex}
+}
 
 /* APP */
 .app-page{display:none}
 .app-page.show{display:block}
 
-.sidebar{width:var(--side);background:var(--primary);color:#fff;display:flex;flex-direction:column;position:fixed;inset:0;right:auto;z-index:50;transition:transform .25s}
+.sidebar{width:var(--side);background:linear-gradient(190deg,#0f172a 0%,#111c34 100%);color:#fff;display:flex;flex-direction:column;position:fixed;inset:0;right:auto;z-index:50;transition:transform .25s;border-right:1px solid rgba(255,255,255,.05)}
 .sidebar.collapsed{transform:translateX(calc(var(--side)*-1))}
-.sidebar-brand{padding:20px 18px 12px;border-bottom:1px solid rgba(255,255,255,.08)}
-.sidebar-brand h1{font-size:14px;font-weight:700}
+.sidebar-brand{padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:11px}
+.sidebar-brand .lg{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;box-shadow:0 4px 12px rgba(79,70,229,.35)}
+.sidebar-brand h1{font-family:var(--font-d);font-size:13px;font-weight:700;line-height:1.25}
 .sidebar-brand small{font-size:10px;color:#64748b;display:block;margin-top:1px}
-.sidebar-nav{flex:1;padding:8px 10px;overflow-y:auto}
-.sidebar-nav button{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;background:0 0;border:none;color:#64748b;font-size:12px;font-weight:500;border-radius:var(--rs);cursor:pointer;transition:.12s;text-align:left;font-family:inherit}
-.sidebar-nav button:hover{background:rgba(255,255,255,.06);color:#e2e8f0}
-.sidebar-nav button.active{background:var(--accent);color:#fff}
-.sidebar-nav button .ico{font-size:15px;width:20px;text-align:center}
-.sidebar-foot{padding:10px 14px;border-top:1px solid rgba(255,255,255,.08);font-size:10px;color:#475569}
-.sidebar-foot button{background:0 0;border:none;color:#64748b;font-size:10px;cursor:pointer;font-family:inherit;padding:0}
-.sidebar-foot button:hover{color:#e2e8f0}
+.sidebar-nav{flex:1;padding:14px 12px;overflow-y:auto}
+.sidebar-nav .grp-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#4b5875;padding:4px 12px 7px;margin-top:6px}
+.sidebar-nav .grp-label:first-child{margin-top:0}
+.sidebar-nav button{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;background:0 0;border:none;color:#8996b3;font-size:12.5px;font-weight:500;border-radius:10px;cursor:pointer;transition:.15s;text-align:left;font-family:inherit;margin-bottom:2px;position:relative}
+.sidebar-nav button:hover{background:rgba(255,255,255,.06);color:#f1f5f9}
+.sidebar-nav button.active{background:linear-gradient(135deg,var(--accent),#5b52ef);color:#fff;box-shadow:0 4px 14px rgba(79,70,229,.35)}
+.sidebar-nav button .ico{font-size:14px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(255,255,255,.05);flex-shrink:0}
+.sidebar-nav button.active .ico{background:rgba(255,255,255,.18)}
+.sidebar-foot{padding:12px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px}
+.sidebar-foot .av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#334155,#1e293b);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#cbd5e1;flex-shrink:0;border:1px solid rgba(255,255,255,.08)}
+.sidebar-foot .u{flex:1;min-width:0}
+.sidebar-foot .u b{display:block;font-size:11.5px;color:#e2e8f0;font-weight:600}
+.sidebar-foot .u small{font-size:10px;color:#5c6b8a}
+.sidebar-foot button{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#94a3b8;font-size:13px;cursor:pointer;font-family:inherit;padding:6px 8px;border-radius:8px;flex-shrink:0;transition:.15s;display:flex;align-items:center;justify-content:center}
+.sidebar-foot button:hover{color:#fca5a5;background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.25)}
 
 
 .main{margin-left:var(--side);flex:1;min-height:100vh;transition:margin-left .25s}
 .sidebar.collapsed+.main{margin-left:0}
-.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:40}
-.topbar .menu-btn{background:0 0;border:none;font-size:20px;cursor:pointer;color:var(--text);padding:4px 6px;border-radius:4px}
+.topbar{background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:12px 26px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:40}
+.topbar .menu-btn{background:0 0;border:none;font-size:19px;cursor:pointer;color:var(--text);padding:5px 8px;border-radius:8px}
 .topbar .menu-btn:hover{background:#f1f5f9}
-.topbar h2{font-size:16px;font-weight:700;margin-right:auto}
-.content{padding:20px 24px}
+.topbar h2{font-family:var(--font-d);font-size:16.5px;font-weight:700;letter-spacing:-.2px}
+.topbar .date{font-size:11.5px;color:var(--text2);margin-top:1px;display:block}
+.topbar .tb-titles{display:flex;flex-direction:column;margin-right:auto}
+.content{padding:22px 26px}
 
-.page-h{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
-.page-h h3{font-size:17px;font-weight:700;margin-right:auto}
+.page-h{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.page-h h3{font-family:var(--font-d);font-size:18px;font-weight:700;margin-right:auto;letter-spacing:-.2px}
 
 .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:16px}
-.card-t{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;padding:12px 18px;border-bottom:1px solid var(--border);background:#f8fafc}
-.card-b{padding:14px 18px}
+.card-t{font-size:11.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;padding:13px 20px;border-bottom:1px solid var(--border);background:#f8fafc;border-radius:var(--radius) var(--radius) 0 0}
+.card-b{padding:16px 20px}
 
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-.stat{background:var(--card);border-radius:var(--radius);box-shadow:var(--sh);border:1px solid var(--border);padding:14px 16px;border-left:3px solid var(--border)}
-.stat .l{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);font-weight:600}
-.stat .v{font-size:22px;font-weight:800;margin-top:1px}
-.stat.blue{border-left-color:var(--accent)}.stat.gr{border-left-color:var(--success)}.stat.or{border-left-color:var(--warning)}.stat.re{border-left-color:var(--danger)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px}
+.stat{background:var(--card);border-radius:var(--radius);box-shadow:var(--sh);border:1px solid var(--border);padding:16px 18px;display:flex;align-items:center;gap:13px;transition:.2s}
+.stat:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
+.stat .stat-ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:var(--accent-l);color:var(--accent)}
+.stat .l{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);font-weight:700}
+.stat .v{font-size:21px;font-weight:800;margin-top:2px;font-family:var(--font-d);letter-spacing:-.3px}
+.stat.blue .stat-ico{background:var(--accent-l);color:var(--accent)}
+.stat.gr .stat-ico{background:var(--success-l);color:var(--success)}
+.stat.or .stat-ico{background:var(--warning-l);color:var(--warning)}
+.stat.re .stat-ico{background:var(--danger-l);color:var(--danger)}
+
+.welcome-banner{position:relative;overflow:hidden;background:linear-gradient(120deg,#0f172a,#1e2a52 55%,#312e81);border-radius:var(--radius);padding:24px 26px;margin-bottom:18px;color:#fff;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh-md)}
+.welcome-banner::before{content:'';position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.35) 0,transparent 70%);top:-120px;right:-40px}
+.wb-text{position:relative;z-index:1}
+.wb-text h3{font-family:var(--font-d);font-size:19px;font-weight:800;letter-spacing:-.3px}
+.wb-text p{font-size:12.5px;color:#a9b4d0;margin-top:6px;max-width:480px;line-height:1.5}
+.wb-deco{position:relative;z-index:1;font-size:44px;opacity:.18;flex-shrink:0}
+@media(max-width:640px){.wb-deco{display:none}}
 
 .tw{overflow-x:auto}
 .tw table{min-width:max(100%,600px);width:auto;white-space:nowrap}
@@ -101,12 +151,12 @@ tbody tr:hover{background:#f8fafc}
 .form-inline input,.form-inline select{padding:6px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;background:#fff}
 .form-inline input:focus,.form-inline select:focus{outline:none;border-color:var(--accent)}
 
-.btn{display:inline-flex;align-items:center;gap:4px;padding:7px 14px;border:none;border-radius:var(--rs);cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:.12s;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:8px 15px;border:none;border-radius:var(--rs);cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:.15s;white-space:nowrap}
 .btn:active{transform:scale(.97)}
-.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:var(--accent-h)}
-.btn-g{background:var(--success);color:#fff}.btn-g:hover{background:#047857}
+.btn-p{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(79,70,229,.25)}.btn-p:hover{background:var(--accent-h);box-shadow:0 4px 12px rgba(79,70,229,.35);transform:translateY(-1px)}
+.btn-g{background:var(--success);color:#fff;box-shadow:0 2px 8px rgba(5,150,105,.2)}.btn-g:hover{background:#047857;transform:translateY(-1px)}
 .btn-r{background:var(--danger);color:#fff}.btn-r:hover{background:#b91c1c}
-.btn-o{background:var(--warning);color:#fff}.btn-o:hover{background:#b45309}
+.btn-o{background:var(--warning);color:#fff;box-shadow:0 2px 8px rgba(217,119,6,.2)}.btn-o:hover{background:#b45309;transform:translateY(-1px)}
 .btn-gh{background:0 0;color:var(--text2);border:1px solid var(--border)}.btn-gh:hover{background:#f8fafc}
 .btn-xs{padding:2px 7px;font-size:10px;border-radius:3px}
 .btn-sm{padding:5px 10px;font-size:11px}
@@ -143,6 +193,7 @@ tbody tr:hover{background:#f8fafc}
 .ec-item .s{font-size:11px;color:var(--text2);margin-top:3px}
 .ec-bar{background:#f1f5f9;border-radius:20px;height:6px;overflow:hidden;margin-top:8px}
 .ec-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),#818cf8);border-radius:20px;transition:width .4s ease}
+.stat.ec-stat-card{display:block}
 .ec-stat-card{position:relative;padding:16px 18px;overflow:hidden}
 .ec-stat-card .ico{font-size:22px;margin-bottom:6px}
 .ec-stat-card .l{font-size:10px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;color:var(--text2)}
@@ -223,48 +274,71 @@ tbody tr:nth-child(even){background:#f8fafc}
   .content{padding:12px 14px}
   .g2{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
+  .welcome-banner{flex-direction:column;align-items:flex-start;gap:8px}
 }
 </style>
 </head>
 <body>
 <!-- LOGIN -->
 <div id="loginPage" class="login-page" style="display:flex">
-  <div class="login-box">
-    <div class="login-brand">
-      <div class="login-icon">◉</div>
-      <h1>Grupo Calle Portoviejo</h1>
-      <p class="login-sub">Sistema de Gestión 2026</p>
-    </div>
-    <div id="loginForm">
-      <div class="login-field">
-        <label>Contraseña</label>
-        <div class="input-wrap">
-          <span class="input-icon">🔑</span>
-          <input type="password" id="loginPass" placeholder="Ingresá tu contraseña" autofocus onkeydown="if(event.key==='Enter')login()">
-        </div>
+  <div class="login-visual">
+    <div class="login-orb"></div>
+    <div class="login-visual-top">
+      <div class="login-visual-badge">◉</div>
+      <div>
+        <b>Grupo Calle Portoviejo</b>
+        <small>Sistema de Gestión 2026</small>
       </div>
-      <button class="login-btn" id="loginBtn" onclick="login()">
-        <span class="btn-text">Ingresar</span>
-        <span class="btn-spinner"></span>
-      </button>
-      <div id="loginErr" class="login-err"></div>
     </div>
-    <div id="setupForm" style="display:none">
-      <p class="setup-info">🔐 Primer inicio — creá una contraseña</p>
-      <div class="login-field">
-        <label>Nueva contraseña (mín. 4 caracteres)</label>
-        <div class="input-wrap">
-          <span class="input-icon">🔑</span>
-          <input type="password" id="setupPass" placeholder="Crear contraseña" onkeydown="if(event.key==='Enter')setup()">
-        </div>
+    <div class="login-visual-mid">
+      <h2>Organizá los ahorros<br>del grupo <span>sin complicaciones</span></h2>
+      <p>Asistencias, bingos, rifas, ahorros, cumpleaños y préstamos — todo centralizado, respaldado en la nube y disponible al instante para todo el grupo.</p>
+      <div class="login-visual-cards">
+        <div class="login-vcard"><div class="n">100%</div><div class="l">En la nube</div></div>
+        <div class="login-vcard"><div class="n">24/7</div><div class="l">Disponible</div></div>
+        <div class="login-vcard"><div class="n">Seguro</div><div class="l">Con clave</div></div>
       </div>
-      <button class="login-btn" id="setupBtn" onclick="setup()">
-        <span class="btn-text">Configurar</span>
-        <span class="btn-spinner"></span>
-      </button>
-      <div id="setupErr" class="login-err"></div>
     </div>
-    <div class="login-footer">v1.0 · Grupo de Ahorro Solidario</div>
+    <div class="login-visual-foot"><span class="dot"></span> Base de datos PostgreSQL activa</div>
+  </div>
+  <div class="login-form-side">
+    <div class="login-box">
+      <div class="login-brand">
+        <div class="login-icon">◉</div>
+        <h1>Bienvenido de vuelta</h1>
+        <p class="login-sub">Ingresá tu contraseña para acceder al panel</p>
+      </div>
+      <div id="loginForm">
+        <div class="login-field">
+          <label>Contraseña</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔑</span>
+            <input type="password" id="loginPass" placeholder="Ingresá tu contraseña" autofocus onkeydown="if(event.key==='Enter')login()">
+          </div>
+        </div>
+        <button class="login-btn" id="loginBtn" onclick="login()">
+          <span class="btn-text">Ingresar →</span>
+          <span class="btn-spinner"></span>
+        </button>
+        <div id="loginErr" class="login-err"></div>
+      </div>
+      <div id="setupForm" style="display:none">
+        <p class="setup-info">🔐 Primer inicio — creá una contraseña</p>
+        <div class="login-field">
+          <label>Nueva contraseña (mín. 4 caracteres)</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔑</span>
+            <input type="password" id="setupPass" placeholder="Crear contraseña" onkeydown="if(event.key==='Enter')setup()">
+          </div>
+        </div>
+        <button class="login-btn" id="setupBtn" onclick="setup()">
+          <span class="btn-text">Configurar</span>
+          <span class="btn-spinner"></span>
+        </button>
+        <div id="setupErr" class="login-err"></div>
+      </div>
+      <div class="login-footer">v1.0 · Grupo de Ahorro Solidario</div>
+    </div>
   </div>
 </div>
 
@@ -272,37 +346,55 @@ tbody tr:nth-child(even){background:#f8fafc}
 <div id="appPage" class="app-page">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-      <h1>Grupo Calle Portoviejo</h1>
-      <small>Gestión 2026 · PostgreSQL</small>
+      <div class="lg">◉</div>
+      <div>
+        <h1>Grupo Calle Portoviejo</h1>
+        <small>Gestión 2026 · PostgreSQL</small>
+      </div>
     </div>
     <nav class="sidebar-nav">
+      <div class="grp-label">Principal</div>
       <button class="active" data-t="dashboard"><span class="ico">◉</span> Dashboard</button>
       <button data-t="miembros"><span class="ico">⊙</span> Miembros</button>
+      <button data-t="estadocuenta"><span class="ico">◈</span> Estado de Cuenta</button>
+      <div class="grp-label">Actividades</div>
       <button data-t="tablas"><span class="ico">⊞</span> Tablas de Bingo</button>
       <button data-t="bingo"><span class="ico">⊟</span> Bingo</button>
       <button data-t="rifa"><span class="ico">⊡</span> Rifa</button>
       <button data-t="ahorros"><span class="ico">⊠</span> Ahorros</button>
       <button data-t="cumpleanos"><span class="ico">★</span> Cumpleaños</button>
       <button data-t="prestamos"><span class="ico">⊡</span> Préstamos</button>
-      <button data-t="estadocuenta"><span class="ico">◈</span> Estado de Cuenta</button>
+      <div class="grp-label">Sistema</div>
       <button data-t="importar"><span class="ico">⇧</span> Importar / Exportar</button>
     </nav>
     <div class="sidebar-foot">
-      <button onclick="logout()">✕ Cerrar sesión</button>
+      <div class="av">GP</div>
+      <div class="u"><b>Administrador</b><small>Sesión activa</small></div>
+      <button onclick="logout()" title="Cerrar sesión">⏻</button>
     </div>
   </aside>
 
   <div class="main">
     <header class="topbar">
       <button class="menu-btn" onclick="toggleSidebar()" title="Menú">☰</button>
-      <h2 id="pageTitle">Dashboard</h2>
-      <span id="connBadge" style="font-size:11px;padding:2px 10px;border-radius:10px;font-weight:600" class="bdg-g">● OK</span>
+      <div class="tb-titles">
+        <h2 id="pageTitle">Dashboard</h2>
+        <span class="date" id="topDate"></span>
+      </div>
+      <span id="connBadge" style="font-size:11px;padding:3px 11px;border-radius:20px;font-weight:600" class="bdg-g">● OK</span>
     </header>
 
     <section class="content">
 
       <!-- DASHBOARD -->
       <div id="tb-dashboard" class="tb show">
+        <div class="welcome-banner">
+          <div class="wb-text">
+            <h3>Hola 👋, este es el resumen del grupo</h3>
+            <p>Un vistazo rápido a asistencias, bingos, rifas, ahorros y préstamos del Grupo Calle Portoviejo.</p>
+          </div>
+          <div class="wb-deco">◉</div>
+        </div>
         <div class="stats" id="statsGrid"></div>
         <div class="card">
           <div class="card-t">Resumen por Miembro</div>
@@ -531,7 +623,7 @@ document.querySelectorAll('.sidebar-nav button[data-t]').forEach(b=>{
     document.querySelectorAll('.tb').forEach(t=>t.classList.remove('show'));
     const tb=document.getElementById('tb-'+b.dataset.t);
     if(tb)tb.classList.add('show');
-    document.getElementById('pageTitle').textContent=b.textContent.trim();
+    document.getElementById('pageTitle').textContent=b.textContent.replace(b.querySelector('.ico')?.textContent||'','').trim();
     if(window.innerWidth<=900)document.getElementById('sidebar').classList.remove('open')
   })
 });
@@ -711,12 +803,12 @@ function renderDashboard(){
     RIFA_NUM.forEach(n=>{ta+=(S.ahorroRifa[mi.nombre]?.[n])||0})});
   const tp=S.prestamos.filter(p=>p.estado!=='pagado').reduce((s,p)=>s+p.monto,0);
   document.getElementById('statsGrid').innerHTML=
-    `<div class="stat blue"><div class="l">Miembros</div><div class="v">${m.length}</div></div>
-     <div class="stat gr"><div class="l">Tablas</div><div class="v">${S.fechasTablas.length}</div></div>
-     <div class="stat"><div class="l">Bingo</div><div class="v">$${$f(tb)}</div></div>
-     <div class="stat or"><div class="l">Rifa</div><div class="v">$${$f(tr)}</div></div>
-     <div class="stat gr"><div class="l">Ahorros</div><div class="v">$${$f(ta)}</div></div>
-     <div class="stat re"><div class="l">Préstamos Pend.</div><div class="v">$${$f(tp)}</div></div>`;
+    `<div class="stat blue"><div class="stat-ico">⊙</div><div><div class="l">Miembros</div><div class="v">${m.length}</div></div></div>
+     <div class="stat gr"><div class="stat-ico">⊞</div><div><div class="l">Tablas</div><div class="v">${S.fechasTablas.length}</div></div></div>
+     <div class="stat blue"><div class="stat-ico">⊟</div><div><div class="l">Bingo</div><div class="v">$${$f(tb)}</div></div></div>
+     <div class="stat or"><div class="stat-ico">⊡</div><div><div class="l">Rifa</div><div class="v">$${$f(tr)}</div></div></div>
+     <div class="stat gr"><div class="stat-ico">⊠</div><div><div class="l">Ahorros</div><div class="v">$${$f(ta)}</div></div></div>
+     <div class="stat re"><div class="stat-ico">◈</div><div><div class="l">Préstamos Pend.</div><div class="v">$${$f(tp)}</div></div></div>`;
   const data=computeEstadoCuenta();
   const pillMap={al_dia:['Al día','pill-ok'],con_deuda:['Con deuda','pill-warn'],moroso:['Moroso','pill-danger']};
   document.getElementById('dashBody').innerHTML=data.map((d,i)=>{
@@ -1111,6 +1203,14 @@ async function importExcel(){
 }
 
 // ─── INIT ───
+(function(){
+  const el=document.getElementById('topDate');
+  if(el){
+    const d=new Date();
+    let s=d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+    el.textContent=s.charAt(0).toUpperCase()+s.slice(1);
+  }
+})();
 checkAuth();
 </script>
 </body>
