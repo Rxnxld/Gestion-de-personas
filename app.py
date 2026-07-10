@@ -257,6 +257,42 @@ def init_db():
     # Marca si el monto de un miembro en un bingo fue personalizado a mano en el
     # modal de Reparto; si es así, los recálculos automáticos no deben pisarlo.
     c.execute("ALTER TABLE bingo_distribucion ADD COLUMN IF NOT EXISTS personalizado BOOLEAN DEFAULT FALSE")
+    # Migración: REAL → NUMERIC(10,2) para columnas monetarias existentes
+    for tbl, col, nullable in [
+        ("bingos", "monto", True),
+        ("bingos", "adicional", False),
+        ("bingo_distribucion", "monto_asignado", False),
+        ("ahorros", "valor", False),
+        ("prestamos", "monto", True),
+        ("prestamos", "pagado", False),
+        ("abonos", "monto", True),
+    ]:
+        using = f"COALESCE({col},0)::numeric(10,2)" if not nullable else f"{col}::numeric(10,2)"
+        c.execute(f"ALTER TABLE {tbl} ALTER COLUMN {col} TYPE NUMERIC(10,2) USING {using}")
+    # Limpiar valores negativos existentes antes de agregar CHECK
+    c.execute("UPDATE bingos SET monto = 0 WHERE monto < 0")
+    c.execute("UPDATE bingos SET adicional = 0 WHERE adicional < 0")
+    c.execute("UPDATE bingo_distribucion SET monto_asignado = 0 WHERE monto_asignado < 0")
+    c.execute("UPDATE ahorros SET valor = 0 WHERE valor < 0")
+    c.execute("UPDATE prestamos SET monto = 0 WHERE monto < 0")
+    c.execute("UPDATE prestamos SET pagado = 0 WHERE pagado < 0")
+    c.execute("UPDATE abonos SET monto = 0 WHERE monto < 0")
+    # CHECK constraints monetarias (con DO block para ser idempotente)
+    for tbl, constraint, expr in [
+        ("bingos", "bingos_monto_ck", "CHECK (monto >= 0)"),
+        ("bingos", "bingos_adicional_ck", "CHECK (adicional >= 0)"),
+        ("bingo_distribucion", "bingo_dist_monto_ck", "CHECK (monto_asignado >= 0)"),
+        ("ahorros", "ahorros_valor_ck", "CHECK (valor >= 0)"),
+        ("prestamos", "prestamos_monto_ck", "CHECK (monto >= 0)"),
+        ("prestamos", "prestamos_pagado_ck", "CHECK (pagado >= 0)"),
+        ("abonos", "abonos_monto_ck", "CHECK (monto >= 0)"),
+    ]:
+        c.execute(f"""
+            DO $$ BEGIN
+                ALTER TABLE {tbl} ADD CONSTRAINT {constraint} {expr};
+            EXCEPTION WHEN duplicate_object THEN NULL;
+            END $$;
+        """)
     conn.close()
 
 # ═══════════════════════════════════════════
