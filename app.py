@@ -27,15 +27,13 @@ class DBWrapper:
         return cur
     def commit(self):
         self.conn.commit()
-    def rollback(self):
-        self.conn.rollback()
     def close(self):
         self.conn.close()
 
 def get_db():
     if 'db' not in g:
         conn = psycopg2.connect(DATABASE_URL)
-        conn.autocommit = False
+        conn.autocommit = True
         g.db = DBWrapper(conn)
     return g.db
 
@@ -117,18 +115,18 @@ def init_db():
         CREATE TABLE IF NOT EXISTS bingos (
             id SERIAL PRIMARY KEY,
             fecha TEXT UNIQUE NOT NULL,
-            monto NUMERIC(10,2) NOT NULL DEFAULT 0,
-            adicional NUMERIC(10,2) DEFAULT 0,
+            monto REAL NOT NULL,
+            adicional REAL DEFAULT 0,
             asistentes INTEGER DEFAULT 0
         );
         ALTER TABLE bingos ADD COLUMN IF NOT EXISTS asistentes INTEGER DEFAULT 0;
-        ALTER TABLE bingos ADD COLUMN IF NOT EXISTS adicional NUMERIC(10,2) DEFAULT 0;
+        ALTER TABLE bingos ADD COLUMN IF NOT EXISTS adicional REAL DEFAULT 0;
         CREATE TABLE IF NOT EXISTS bingo_distribucion (
             id SERIAL PRIMARY KEY,
             bingo_id INTEGER NOT NULL REFERENCES bingos(id) ON DELETE CASCADE,
             miembro_id INTEGER NOT NULL REFERENCES miembros(id) ON DELETE CASCADE,
             recibe BOOLEAN DEFAULT TRUE,
-            monto_asignado NUMERIC(10,2) DEFAULT 0,
+            monto_asignado REAL DEFAULT 0,
             personalizado BOOLEAN DEFAULT FALSE,
             UNIQUE(bingo_id, miembro_id)
         );
@@ -210,7 +208,7 @@ def init_db():
             tipo TEXT NOT NULL CHECK(tipo IN ('normal','cumple','rifa')),
             miembro_id INTEGER NOT NULL REFERENCES miembros(id) ON DELETE CASCADE,
             mes_id INTEGER NOT NULL REFERENCES meses_ahorro(id) ON DELETE CASCADE,
-            valor NUMERIC(10,2) DEFAULT 0,
+            valor REAL DEFAULT 0,
             UNIQUE(tipo, miembro_id, mes_id)
         );
         CREATE TABLE IF NOT EXISTS cumple_meses (
@@ -231,16 +229,16 @@ def init_db():
         CREATE TABLE IF NOT EXISTS prestamos (
             id SERIAL PRIMARY KEY,
             miembro_id INTEGER NOT NULL REFERENCES miembros(id) ON DELETE CASCADE,
-            monto NUMERIC(10,2) NOT NULL DEFAULT 0,
+            monto REAL NOT NULL,
             obs TEXT DEFAULT '',
             estado TEXT NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente','pagado')),
             fecha TEXT DEFAULT NULL
         );
-        ALTER TABLE prestamos ADD COLUMN IF NOT EXISTS pagado NUMERIC(10,2) DEFAULT 0;
+        ALTER TABLE prestamos ADD COLUMN IF NOT EXISTS pagado REAL DEFAULT 0;
         CREATE TABLE IF NOT EXISTS abonos (
             id SERIAL PRIMARY KEY,
             prestamo_id INTEGER NOT NULL REFERENCES prestamos(id) ON DELETE CASCADE,
-            monto NUMERIC(10,2) NOT NULL DEFAULT 0,
+            monto REAL NOT NULL,
             fecha TEXT DEFAULT NULL
         );
         INSERT INTO meses_ahorro (id, nombre, orden) VALUES
@@ -259,34 +257,6 @@ def init_db():
     # Marca si el monto de un miembro en un bingo fue personalizado a mano en el
     # modal de Reparto; si es así, los recálculos automáticos no deben pisarlo.
     c.execute("ALTER TABLE bingo_distribucion ADD COLUMN IF NOT EXISTS personalizado BOOLEAN DEFAULT FALSE")
-    # Migración: REAL → NUMERIC(10,2) para columnas monetarias existentes
-    for tbl, col, nullable in [
-        ("bingos", "monto", True),
-        ("bingos", "adicional", False),
-        ("bingo_distribucion", "monto_asignado", False),
-        ("ahorros", "valor", False),
-        ("prestamos", "monto", True),
-        ("prestamos", "pagado", False),
-        ("abonos", "monto", True),
-    ]:
-        using = f"COALESCE({col},0)::numeric(10,2)" if not nullable else f"{col}::numeric(10,2)"
-        c.execute(f"ALTER TABLE {tbl} ALTER COLUMN {col} TYPE NUMERIC(10,2) USING {using}")
-    # CHECK constraints monetarias (con PL/pgSQL DO block para ser idempotente)
-    for tbl, constraint, expr in [
-        ("bingos", "bingos_monto_ck", "CHECK (monto >= 0)"),
-        ("bingos", "bingos_adicional_ck", "CHECK (adicional >= 0)"),
-        ("bingo_distribucion", "bingo_dist_monto_ck", "CHECK (monto_asignado >= 0)"),
-        ("ahorros", "ahorros_valor_ck", "CHECK (valor >= 0)"),
-        ("prestamos", "prestamos_monto_ck", "CHECK (monto >= 0)"),
-        ("prestamos", "prestamos_pagado_ck", "CHECK (pagado >= 0)"),
-        ("abonos", "abonos_monto_ck", "CHECK (monto >= 0)"),
-    ]:
-        c.execute(f"""
-            DO $$ BEGIN
-                ALTER TABLE {tbl} ADD CONSTRAINT {constraint} {expr};
-            EXCEPTION WHEN duplicate_object THEN NULL;
-            END $$;
-        """)
     conn.close()
 
 # ═══════════════════════════════════════════
@@ -417,32 +387,26 @@ def get_asistencias():
 def set_asistencia():
     data = request.json
     db = get_db()
-    try:
-        miembro = db.execute("SELECT id FROM miembros WHERE nombre=?", (data['nombre'],)).fetchone()
-        if not miembro: return jsonify({'error':'Miembro no encontrado'}), 404
-        valor = int(data.get('valor', 0))
-        db.execute("INSERT INTO asistencias (miembro_id, fecha, valor) VALUES (?, ?, ?) ON CONFLICT(miembro_id, fecha) DO UPDATE SET valor=excluded.valor",
-                   (miembro['id'], data['fecha'], valor))
-        # Conecta con Bingo: si esa fecha ya tiene un bingo asociado, sincroniza
-        # si el miembro "recibe" reparto segun la asistencia recien marcada y
-        # recalcula su monto (a menos que ya tenga un reparto personalizado).
-        bingo = db.execute("SELECT id, monto, adicional, asistentes FROM bingos WHERE fecha=? FOR UPDATE", (data['fecha'],)).fetchone()
-        if bingo:
-            recibe = valor == 1
-            attendees = {r['miembro_id'] for r in db.execute(
-                "SELECT miembro_id FROM asistencias WHERE fecha=? AND valor=1", (data['fecha'],)).fetchall()}
-            a = len(attendees) or (bingo['asistentes'] or 0) or 1
-            total = (bingo['monto'] or 0) + (bingo['adicional'] or 0)
-            coge = round(total / a, 2)
-            db.execute(
-                "UPDATE bingo_distribucion SET recibe=?, monto_asignado=? "
-                "WHERE bingo_id=? AND miembro_id=? AND personalizado=FALSE",
-                (recibe, coge if recibe else 0, bingo['id'], miembro['id']))
-        db.commit()
-        return jsonify({'ok': True})
-    except Exception:
-        db.rollback()
-        raise
+    miembro = db.execute("SELECT id FROM miembros WHERE nombre=?", (data['nombre'],)).fetchone()
+    if not miembro: return jsonify({'error':'Miembro no encontrado'}), 404
+    valor = int(data.get('valor', 0))
+    db.execute("INSERT INTO asistencias (miembro_id, fecha, valor) VALUES (?, ?, ?) ON CONFLICT(miembro_id, fecha) DO UPDATE SET valor=excluded.valor",
+               (miembro['id'], data['fecha'], valor))
+    # Conecta con Bingo: si esa fecha ya tiene un bingo asociado, sincroniza
+    # si el miembro "recibe" reparto segun la asistencia recien marcada y
+    # recalcula su monto (a menos que ya tenga un reparto personalizado).
+    bingo = db.execute("SELECT id, monto, adicional, asistentes FROM bingos WHERE fecha=?", (data['fecha'],)).fetchone()
+    if bingo:
+        recibe = valor == 1
+        total = (bingo['monto'] or 0) + (bingo['adicional'] or 0)
+        a = bingo['asistentes'] or 0
+        coge = round(total / a, 2) if a > 0 else 0
+        db.execute(
+            "UPDATE bingo_distribucion SET recibe=?, monto_asignado=? "
+            "WHERE bingo_id=? AND miembro_id=? AND personalizado=FALSE",
+            (recibe, coge if recibe else 0, bingo['id'], miembro['id']))
+    db.commit()
+    return jsonify({'ok': True})
 
 # ═══════════════════════════════════════════
 #  BINGOS
@@ -463,91 +427,60 @@ def get_bingos():
 def add_bingo():
     data = request.json
     db = get_db()
+    adicional = float(data.get('adicional', 0) or 0)
     try:
-        adicional = float(data.get('adicional', 0) or 0)
-        fecha = data['fecha']
-        monto = float(data['monto'])
-        if monto < 0 or adicional < 0:
-            return jsonify({'error':'Montos no pueden ser negativos'}), 400
-        asistentes_manual = int(data.get('asistentes', 0))
-        if asistentes_manual < 0:
-            return jsonify({'error':'Asistentes no puede ser negativo'}), 400
-        # Si ya existe un bingo para esta fecha, actualizarlo en vez de duplicar
-        existe = db.execute("SELECT id FROM bingos WHERE fecha=? FOR UPDATE", (fecha,)).fetchone()
-        if existe:
-            bingo_id = existe['id']
-            db.execute("UPDATE bingos SET monto=?, adicional=?, asistentes=? WHERE id=?",
-                       (monto, adicional, asistentes_manual, bingo_id))
-        else:
-            cur = db.execute("INSERT INTO bingos (fecha, monto, adicional, asistentes) VALUES (?, ?, ?, ?) RETURNING id",
-                             (fecha, monto, adicional, asistentes_manual))
-            bingo_id = cur.fetchone()['id']
+        cur = db.execute("INSERT INTO bingos (fecha, monto, adicional, asistentes) VALUES (?, ?, ?, ?) RETURNING id",
+                         (data['fecha'], float(data['monto']), adicional, int(data.get('asistentes', 0))))
+        bingo_id = cur.fetchone()['id']
         # Quiénes asistieron ese día (asistencias con valor=1)
         attendees = {r['miembro_id'] for r in db.execute(
-            "SELECT miembro_id FROM asistencias WHERE fecha=? AND valor=1", (fecha,)).fetchall()}
-        asistentes = len(attendees)
-        if asistentes == 0:
-            asistentes = asistentes_manual
-        if asistentes <= 0:
-            asistentes = len(db.execute("SELECT id FROM miembros").fetchall())
-        total = monto + adicional
+            "SELECT miembro_id FROM asistencias WHERE fecha=? AND valor=1", (data['fecha'],)).fetchall()}
+        asistentes = len(attendees) or int(data.get('asistentes', 0))
+        total = float(data['monto']) + adicional
         coge = round(total / asistentes, 2) if asistentes > 0 else 0
         todos = db.execute("SELECT id FROM miembros").fetchall()
         for m in todos:
-            recibe = m['id'] in attendees if attendees else True
-            db.execute(
-                "INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado) "
-                "VALUES (?, ?, ?, ?) ON CONFLICT (bingo_id, miembro_id) DO UPDATE SET recibe=?, monto_asignado=?",
-                (bingo_id, m['id'], recibe, coge if recibe else 0, recibe, coge if recibe else 0))
+            recibe = m['id'] in attendees
+            db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado) VALUES (?, ?, ?, ?)",
+                       (bingo_id, m['id'], recibe, coge if recibe else 0))
         try:
-            db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (fecha,))
+            db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (data['fecha'],))
         except psycopg2.IntegrityError:
             pass
         db.commit()
-        return jsonify({'ok': True}), 200
-    except Exception:
-        db.rollback()
-        raise
+        return jsonify({'ok': True}), 201
+    except psycopg2.IntegrityError:
+        return jsonify({'error': 'La fecha ya existe'}), 409
 
 @app.route('/api/bingos/<int:id>', methods=['PUT'])
 @login_required
 def update_bingo(id):
     data = request.json
     db = get_db()
-    try:
-        old = db.execute("SELECT id, fecha, monto, adicional, asistentes FROM bingos WHERE id=? FOR UPDATE", (id,)).fetchone()
-        if not old:
-            return jsonify({'error':'Bingo no encontrado'}), 404
-        if 'monto' in data and float(data['monto']) < 0:
-            return jsonify({'error':'Monto no puede ser negativo'}), 400
-        if 'adicional' in data and float(data['adicional']) < 0:
-            return jsonify({'error':'Adicional no puede ser negativo'}), 400
-        if 'asistentes' in data:
-            db.execute("UPDATE bingos SET asistentes=? WHERE id=?", (int(data['asistentes']), id))
-        if 'monto' in data:
-            db.execute("UPDATE bingos SET monto=? WHERE id=?", (float(data['monto']), id))
-        if 'adicional' in data:
-            db.execute("UPDATE bingos SET adicional=? WHERE id=?", (float(data['adicional']), id))
-        if 'fecha' in data and data['fecha'] != old['fecha']:
-            try:
-                db.execute("UPDATE bingos SET fecha=? WHERE id=?", (data['fecha'], id))
-                db.execute("UPDATE fechas_tablas SET fecha=? WHERE fecha=?", (data['fecha'], old['fecha']))
-                db.execute("UPDATE asistencias SET fecha=? WHERE fecha=?", (data['fecha'], old['fecha']))
-            except psycopg2.IntegrityError:
-                return jsonify({'error': 'La fecha ya existe en bingos'}), 409
-        # si cambió monto/adicional/asistentes, actualizar distribución automática
-        if 'monto' in data or 'adicional' in data or 'asistentes' in data:
-            b = db.execute("SELECT monto, adicional, asistentes FROM bingos WHERE id=?", (id,)).fetchone()
-            if b:
-                total = (b['monto'] or 0) + (b['adicional'] or 0)
-                a = b['asistentes'] or 1
-                coge = round(total / a, 2)
-                db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE AND personalizado=FALSE", (coge, id))
-        db.commit()
-        return jsonify({'ok': True})
-    except Exception:
-        db.rollback()
-        raise
+    old = db.execute("SELECT id, fecha, monto, adicional, asistentes FROM bingos WHERE id=?", (id,)).fetchone()
+    if 'asistentes' in data:
+        db.execute("UPDATE bingos SET asistentes=? WHERE id=?", (int(data['asistentes']), id))
+    if 'monto' in data:
+        db.execute("UPDATE bingos SET monto=? WHERE id=?", (float(data['monto']), id))
+    if 'adicional' in data:
+        db.execute("UPDATE bingos SET adicional=? WHERE id=?", (float(data['adicional']), id))
+    if 'fecha' in data and old and data['fecha'] != old['fecha']:
+        try:
+            db.execute("UPDATE bingos SET fecha=? WHERE id=?", (data['fecha'], id))
+            db.execute("UPDATE fechas_tablas SET fecha=? WHERE fecha=?", (data['fecha'], old['fecha']))
+            db.execute("UPDATE asistencias SET fecha=? WHERE fecha=?", (data['fecha'], old['fecha']))
+        except psycopg2.IntegrityError:
+            return jsonify({'error': 'La fecha ya existe en bingos'}), 409
+    # si cambió monto/adicional/asistentes, actualizar distribución automática
+    if 'monto' in data or 'adicional' in data or 'asistentes' in data:
+        b = db.execute("SELECT monto, adicional, asistentes FROM bingos WHERE id=?", (id,)).fetchone()
+        if b:
+            total = b['monto'] + (b['adicional'] or 0)
+            a = b['asistentes'] or 1
+            coge = round(total / a, 2) if a > 0 else 0
+            db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE AND personalizado=FALSE", (coge, id))
+    db.commit()
+    return jsonify({'ok': True})
 
 @app.route('/api/bingos/<int:id>', methods=['DELETE'])
 @login_required
@@ -582,34 +515,26 @@ def get_distribucion(id):
 def save_distribucion(id):
     data = request.json
     db = get_db()
-    try:
-        b = db.execute("SELECT monto, adicional, asistentes FROM bingos WHERE id=? FOR UPDATE", (id,)).fetchone()
-        if not b:
-            return jsonify({'error':'Bingo no encontrado'}), 404
-        a = (b['asistentes'] or 1) if b else 1
-        coge = round(((b['monto'] + (b['adicional'] or 0)) / a), 2) if b else 0
-        db.execute("DELETE FROM bingo_distribucion WHERE bingo_id=?", (id,))
-        for item in data:
-            recibe = item.get('recibe', True)
-            if not recibe:
-                monto, personalizado = 0, False
-            else:
-                enviado = round(float(item.get('monto', coge)), 2)
-                if enviado < 0:
-                    return jsonify({'error':'Monto no puede ser negativo'}), 400
-                # Si el monto que llega es distinto al "Coge c/u" automático, es que
-                # lo personalizaron a mano (ganó un extra ese día, etc.). Se marca
-                # como personalizado para que los recálculos automáticos (cambios
-                # de asistencia, monto, adicional o asistentes) no lo pisen.
-                personalizado = abs(enviado - coge) > 0.001
-                monto = enviado if personalizado else coge
-            db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado, personalizado) VALUES (?, ?, ?, ?, ?)",
-                       (id, item['miembro_id'], recibe, monto, personalizado))
-        db.commit()
-        return jsonify({'ok': True})
-    except Exception:
-        db.rollback()
-        raise
+    b = db.execute("SELECT monto, adicional, asistentes FROM bingos WHERE id=?", (id,)).fetchone()
+    a = (b['asistentes'] or 1) if b else 1
+    coge = round(((b['monto'] + (b['adicional'] or 0)) / a), 2) if b else 0
+    db.execute("DELETE FROM bingo_distribucion WHERE bingo_id=?", (id,))
+    for item in data:
+        recibe = item.get('recibe', True)
+        if not recibe:
+            monto, personalizado = 0, False
+        else:
+            enviado = round(float(item.get('monto', coge)), 2)
+            # Si el monto que llega es distinto al "Coge c/u" automático, es que
+            # lo personalizaron a mano (ganó un extra ese día, etc.). Se marca
+            # como personalizado para que los recálculos automáticos (cambios
+            # de asistencia, monto, adicional o asistentes) no lo pisen.
+            personalizado = abs(enviado - coge) > 0.001
+            monto = enviado if personalizado else coge
+        db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado, personalizado) VALUES (?, ?, ?, ?, ?)",
+                   (id, item['miembro_id'], recibe, monto, personalizado))
+    db.commit()
+    return jsonify({'ok': True})
 
 # ═══════════════════════════════════════════
 #  RIFA
@@ -681,10 +606,8 @@ def set_ahorro(tipo):
     if not miembro: return jsonify({'error':'Miembro no encontrado'}), 404
     mes_row = db.execute("SELECT id FROM meses_ahorro WHERE nombre=?", (data['mes'],)).fetchone()
     if not mes_row: return jsonify({'error':'Mes inválido'}), 400
-    valor = float(data.get('valor', 0))
-    if valor < 0: return jsonify({'error':'Monto no puede ser negativo'}), 400
     db.execute("INSERT INTO ahorros (tipo, miembro_id, mes_id, valor) VALUES (?, ?, ?, ?) ON CONFLICT(tipo, miembro_id, mes_id) DO UPDATE SET valor=excluded.valor",
-               (tipo, miembro['id'], mes_row['id'], valor))
+               (tipo, miembro['id'], mes_row['id'], float(data.get('valor', 0))))
     db.commit()
     return jsonify({'ok': True})
 
@@ -764,10 +687,8 @@ def add_prestamo():
     data = request.json
     miembro = get_db().execute("SELECT id FROM miembros WHERE nombre=?", (data['nombre'],)).fetchone()
     if not miembro: return jsonify({'error':'Miembro no encontrado'}), 404
-    monto = float(data['monto'])
-    if monto <= 0: return jsonify({'error':'Monto debe ser positivo'}), 400
     c = get_db().execute("INSERT INTO prestamos (miembro_id, monto, obs, fecha) VALUES (?, ?, ?, ?) RETURNING id",
-                          (miembro['id'], monto, data.get('obs', ''), data.get('fecha') or None))
+                          (miembro['id'], float(data['monto']), data.get('obs', ''), data.get('fecha') or None))
     new_id = c.fetchone()['id']
     get_db().commit()
     return jsonify({'id': new_id}), 201
@@ -783,41 +704,33 @@ def delete_prestamo(id):
 @login_required
 def toggle_prestamo_estado(id):
     db = get_db()
-    try:
-        row = db.execute("SELECT estado, monto FROM prestamos WHERE id=? FOR UPDATE", (id,)).fetchone()
-        if not row: return jsonify({'error':'Préstamo no encontrado'}), 404
-        nuevo = 'pagado' if row['estado'] == 'pendiente' else 'pendiente'
-        if nuevo == 'pagado':
-            db.execute("UPDATE prestamos SET estado=?, pagado=monto WHERE id=?", (nuevo, id))
-        else:
-            db.execute("UPDATE prestamos SET estado=?, pagado=0 WHERE id=?", (nuevo, id))
-        db.commit()
-        return jsonify({'ok': True, 'estado': nuevo})
-    except Exception:
-        db.rollback()
-        raise
+    row = db.execute("SELECT estado, monto FROM prestamos WHERE id=?", (id,)).fetchone()
+    if not row: return jsonify({'error':'Préstamo no encontrado'}), 404
+    nuevo = 'pagado' if row['estado'] == 'pendiente' else 'pendiente'
+    if nuevo == 'pagado':
+        db.execute("UPDATE prestamos SET estado=?, pagado=monto WHERE id=?", (nuevo, id))
+    else:
+        db.execute("UPDATE prestamos SET estado=?, pagado=0 WHERE id=?", (nuevo, id))
+    db.commit()
+    return jsonify({'ok': True, 'estado': nuevo})
 
 @app.route('/api/prestamos/<int:id>/abono', methods=['POST'])
 @login_required
 def add_abono(id):
     data = request.json
     db = get_db()
-    try:
-        row = db.execute("SELECT id, monto, COALESCE(pagado,0) as pagado FROM prestamos WHERE id=? FOR UPDATE", (id,)).fetchone()
-        if not row: return jsonify({'error':'Préstamo no encontrado'}), 404
-        monto = float(data['monto'])
-        if monto <= 0: return jsonify({'error':'Monto debe ser positivo'}), 400
-        nuevo_pagado = row['pagado'] + monto
-        if nuevo_pagado > row['monto']: return jsonify({'error':'El abono excede la deuda pendiente'}), 400
-        db.execute("INSERT INTO abonos (prestamo_id, monto, fecha) VALUES (?, ?, ?)",
-                   (row['id'], monto, data.get('fecha') or None))
-        nuevo_estado = 'pagado' if nuevo_pagado >= row['monto'] else 'pendiente'
-        db.execute("UPDATE prestamos SET pagado=?, estado=? WHERE id=?", (nuevo_pagado, nuevo_estado, row['id']))
-        db.commit()
-        return jsonify({'ok': True, 'saldo': round(row['monto'] - nuevo_pagado, 2), 'estado': nuevo_estado})
-    except Exception:
-        db.rollback()
-        raise
+    row = db.execute("SELECT id, monto, COALESCE(pagado,0) as pagado FROM prestamos WHERE id=?", (id,)).fetchone()
+    if not row: return jsonify({'error':'Préstamo no encontrado'}), 404
+    monto = float(data['monto'])
+    if monto <= 0: return jsonify({'error':'Monto debe ser positivo'}), 400
+    nuevo_pagado = row['pagado'] + monto
+    if nuevo_pagado > row['monto']: return jsonify({'error':'El abono excede la deuda pendiente'}), 400
+    db.execute("INSERT INTO abonos (prestamo_id, monto, fecha) VALUES (?, ?, ?)",
+               (row['id'], monto, data.get('fecha') or None))
+    nuevo_estado = 'pagado' if nuevo_pagado >= row['monto'] else 'pendiente'
+    db.execute("UPDATE prestamos SET pagado=?, estado=? WHERE id=?", (nuevo_pagado, nuevo_estado, row['id']))
+    db.commit()
+    return jsonify({'ok': True, 'saldo': round(row['monto'] - nuevo_pagado, 2), 'estado': nuevo_estado})
 
 @app.route('/api/prestamos/<int:id>/abonos', methods=['GET'])
 @login_required
@@ -830,44 +743,36 @@ def get_abonos(id):
 def update_abono(id):
     data = request.json
     db = get_db()
-    try:
-        row = db.execute("SELECT a.id, a.prestamo_id, a.monto FROM abonos a WHERE a.id=? FOR UPDATE", (id,)).fetchone()
-        if not row: return jsonify({'error':'Abono no encontrado'}), 404
-        nuevo_monto = float(data['monto'])
-        if nuevo_monto <= 0: return jsonify({'error':'Monto debe ser positivo'}), 400
-        prestamo = db.execute("SELECT id, monto, COALESCE(pagado,0) as pagado FROM prestamos WHERE id=? FOR UPDATE", (row['prestamo_id'],)).fetchone()
-        diferencia = nuevo_monto - row['monto']
-        nuevo_pagado = prestamo['pagado'] + diferencia
-        if nuevo_pagado > prestamo['monto']: return jsonify({'error':'El abono excede la deuda pendiente'}), 400
-        db.execute("UPDATE abonos SET monto=? WHERE id=?", (nuevo_monto, id))
-        if 'fecha' in data:
-            db.execute("UPDATE abonos SET fecha=? WHERE id=?", (data['fecha'], id))
-        nuevo_estado = 'pagado' if nuevo_pagado >= prestamo['monto'] else 'pendiente'
-        db.execute("UPDATE prestamos SET pagado=?, estado=? WHERE id=?", (nuevo_pagado, nuevo_estado, prestamo['id']))
-        db.commit()
-        return jsonify({'ok': True, 'saldo': round(prestamo['monto'] - nuevo_pagado, 2), 'estado': nuevo_estado})
-    except Exception:
-        db.rollback()
-        raise
+    row = db.execute("SELECT a.id, a.prestamo_id, a.monto FROM abonos a WHERE a.id=?", (id,)).fetchone()
+    if not row: return jsonify({'error':'Abono no encontrado'}), 404
+    nuevo_monto = float(data['monto'])
+    if nuevo_monto <= 0: return jsonify({'error':'Monto debe ser positivo'}), 400
+    prestamo = db.execute("SELECT id, monto, COALESCE(pagado,0) as pagado FROM prestamos WHERE id=?", (row['prestamo_id'],)).fetchone()
+    diferencia = nuevo_monto - row['monto']
+    nuevo_pagado = prestamo['pagado'] + diferencia
+    if nuevo_pagado > prestamo['monto']: return jsonify({'error':'El abono excede la deuda pendiente'}), 400
+    db.execute("UPDATE abonos SET monto=? WHERE id=?", (nuevo_monto, id))
+    if 'fecha' in data:
+        db.execute("UPDATE abonos SET fecha=? WHERE id=?", (data['fecha'], id))
+    nuevo_estado = 'pagado' if nuevo_pagado >= prestamo['monto'] else 'pendiente'
+    db.execute("UPDATE prestamos SET pagado=?, estado=? WHERE id=?", (nuevo_pagado, nuevo_estado, prestamo['id']))
+    db.commit()
+    return jsonify({'ok': True, 'saldo': round(prestamo['monto'] - nuevo_pagado, 2), 'estado': nuevo_estado})
 
 @app.route('/api/abonos/<int:id>', methods=['DELETE'])
 @login_required
 def delete_abono(id):
     db = get_db()
-    try:
-        row = db.execute("SELECT a.id, a.prestamo_id, a.monto FROM abonos a WHERE a.id=? FOR UPDATE", (id,)).fetchone()
-        if not row: return jsonify({'error':'Abono no encontrado'}), 404
-        prestamo = db.execute("SELECT id, monto, COALESCE(pagado,0) as pagado FROM prestamos WHERE id=? FOR UPDATE", (row['prestamo_id'],)).fetchone()
-        nuevo_pagado = prestamo['pagado'] - row['monto']
-        if nuevo_pagado < 0: nuevo_pagado = 0
-        db.execute("DELETE FROM abonos WHERE id=?", (id,))
-        nuevo_estado = 'pagado' if nuevo_pagado >= prestamo['monto'] else 'pendiente'
-        db.execute("UPDATE prestamos SET pagado=?, estado=? WHERE id=?", (nuevo_pagado, nuevo_estado, prestamo['id']))
-        db.commit()
-        return jsonify({'ok': True})
-    except Exception:
-        db.rollback()
-        raise
+    row = db.execute("SELECT a.id, a.prestamo_id, a.monto FROM abonos a WHERE a.id=?", (id,)).fetchone()
+    if not row: return jsonify({'error':'Abono no encontrado'}), 404
+    prestamo = db.execute("SELECT id, monto, COALESCE(pagado,0) as pagado FROM prestamos WHERE id=?", (row['prestamo_id'],)).fetchone()
+    nuevo_pagado = prestamo['pagado'] - row['monto']
+    if nuevo_pagado < 0: nuevo_pagado = 0
+    db.execute("DELETE FROM abonos WHERE id=?", (id,))
+    nuevo_estado = 'pagado' if nuevo_pagado >= prestamo['monto'] else 'pendiente'
+    db.execute("UPDATE prestamos SET pagado=?, estado=? WHERE id=?", (nuevo_pagado, nuevo_estado, prestamo['id']))
+    db.commit()
+    return jsonify({'ok': True})
 
 # ═══════════════════════════════════════════
 #  DATOS COMPLETOS
@@ -940,24 +845,12 @@ def _calcular_estado_cuenta(db):
     for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):
         asis[r['miembro_id']] = r['s'] or 0
 
-    # Calcular bingo ganado desde asistencias en vivo
-    bingos = db.execute("SELECT id, fecha, monto, adicional, asistentes FROM bingos").fetchall()
-    bingo_asistencias = {}
-    for r in db.execute("SELECT fecha, miembro_id FROM asistencias WHERE valor=1"):
-        if r['fecha'] not in bingo_asistencias:
-            bingo_asistencias[r['fecha']] = set()
-        bingo_asistencias[r['fecha']].add(r['miembro_id'])
+    # monto_asignado en bingo_distribucion ya refleja el valor real que a cada
+    # miembro le toca (auto-calculado o personalizado a mano en el Reparto),
+    # así que basta con sumarlo directamente para quienes reciben.
     bingo_dist = {}
-    for b in bingos:
-        att = bingo_asistencias.get(b['fecha'], set())
-        monto_real = len(att)
-        if monto_real == 0:
-            continue
-        total = monto_real + (b['adicional'] or 0)
-        asistentes = monto_real or (b['asistentes'] or 1)
-        coge = total / asistentes
-        for mid in att:
-            bingo_dist[mid] = bingo_dist.get(mid, 0) + coge
+    for r in db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE recibe=TRUE"):
+        bingo_dist[r['miembro_id']] = bingo_dist.get(r['miembro_id'], 0) + (r['monto_asignado'] or 0)
 
     rifa = {}
     rifa_raw = {}

@@ -661,7 +661,7 @@ function closeModal(){document.getElementById('modalBg').classList.remove('open'
 document.getElementById('modalBg').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()})
 
 function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39'})[c])}
-function $f(n){const v=Math.round(Number(n||0)*100)/100;return v.toFixed(2)}
+function $f(n){const v=Number(n||0);return v.toFixed(2)}
 function fd(f){if(!f)return'';const d=new Date(f+'T12:00:00');return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}
 function selM(val){return MESES.map(m=>`<option value="${m}"${m===val?' selected':''}>${m.toLowerCase()}</option>`).join('')}
 function selMi(val){return S.miembros.map(m=>`<option value="${esc(m.nombre)}"${m.nombre===val?' selected':''}>${esc(m.nombre)}${m.apodo?' ('+esc(m.apodo)+')':''}</option>`).join('')}
@@ -692,13 +692,9 @@ function computeEstadoCuenta(){
     const pendiente=prestamosM.reduce((s,p)=>s+Math.max(p.monto-(p.pagado||0),0),0);
     const pagadoTotal=prestamosM.reduce((s,p)=>s+(p.pagado||0),0);
     const bingoGanado=S.bingos.reduce((s,b)=>{
-      const montoReal=S.miembros.reduce((ss,mi)=>ss+((S.asistencias[mi.nombre]?.[b.fecha])||0),0);
-      if(montoReal===0)return s;
-      const total=montoReal+(parseFloat(b.adicional||0));
-      const asistentes=montoReal||(b.asistentes||1);
-      const coge=total/asistentes;
-      if((S.asistencias[m.nombre]?.[b.fecha])||0)return s+coge;
-      return s;
+      const d=(b.distribucion||[]).find(x=>x.miembro_id===m.id);
+      if(!d||!d.recibe)return s;
+      return s+(parseFloat(d.monto_asignado)||0);
     },0);
 const bingoDebe=Math.max(totalFechas-asOk,0);
     const bingoTotal=Math.round((bingoGanado-bingoDebe)*100)/100;
@@ -884,7 +880,7 @@ function renderizarGraficos(datos){
           legend:{display:false},
           tooltip:{
             backgroundColor:'#0f172a',padding:10,cornerRadius:8,displayColors:false,
-            callbacks:{label:c=>'$'+$f(c.parsed.y)}
+            callbacks:{label:c=>'$'+c.parsed.y.toFixed(2)}
           }
         },
         scales:{
@@ -957,7 +953,7 @@ function renderTablas(){
     }).join('')+'<td></td></tr>'+
     '<tr style="background:#eef2ff;font-weight:700"><td></td><td class="tl">Monto Bingo</td>'+fs.map(f=>{
       const total=S.miembros.reduce((s,m)=>s+((S.asistencias[m.nombre]?.[f])||0),0);
-      return `<td>$${$f(total)}</td>`
+      return `<td>$${total.toFixed(2)}</td>`
     }).join('')+'<td></td></tr>';
     document.getElementById('tablasBody').insertAdjacentHTML('beforeend', footer);
   }
@@ -1007,17 +1003,17 @@ function renderBingos(){
     const montoReal=S.miembros.reduce((s,m)=>s+((S.asistencias[m.nombre]?.[b.fecha])||0),0);
     const a=b.asistentes||S.miembros.length||1, ad=parseFloat(b.adicional||0), total=montoReal+ad;
     return `<tr><td><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarFechaBingo(${b.id},'${b.fecha}')" title="Click para cambiar fecha">${fd(b.fecha)} <i data-lucide="pencil" style="width:10px;height:10px;vertical-align:-2px;opacity:.6"></i></span></td>
-      <td class="tr fw6">$${$f(montoReal)}</td>
-      <td class="tr"><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarAdicional(${b.id},${ad})" title="Click para editar">$${$f(ad)} <i data-lucide="pencil" style="width:10px;height:10px;vertical-align:-2px;opacity:.6"></i></span></td>
-      <td class="tr fw6" style="color:var(--accent)">$${$f(total)}</td>
-      <td class="tr">$${$f(total/a)}</td>
+      <td class="tr fw6">$${montoReal.toFixed(2)}</td>
+      <td class="tr"><span style="cursor:pointer;border-bottom:1px dashed var(--text2)" onclick="editarAdicional(${b.id},${ad})" title="Click para editar">$${ad.toFixed(2)} <i data-lucide="pencil" style="width:10px;height:10px;vertical-align:-2px;opacity:.6"></i></span></td>
+      <td class="tr fw6" style="color:var(--accent)">$${total.toFixed(2)}</td>
+      <td class="tr">$${(total/a).toFixed(2)}</td>
       <td><span class="bdg" style="cursor:pointer;background:#f1f5f9;color:var(--text);padding:2px 8px" onclick="editarAsistentes(${b.id},${a})" title="Click para cambiar">${a} <i data-lucide="pencil" style="width:10px;height:10px;vertical-align:-2px;opacity:.6"></i></span></td>
       <td><button class="btn btn-gh btn-xs" onclick="modalReparto(${b.id})" title="Distribuir"><i data-lucide="split" style="width:11px;height:11px;vertical-align:-2px;"></i> Reparto</button> <button class="btn btn-r btn-xs" onclick="delBingo(${b.id})"><i data-lucide="trash-2" style="width:11px;height:11px;vertical-align:-2px;"></i></button></td></tr>`
   }).join('')||'<tr><td colspan="8" class="emp"><div class="big"><i data-lucide="grid-3x3" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin bingos</td></tr>';
-  document.getElementById('bingoTotal').textContent=$f(S.bingos.reduce((s,b)=>{
+  document.getElementById('bingoTotal').textContent=S.bingos.reduce((s,b)=>{
     const mr=S.miembros.reduce((ss,m)=>ss+((S.asistencias[m.nombre]?.[b.fecha])||0),0);
     return s+mr+(parseFloat(b.adicional||0));
-  },0))
+  },0).toFixed(2)
 }
 
 function editarAsistentes(id, actual){
@@ -1040,11 +1036,11 @@ async function modalReparto(id){
       <label for="repCk_${m.miembro_id}" style="flex:1;margin:0;font-size:13px;cursor:pointer">${esc(m.nombre)}</label>
       ${badge}
       <span style="font-size:11px;color:var(--text2)">$</span>
-      <input type="number" id="repM_${m.miembro_id}" step="0.01" min="0" value="${$f(monto)}" ${recibe?'':'disabled'} style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:13px;text-align:right" oninput="repSuma()">
+      <input type="number" id="repM_${m.miembro_id}" step="0.01" min="0" value="${monto.toFixed(2)}" ${recibe?'':'disabled'} style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:13px;text-align:right" oninput="repSuma()">
     </div>`
   }).join('');
-  modal(`<h3>Reparto — Total: $${$f(total)}</h3>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:8px">Cada uno que recibe se lleva <strong>$${$f(coge)}</strong> por defecto. Desmarcá a quien NO recibe, o cambiá el monto si ese día ganó algo extra (queda fijo y ya no se recalcula solo).</p>
+  modal(`<h3>Reparto — Total: $${total.toFixed(2)}</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:8px">Cada uno que recibe se lleva <strong>$${coge.toFixed(2)}</strong> por defecto. Desmarcá a quien NO recibe, o cambiá el monto si ese día ganó algo extra (queda fijo y ya no se recalcula solo).</p>
     <div style="margin-bottom:6px;font-size:13px;font-weight:600">Distribuido: <span id="repSuma" style="color:var(--accent)">$0.00</span></div>
     ${items}
     <div class="ma"><button class="btn btn-gh" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="guardarReparto(${id})">Guardar</button></div>`);
@@ -1055,7 +1051,7 @@ function repToggle(miembroId){
   const ck=document.getElementById('repCk_'+miembroId);
   const inp=document.getElementById('repM_'+miembroId);
   inp.disabled=!ck.checked;
-  inp.value=ck.checked?$f(_repartoCoge):'0';
+  inp.value=ck.checked?_repartoCoge.toFixed(2):'0';
   repSuma();
 }
 
@@ -1065,7 +1061,7 @@ function repSuma(){
   const inputs=document.querySelectorAll('[id^="repM_"]');
   let suma=0;
   inputs.forEach(i=>{if(!i.disabled)suma+=parseFloat(i.value)||0});
-  s.textContent='$'+$f(suma);
+  s.textContent='$'+suma.toFixed(2);
 }
 
 async function guardarReparto(id){
@@ -1116,7 +1112,7 @@ function calcMontoTablas(){
   const fecha=document.getElementById('fBiFecha').value;
   if(!fecha||!S.asistencias){document.getElementById('fBiMonto').value='0';return}
   const pagados=S.miembros.filter(m=>(S.asistencias[m.nombre]?.[fecha])||0).length;
-  document.getElementById('fBiMonto').value=$f(pagados);
+  document.getElementById('fBiMonto').value=pagados.toFixed(2);
 }
 async function saveBingo(){
   const f=document.getElementById('fBiFecha').value,m=parseFloat(document.getElementById('fBiMonto').value)||0,a=parseInt(document.getElementById('fBiAsist').value),ad=parseFloat(document.getElementById('fBiAdicional').value)||0;
@@ -1179,16 +1175,16 @@ function renderAhorros(){
     const isRifa=key==='ahorroRifa';
     document.getElementById(hid).innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+(isRifa?'':periodos.map(m=>`<th>${m.length>3?m.slice(0,3):m}</th>`).join(''))+'<th class="tr">Total</th></tr>';
     document.getElementById(bid).innerHTML=S.miembros.map((mi,i)=>{
-      const c=isRifa?'':periodos.map(me=>{const v=(S[key][mi.nombre]?.[me])||0;return `<td>${v?`$${$f(v)}`:'—'}</td>`}).join('');
+      const c=isRifa?'':periodos.map(me=>{const v=(S[key][mi.nombre]?.[me])||0;return `<td>${v?`$${v.toFixed(2)}`:'—'}</td>`}).join('');
       const s=periodos.reduce((s,me)=>s+((S[key][mi.nombre]?.[me])||0),0);
-      return `<tr><td>${i+1}</td><td class="tl fw6">${esc(mi.nombre)}</td>${c}<td class="tr fw6">$${$f(s)}</td></tr>`
+      return `<tr><td>${i+1}</td><td class="tl fw6">${esc(mi.nombre)}</td>${c}<td class="tr fw6">$${s.toFixed(2)}</td></tr>`
     }).join('')||'<tr><td colspan="'+(isRifa?3:periodos.length+2)+'" class="emp"><div class="big"><i data-lucide="piggy-bank" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin datos</td></tr>'
   });
   let tg=0;S.miembros.forEach(mi=>{['ahorroNormal','ahorroCumple','ahorroRifa'].forEach(k=>{
     const periodos=k==='ahorroRifa'?RIFA_NUM:MESES;
     tg+=periodos.reduce((s,me)=>s+((S[k][mi.nombre]?.[me])||0),0)
   })});
-  document.getElementById('ahorroGral').textContent=$f(tg)
+  document.getElementById('ahorroGral').textContent=tg.toFixed(2)
 }
 function modalAhorro(tipo){
   const lb={normal:'Ahorro Normal',cumple:'Ahorro Cumpleaños',rifa:'Ahorro Rifa'};
