@@ -661,7 +661,7 @@ function closeModal(){document.getElementById('modalBg').classList.remove('open'
 document.getElementById('modalBg').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()})
 
 function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39'})[c])}
-function $f(n){const v=Number(n||0);return v.toFixed(2)}
+function $f(n){const v=Math.round(Number(n||0)*100)/100;return v.toFixed(2)}
 function fd(f){if(!f)return'';const d=new Date(f+'T12:00:00');return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}
 function selM(val){return MESES.map(m=>`<option value="${m}"${m===val?' selected':''}>${m.toLowerCase()}</option>`).join('')}
 function selMi(val){return S.miembros.map(m=>`<option value="${esc(m.nombre)}"${m.nombre===val?' selected':''}>${esc(m.nombre)}${m.apodo?' ('+esc(m.apodo)+')':''}</option>`).join('')}
