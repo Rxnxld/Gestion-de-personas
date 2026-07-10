@@ -166,20 +166,26 @@ def init_db():
         LEFT JOIN asistencias a ON a.miembro_id = m.id AND a.fecha = b.fecha
         WHERE NOT EXISTS (SELECT 1 FROM bingo_distribucion d WHERE d.bingo_id=b.id AND d.miembro_id=m.id)
         ON CONFLICT (bingo_id, miembro_id) DO NOTHING;
-        -- repara filas creadas por una version anterior de este backfill que
-        -- dejaron recibe=TRUE para todos en las fechas "espejo" recien
-        -- sincronizadas (monto/adicional/asistentes en 0 y aun sin editar).
-        -- No toca bingos que ya hayan sido editados o personalizados.
+        -- re-sincroniza recibe/monto en cada arranque para bingos cuya fecha
+        -- ya tenga asistencia registrada (por si se marco/edito asistencia
+        -- despues de crear el bingo, lo cual antes dejaba el reparto
+        -- desactualizado). No toca reparto personalizado.
         UPDATE bingo_distribucion d
         SET recibe = (
               SELECT COALESCE(a.valor, 0) = 1
               FROM asistencias a
               WHERE a.miembro_id = d.miembro_id AND a.fecha = b.fecha
             ),
-            monto_asignado = 0
+            monto_asignado = CASE WHEN (
+                SELECT COALESCE(a.valor, 0) = 1
+                FROM asistencias a
+                WHERE a.miembro_id = d.miembro_id AND a.fecha = b.fecha
+              )
+              THEN COALESCE(ROUND(((b.monto + COALESCE(b.adicional,0)) / NULLIF(b.asistentes,0))::numeric, 2)::real, 0)
+              ELSE 0
+            END
         FROM bingos b
         WHERE d.bingo_id = b.id
-          AND b.monto = 0 AND b.asistentes = 0 AND COALESCE(b.adicional,0) = 0
           AND d.personalizado = FALSE
           AND EXISTS (SELECT 1 FROM asistencias a2 WHERE a2.fecha = b.fecha);
         CREATE TABLE IF NOT EXISTS fechas_rifa (
@@ -383,8 +389,22 @@ def set_asistencia():
     db = get_db()
     miembro = db.execute("SELECT id FROM miembros WHERE nombre=?", (data['nombre'],)).fetchone()
     if not miembro: return jsonify({'error':'Miembro no encontrado'}), 404
+    valor = int(data.get('valor', 0))
     db.execute("INSERT INTO asistencias (miembro_id, fecha, valor) VALUES (?, ?, ?) ON CONFLICT(miembro_id, fecha) DO UPDATE SET valor=excluded.valor",
-               (miembro['id'], data['fecha'], int(data.get('valor', 0))))
+               (miembro['id'], data['fecha'], valor))
+    # Conecta con Bingo: si esa fecha ya tiene un bingo asociado, sincroniza
+    # si el miembro "recibe" reparto segun la asistencia recien marcada y
+    # recalcula su monto (a menos que ya tenga un reparto personalizado).
+    bingo = db.execute("SELECT id, monto, adicional, asistentes FROM bingos WHERE fecha=?", (data['fecha'],)).fetchone()
+    if bingo:
+        recibe = valor == 1
+        total = (bingo['monto'] or 0) + (bingo['adicional'] or 0)
+        a = bingo['asistentes'] or 0
+        coge = round(total / a, 2) if a > 0 else 0
+        db.execute(
+            "UPDATE bingo_distribucion SET recibe=?, monto_asignado=? "
+            "WHERE bingo_id=? AND miembro_id=? AND personalizado=FALSE",
+            (recibe, coge if recibe else 0, bingo['id'], miembro['id']))
     db.commit()
     return jsonify({'ok': True})
 
