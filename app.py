@@ -171,9 +171,13 @@ def init_db():
         -- sincronizadas (monto/adicional/asistentes en 0 y aun sin editar).
         -- No toca bingos que ya hayan sido editados o personalizados.
         UPDATE bingo_distribucion d
-        SET recibe = (COALESCE(a.valor, 0) = 1), monto_asignado = 0
+        SET recibe = (
+              SELECT COALESCE(a.valor, 0) = 1
+              FROM asistencias a
+              WHERE a.miembro_id = d.miembro_id AND a.fecha = b.fecha
+            ),
+            monto_asignado = 0
         FROM bingos b
-        LEFT JOIN asistencias a ON a.miembro_id = d.miembro_id AND a.fecha = b.fecha
         WHERE d.bingo_id = b.id
           AND b.monto = 0 AND b.asistentes = 0 AND COALESCE(b.adicional,0) = 0
           AND d.personalizado = FALSE
