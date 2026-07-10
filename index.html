@@ -692,9 +692,13 @@ function computeEstadoCuenta(){
     const pendiente=prestamosM.reduce((s,p)=>s+Math.max(p.monto-(p.pagado||0),0),0);
     const pagadoTotal=prestamosM.reduce((s,p)=>s+(p.pagado||0),0);
     const bingoGanado=S.bingos.reduce((s,b)=>{
-      const d=(b.distribucion||[]).find(x=>x.miembro_id===m.id);
-      if(!d||!d.recibe)return s;
-      return s+(parseFloat(d.monto_asignado)||0);
+      const montoReal=S.miembros.reduce((ss,mi)=>ss+((S.asistencias[mi.nombre]?.[b.fecha])||0),0);
+      if(montoReal===0)return s;
+      const total=montoReal+(parseFloat(b.adicional||0));
+      const asistentes=montoReal||(b.asistentes||1);
+      const coge=total/asistentes;
+      if((S.asistencias[m.nombre]?.[b.fecha])||0)return s+coge;
+      return s;
     },0);
 const bingoDebe=Math.max(totalFechas-asOk,0);
     const bingoTotal=Math.round((bingoGanado-bingoDebe)*100)/100;
