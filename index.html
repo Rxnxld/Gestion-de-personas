@@ -264,12 +264,12 @@ tbody tr:hover{background:#f8fafc}
 tbody tr:nth-child(even){background:#f8fafc}
 .card{transition:box-shadow .2s}
 .card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.tb-cell{padding:8px 12px;border-bottom:1px solid var(--border-l);transition:all .12s;font-size:15px;font-weight:700;user-select:none}
+.tb-cell{padding:10px 14px;border-bottom:1px solid var(--border-l);transition:all .12s;font-size:16px;font-weight:700;user-select:none;text-align:center}
 .tb-cell:hover{background:var(--accent-l);transform:scale(1.06)}
-.tb-cell.pagado{color:#059669;background:var(--success-l)}
-.tb-cell.pagado:hover{background:#d1fae5}
-.tb-cell.nopagado{color:var(--text3)}
-.tb-cell.nopagado:hover{color:var(--accent);background:var(--accent-l)}
+.tb-cell.pagado{color:#059669;background:#d1fae5}
+.tb-cell.pagado:hover{background:#a7f3d0}
+.tb-cell.nopagado{color:var(--text2);border:1px dashed var(--border-l)}
+.tb-cell.nopagado:hover{color:var(--accent);background:var(--accent-l);border-color:var(--accent)}
 
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -1139,15 +1139,15 @@ async function delBingo(id){if(!confirm('¿Eliminar?'))return;try{await api('DEL
 function renderRifa(){
   const meses=RIFA_NUM;
   const head='<tr><th>#</th><th class="tl">Nombre</th>'+meses.map(m=>`<th colspan="2" style="text-align:center;min-width:50px">${m}</th>`).join('')+'<th class="tr">Total</th></tr>'+
-    '<tr><th></th><th></th>'+meses.map(()=>'<th style="font-weight:400;font-size:9px;padding:2px 4px">1</th><th style="font-weight:400;font-size:9px;padding:2px 4px">2</th>').join('')+'<th></th></tr>';
+    '<tr><th></th><th></th>'+meses.map(()=>'<th style="font-weight:500;font-size:11px;padding:4px 8px">1</th><th style="font-weight:500;font-size:11px;padding:4px 8px">2</th>').join('')+'<th></th></tr>';
   document.getElementById('rifaHead').innerHTML=head;
   let gl=0;
   document.getElementById('rifaBody').innerHTML=S.miembros.map((m,i)=>{
     const cells=meses.map(me=>{
       const v=(S.rifas[m.nombre]?.[me])||0;
       const s1=!!(v&1), s2=!!(v&2);
-      return `<td class="tb-cell ${s1?'pagado':'nopagado'}" onclick="toggleRifaSlot(${m.id},'${me}',1)" title="${s1?'Quitar':'Poner'} slot 1">${s1?'<i data-lucide="check" style="width:13px;height:13px;vertical-align:-2px;"></i>':''}</td>
-              <td class="tb-cell ${s2?'pagado':'nopagado'}" onclick="toggleRifaSlot(${m.id},'${me}',2)" title="${s2?'Quitar':'Poner'} slot 2">${s2?'<i data-lucide="check" style="width:13px;height:13px;vertical-align:-2px;"></i>':''}</td>`
+      return `<td class="tb-cell ${s1?'pagado':'nopagado'}" onclick="toggleRifaSlot(${m.id},'${me}',1)" title="${s1?'Quitar':'Poner'} slot 1">${s1?'◉':'○'}</td>
+              <td class="tb-cell ${s2?'pagado':'nopagado'}" onclick="toggleRifaSlot(${m.id},'${me}',2)" title="${s2?'Quitar':'Poner'} slot 2">${s2?'◉':'○'}</td>`
     }).join('');
     const total=meses.reduce((s,me)=>{const v=(S.rifas[m.nombre]?.[me])||0;return s+(v&1)+((v>>1)&1)},0);
     gl+=total;
