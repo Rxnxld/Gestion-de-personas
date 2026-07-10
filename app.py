@@ -2,7 +2,7 @@ import os, csv, io, hashlib, secrets
 from datetime import timedelta
 from decimal import Decimal
 from flask import Flask, g, request, jsonify, send_from_directory, session, Response, send_file
-from flask.json import JSONEncoder
+from flask.json.provider import DefaultJSONProvider
 from flask_cors import CORS
 import psycopg2
 import psycopg2.extras
@@ -12,13 +12,12 @@ app = Flask(__name__, static_folder='.', static_url_path='')
 # no se invaliden cada vez que el servidor reinicia o se redespliega.
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.permanent_session_lifetime = timedelta(hours=8)
-# Serializador JSON que maneja Decimal (NUMERIC de PostgreSQL)
-class DecimalEncoder(JSONEncoder):
+class DecimalProvider(DefaultJSONProvider):
     def default(self, obj):
         if isinstance(obj, Decimal):
             return float(obj)
         return super().default(obj)
-app.json_encoder = DecimalEncoder
+app.json_provider_class = DecimalProvider
 CORS(app, supports_credentials=True)
 
 # En Render, crea una base de datos PostgreSQL y copia su "Internal Database URL"
