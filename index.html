@@ -682,8 +682,8 @@ function computeEstadoCuenta(){
       const v=(S.rifas[otro.nombre]?.[numRifa])||0;return s+(v&1)+((v>>1)&1)
     },0);
     const totalRifaSlots=S.fechasRifa.length*2;
-    const aN=MESES.reduce((s,me)=>s+((S.ahorroNormal[m.nombre]?.[me])||0),0);
-    const aC=MESES.reduce((s,me)=>s+((S.ahorroCumple[m.nombre]?.[me])||0),0);
+    const aN=MESES.reduce((s,me)=>s+((S.ahorroNormal?.[m.nombre]?.[me])||0),0);
+    const aC=MESES.reduce((s,me)=>s+((S.ahorroCumple?.[m.nombre]?.[me])||0),0);
     const aR=totalRecibido;
     const ahorroTotal=aN+aC+aR;
     const cumpleTotal=S.cumpleMeses.reduce((s,c)=>s+((S.cumpleAportes[c]?.[m.nombre])||0),0);
@@ -827,8 +827,8 @@ function renderEstadoIndividual(){
 function renderDashboard(){
   const m=S.miembros,tb=S.bingos.reduce((s,b)=>s+(Number(b.monto)||0),0);let ta=0,tr=0;
   m.forEach(mi=>{S.fechasRifa.forEach(f=>{const v=(S.rifas[mi.nombre]?.[f])||0;tr+=(v&1)+((v>>1)&1)});
-    ['ahorroNormal','ahorroCumple'].forEach(k=>{MESES.forEach(mes=>{ta+=(S[k][mi.nombre]?.[mes])||0})});
-    RIFA_NUM.forEach(n=>{ta+=(S.ahorroRifa[mi.nombre]?.[n])||0})});
+    ['ahorroNormal','ahorroCumple'].forEach(k=>{MESES.forEach(mes=>{ta+=(S[k]?.[mi.nombre]?.[mes])||0})});
+    RIFA_NUM.forEach(n=>{ta+=(S.ahorroRifa?.[mi.nombre]?.[n])||0})});
   const tp=S.prestamos.filter(p=>p.estado!=='pagado').reduce((s,p)=>s+(Number(p.monto)||0),0);
   document.getElementById('statsGrid').innerHTML=
     `<div class="stat blue"><div class="stat-ico"><i data-lucide="users" style="width:18px;height:18px;vertical-align:-2px;"></i></div><div><div class="l">Miembros</div><div class="v">${m.length}</div></div></div>
@@ -1175,14 +1175,14 @@ function renderAhorros(){
     const isRifa=key==='ahorroRifa';
     document.getElementById(hid).innerHTML='<tr><th>#</th><th class="tl">Nombre</th>'+(isRifa?'':periodos.map(m=>`<th>${m.length>3?m.slice(0,3):m}</th>`).join(''))+'<th class="tr">Total</th></tr>';
     document.getElementById(bid).innerHTML=S.miembros.map((mi,i)=>{
-      const c=isRifa?'':periodos.map(me=>{const v=(S[key][mi.nombre]?.[me])||0;return `<td>${v?`$${$f(v)}`:'—'}</td>`}).join('');
-      const s=periodos.reduce((s,me)=>s+((S[key][mi.nombre]?.[me])||0),0);
+      const c=isRifa?'':periodos.map(me=>{const v=(S[key]?.[mi.nombre]?.[me])||0;return `<td>${v?`$${$f(v)}`:'—'}</td>`}).join('');
+      const s=periodos.reduce((s,me)=>s+((S[key]?.[mi.nombre]?.[me])||0),0);
       return `<tr><td>${i+1}</td><td class="tl fw6">${esc(mi.nombre)}</td>${c}<td class="tr fw6">$${$f(s)}</td></tr>`
     }).join('')||'<tr><td colspan="'+(isRifa?3:periodos.length+2)+'" class="emp"><div class="big"><i data-lucide="piggy-bank" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin datos</td></tr>'
   });
   let tg=0;S.miembros.forEach(mi=>{['ahorroNormal','ahorroCumple','ahorroRifa'].forEach(k=>{
     const periodos=k==='ahorroRifa'?RIFA_NUM:MESES;
-    tg+=periodos.reduce((s,me)=>s+((S[k][mi.nombre]?.[me])||0),0)
+    tg+=periodos.reduce((s,me)=>s+((S[k]?.[mi.nombre]?.[me])||0),0)
   })});
   document.getElementById('ahorroGral').textContent=$f(tg)
 }
