@@ -146,12 +146,38 @@ def init_db():
         WHERE NOT EXISTS (SELECT 1 FROM fechas_tablas ft WHERE ft.fecha = b.fecha)
         ON CONFLICT (fecha) DO NOTHING;
         -- backfill distribucion para bingos existentes sin distribucion
-        -- (incluye los que se acaban de crear en el paso anterior)
+        -- (incluye los que se acaban de crear en el paso anterior).
+        -- Si esa fecha ya tiene asistencia registrada en Tablas de Asistencia,
+        -- respeta quien asistio de verdad; si no hay asistencia registrada
+        -- para esa fecha (bingos antiguos sin tabla asociada), usa TRUE por
+        -- defecto para no romper datos historicos.
         INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado)
-        SELECT b.id, m.id, TRUE, ROUND(((b.monto + COALESCE(b.adicional,0)) / NULLIF(b.asistentes,0))::numeric, 2)::real
-        FROM bingos b, miembros m
+        SELECT b.id, m.id,
+               CASE WHEN EXISTS (SELECT 1 FROM asistencias a2 WHERE a2.fecha = b.fecha)
+                    THEN COALESCE(a.valor, 0) = 1
+                    ELSE TRUE END AS recibe,
+               CASE WHEN EXISTS (SELECT 1 FROM asistencias a2 WHERE a2.fecha = b.fecha)
+                        AND COALESCE(a.valor, 0) != 1
+                    THEN 0
+                    ELSE ROUND(((b.monto + COALESCE(b.adicional,0)) / NULLIF(b.asistentes,0))::numeric, 2)::real
+               END AS monto_asignado
+        FROM bingos b
+        CROSS JOIN miembros m
+        LEFT JOIN asistencias a ON a.miembro_id = m.id AND a.fecha = b.fecha
         WHERE NOT EXISTS (SELECT 1 FROM bingo_distribucion d WHERE d.bingo_id=b.id AND d.miembro_id=m.id)
         ON CONFLICT (bingo_id, miembro_id) DO NOTHING;
+        -- repara filas creadas por una version anterior de este backfill que
+        -- dejaron recibe=TRUE para todos en las fechas "espejo" recien
+        -- sincronizadas (monto/adicional/asistentes en 0 y aun sin editar).
+        -- No toca bingos que ya hayan sido editados o personalizados.
+        UPDATE bingo_distribucion d
+        SET recibe = (COALESCE(a.valor, 0) = 1), monto_asignado = 0
+        FROM bingos b
+        LEFT JOIN asistencias a ON a.miembro_id = d.miembro_id AND a.fecha = b.fecha
+        WHERE d.bingo_id = b.id
+          AND b.monto = 0 AND b.asistentes = 0 AND COALESCE(b.adicional,0) = 0
+          AND d.personalizado = FALSE
+          AND EXISTS (SELECT 1 FROM asistencias a2 WHERE a2.fecha = b.fecha);
         CREATE TABLE IF NOT EXISTS fechas_rifa (
             id SERIAL PRIMARY KEY,
             fecha TEXT UNIQUE NOT NULL
