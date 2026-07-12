@@ -534,15 +534,13 @@ def save_distribucion(id):
     for item in data:
         recibe = item.get('recibe', True)
         if not recibe:
-            monto, personalizado = 0, False
+            monto, personalizado = 0, True
         else:
             enviado = round(float(item.get('monto', coge)), 2)
-            # Si el monto que llega es distinto al "Coge c/u" automático, es que
-            # lo personalizaron a mano (ganó un extra ese día, etc.). Se marca
-            # como personalizado para que los recálculos automáticos (cambios
-            # de asistencia, monto, adicional o asistentes) no lo pisen.
-            personalizado = abs(enviado - coge) > 0.001
-            monto = enviado if personalizado else coge
+            if enviado < 0:
+                return jsonify({'error':'Monto no puede ser negativo'}), 400
+            personalizado = True
+            monto = enviado
         db.execute("INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado, personalizado) VALUES (?, ?, ?, ?, ?)",
                    (id, item['miembro_id'], recibe, monto, personalizado))
     db.commit()
