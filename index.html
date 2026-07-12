@@ -677,7 +677,9 @@ function cogeAutomaticoBingo(b){
     ? registros.reduce((s,m)=>s+(Number(S.asistencias[m.nombre]?.[b.fecha])||0),0)
     : Number(b.monto||0);
   const asistentes=Number(b.asistentes)||S.miembros.length||1;
-  return Math.round(((montoTablas+Number(b.adicional||0))/asistentes)*100)/100
+  // No redondear cada bingo: se suman los valores exactos y se redondea solo
+  // el total, igual que en la hoja de cálculo.
+  return (montoTablas+Number(b.adicional||0))/asistentes
 }
 
 function computeEstadoCuenta(){
@@ -703,15 +705,13 @@ function computeEstadoCuenta(){
     const pagadoTotal=prestamosM.reduce((s,p)=>s+(p.pagado||0),0);
     const bingoGanado=S.bingos.reduce((s,b)=>{
       const dist=(b.distribucion||[]).find(d=>d.miembro_id===m.id);
-      // Una exclusión manual sí elimina el reparto. Una tabla no pagada no lo
-      // elimina aquí porque esa deuda se descuenta una sola vez en bingoDebe.
-      if(dist && dist.personalizado){
-        return dist.recibe?s+(parseFloat(dist.monto_asignado)||0):s
-      }
+      // Los montos personalizados antiguos no reemplazan el cálculo actual.
+      // Solo se conserva una exclusión realizada manualmente.
+      if(dist && dist.personalizado && !dist.recibe)return s;
       return s+cogeAutomaticoBingo(b)
     },0);
 const bingoDebe=Math.max(totalFechas-asOk,0);
-    const bingoTotal=Math.round((bingoGanado-bingoDebe)*100)/100;
+    const bingoTotal=Math.round(bingoGanado*100)/100;
     const saldoNeto=ahorroTotal;
     const totalGeneral=Math.round((bingoTotal+ahorroTotal)*100)/100;
     let estadoGeneral='al_dia';
@@ -745,7 +745,7 @@ function renderEstadoCuenta(){
   document.getElementById('ecBody').innerHTML=data.map((d,i)=>{
     const pill=d.estadoGeneral==='al_dia'?'<span class="ec-badge ok"><i data-lucide="check-circle-2" style="width:12px;height:12px;vertical-align:-2px;"></i> Al día</span>':d.estadoGeneral==='con_deuda'?'<span class="ec-badge warn"><i data-lucide="alert-circle" style="width:12px;height:12px;vertical-align:-2px;"></i> Con deuda</span>':'<span class="ec-badge danger"><i data-lucide="alert-triangle" style="width:12px;height:12px;vertical-align:-2px;"></i> Moroso</span>';
     const bCl=d.bingo>0?'var(--success)':d.bingo<0?'var(--danger)':'var(--text2)';
-    const bTitle=d.bingoDebe>0?`title="Ganado $${$f(d.bingoGanado)} − $${$f(d.bingoDebe)} (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} no pagada${d.bingoDebe===1?'':'s'})"`:'';
+    const bTitle=d.bingoDebe>0?`title="Coge c/u acumulado $${$f(d.bingoGanado)} · ${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} pendiente${d.bingoDebe===1?'':'s'} (no se descuenta del Bingo Neto)"`:'';
     const tCl=d.totalGeneral<0?'var(--danger)':'var(--success)';
     return `<tr><td style="color:var(--text2);font-weight:500">${i+1}</td><td class="tl" style="font-weight:600">${esc(d.nombre)}</td><td><span class="bdg ${d.asistencia.pct>=70?'bdg-g':d.asistencia.pct>=40?'bdg-w':'bdg-r'}">${d.asistencia.pct}%</span></td><td style="font-weight:600">${d.rifa.participaciones}</td><td class="tr fw6" style="color:${bCl}" ${bTitle}>${d.bingo!==0?'$'+$f(d.bingo):'—'}</td><td class="tr">$${$f(d.ahorros.total)}</td><td class="tr">${d.cumpleAportes}</td><td class="tr" style="color:${d.prestamos.pendiente>0?'var(--danger)':'var(--text2)'}">$${$f(d.prestamos.pendiente)}</td><td class="tr fw6" style="color:${tCl};font-size:13px">$${$f(d.totalGeneral)}</td><td>${pill}</td></tr>`
   }).join('')||'<tr><td colspan="11" class="emp"><div class="big"><i data-lucide="file-text" style="width:28px;height:28px;vertical-align:-2px;"></i></div>Sin datos</td></tr>';
@@ -797,7 +797,7 @@ function renderEstadoIndividual(){
         <div class="ec-item" style="background:${bnetoBg};border-color:${bnetoColor}">
           <div class="l">Bingo Neto</div>
           <div class="v" style="color:${bnetoColor}">${d.bingo<0?'−':'+'}$${$f(Math.abs(d.bingo))}</div>
-          <div class="s">Coge c/u total $${$f(d.bingoGanado)} − $${d.bingoDebe} (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} debe) = $${$f(d.bingo)}</div>
+          <div class="s">Coge c/u total $${$f(d.bingoGanado)}${d.bingoDebe>0?` · ${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} pendiente${d.bingoDebe===1?'':'s'} (informativa${d.bingoDebe===1?'':'s'})`:''}</div>
         </div>
         <div class="ec-item">
           <div class="l">Ahorro Normal</div>

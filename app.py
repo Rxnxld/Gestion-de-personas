@@ -855,10 +855,10 @@ def _calcular_estado_cuenta(db):
     for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):
         asis[r['miembro_id']] = r['s'] or 0
 
-    # Calcular el reparto acumulado de bingo sin descontar dos veces una tabla
-    # pendiente. La asistencia se descuenta más abajo mediante ``bingo_debe``.
-    # Aquí todos reciben el valor automático de "coge c/u", excepto quienes
-    # fueron excluidos manualmente (personalizado=TRUE y recibe=FALSE).
+    # Calcular el reparto acumulado de bingo con los valores exactos de "coge
+    # c/u". Se redondea únicamente el total final para que coincida con la suma
+    # realizada en Excel. Las tablas pendientes se informan aparte y no reducen
+    # este valor. Solo se respetan las exclusiones realizadas manualmente.
     bingos_calculo = [dict(r) for r in db.execute("""
         SELECT b.id, b.fecha, b.monto, COALESCE(b.adicional,0) adicional,
                b.asistentes,
@@ -883,13 +883,13 @@ def _calcular_estado_cuenta(db):
         # monto almacenado en la tabla bingos.
         monto_tablas = b['monto_real'] if b['registros_asistencia'] else (b['monto'] or 0)
         asistentes_bingo = b['asistentes'] or len(miembros) or 1
-        coge_automatico = round((monto_tablas + (b['adicional'] or 0)) / asistentes_bingo, 2)
+        coge_automatico = (monto_tablas + (b['adicional'] or 0)) / asistentes_bingo
         for m in miembros:
             dist = distribuciones.get((b['id'], m['id']))
-            if dist and dist['personalizado']:
-                valor = (dist['monto_asignado'] or 0) if dist['recibe'] else 0
-            else:
-                valor = coge_automatico
+            # Un valor personalizado antiguo no debe reemplazar el cálculo
+            # actual. Solo recibe=FALSE con personalizado=TRUE representa una
+            # exclusión manual válida.
+            valor = 0 if dist and dist['personalizado'] and not dist['recibe'] else coge_automatico
             bingo_dist[m['id']] += valor
 
     rifa = {}
@@ -938,11 +938,10 @@ def _calcular_estado_cuenta(db):
         saldo_neto = round(ahorro_total - p['pendiente'], 2)
         estado_general = 'moroso' if p['pendiente'] > 0 and as_pct < 50 else ('con_deuda' if p['pendiente'] > 0 else 'al_dia')
         bingo_ganado = round(bingo_dist.get(mid, 0), 2)
-        # Conecta la tabla de Asistencias con la de Bingo: cualquier fecha de
-        # "Tablas de Bingo" que el miembro NO tenga marcada como "Sí" (ya sea
-        # que la marcó "No" o que nunca la tocó) cuenta como no pagada.
+        # Las tablas no pagadas se muestran como información independiente; no
+        # se descuentan del total acumulado de "coge c/u".
         bingo_debe = max(total_fechas_tablas - as_ok, 0)
-        bingo_total = round(bingo_ganado - bingo_debe, 2)
+        bingo_total = bingo_ganado
         resultado.append({
             'id': mid, 'nombre': m['nombre'], 'apodo': m['apodo'],
             'asistencia': {'asistidas': as_ok, 'total': total_fechas_tablas, 'pct': as_pct},
