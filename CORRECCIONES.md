@@ -1,24 +1,25 @@
 # Corrección del estado de cuenta
 
-Se corrigió el cálculo de **Bingo Neto** para evitar que una tabla pendiente se
-descuente dos veces.
+Se corrigió el cálculo de **Bingo Neto** para que coincida con la suma exacta de
+la columna **Coge c/u**.
 
 La fórmula utilizada ahora es:
 
 ```text
-Bingo Neto = Total acumulado de "Coge c/u" - Tablas pendientes ($1 cada una)
+Bingo Neto = Suma exacta de todos los valores "Coge c/u"
 ```
 
-Las exclusiones realizadas manualmente desde **Excluir del Reparto** continúan
-respetándose. Una tabla marcada como no pagada genera la deuda de $1, pero ya no
-elimina también el valor que le corresponde al miembro en el reparto.
+Las divisiones de cada bingo se suman con todos sus decimales y solamente se
+redondea el resultado final. Las exclusiones realizadas manualmente desde
+**Excluir del Reparto** continúan respetándose. Las tablas pendientes aparecen
+como información separada, pero no reducen el Bingo Neto.
 
 Ejemplo verificado:
 
 ```text
-Coge c/u acumulado: $56.86
-Una tabla pendiente: -$1.00
-Bingo Neto:          $55.86
+Coge c/u acumulado exacto: $55.861928...
+Bingo Neto redondeado:      $55.86
+Tabla pendiente:            1 (informativa)
 ```
 
 La misma lógica fue aplicada en la pantalla, el backend y el archivo Excel del
