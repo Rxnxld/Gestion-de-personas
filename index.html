@@ -671,6 +671,15 @@ function selMi(val){return S.miembros.map(m=>`<option value="${esc(m.nombre)}"${
 function renderAll(){renderDashboard();renderMiembros();renderTablas();renderBingos();renderRifa();renderAhorros();renderCumple();renderCumpleFechas();renderPrestamos();renderEstadoCuenta();if(window.lucide)lucide.createIcons()}
 
 // ─── ESTADO DE CUENTA (cruce de todas las tablas) ───
+function cogeAutomaticoBingo(b){
+  const registros=S.miembros.filter(m=>Object.prototype.hasOwnProperty.call(S.asistencias[m.nombre]||{},b.fecha));
+  const montoTablas=registros.length
+    ? registros.reduce((s,m)=>s+(Number(S.asistencias[m.nombre]?.[b.fecha])||0),0)
+    : Number(b.monto||0);
+  const asistentes=Number(b.asistentes)||S.miembros.length||1;
+  return Math.round(((montoTablas+Number(b.adicional||0))/asistentes)*100)/100
+}
+
 function computeEstadoCuenta(){
   return S.miembros.map(m=>{
     const totalFechas=S.fechasTablas.length;
@@ -694,8 +703,12 @@ function computeEstadoCuenta(){
     const pagadoTotal=prestamosM.reduce((s,p)=>s+(p.pagado||0),0);
     const bingoGanado=S.bingos.reduce((s,b)=>{
       const dist=(b.distribucion||[]).find(d=>d.miembro_id===m.id);
-      if(dist && dist.recibe) return s+(parseFloat(dist.monto_asignado)||0);
-      return s;
+      // Una exclusión manual sí elimina el reparto. Una tabla no pagada no lo
+      // elimina aquí porque esa deuda se descuenta una sola vez en bingoDebe.
+      if(dist && dist.personalizado){
+        return dist.recibe?s+(parseFloat(dist.monto_asignado)||0):s
+      }
+      return s+cogeAutomaticoBingo(b)
     },0);
 const bingoDebe=Math.max(totalFechas-asOk,0);
     const bingoTotal=Math.round((bingoGanado-bingoDebe)*100)/100;

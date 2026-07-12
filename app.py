@@ -166,22 +166,10 @@ def init_db():
         LEFT JOIN asistencias a ON a.miembro_id = m.id AND a.fecha = b.fecha
         WHERE NOT EXISTS (SELECT 1 FROM bingo_distribucion d WHERE d.bingo_id=b.id AND d.miembro_id=m.id)
         ON CONFLICT (bingo_id, miembro_id) DO NOTHING;
-        -- mantiene la columna bingos.asistentes sincronizada con el conteo
-        -- real de asistencias marcadas (valor=1) para esa fecha, para que
-        -- no quede un numero "congelado" desactualizado.
-        UPDATE bingos b
-        SET asistentes = (
-              SELECT COUNT(*) FROM asistencias a WHERE a.fecha = b.fecha AND a.valor = 1
-            )
-        WHERE EXISTS (SELECT 1 FROM asistencias a2 WHERE a2.fecha = b.fecha);
         -- re-sincroniza recibe/monto en cada arranque para bingos cuya fecha
         -- ya tenga asistencia registrada (por si se marco/edito asistencia
         -- despues de crear el bingo, lo cual antes dejaba el reparto
         -- desactualizado). No toca reparto personalizado.
-        -- IMPORTANTE: el divisor se calcula EN VIVO (conteo real de
-        -- asistencias valor=1 ese dia) en vez de usar b.asistentes, que
-        -- puede quedar desfasado si se corrige la asistencia despues de
-        -- crear el bingo y por eso el reparto salia mal para todos.
         UPDATE bingo_distribucion d
         SET recibe = (
               SELECT COALESCE(a.valor, 0) = 1
@@ -193,9 +181,7 @@ def init_db():
                 FROM asistencias a
                 WHERE a.miembro_id = d.miembro_id AND a.fecha = b.fecha
               )
-              THEN COALESCE(ROUND(((b.monto + COALESCE(b.adicional,0)) / NULLIF((
-                     SELECT COUNT(*) FROM asistencias a3 WHERE a3.fecha = b.fecha AND a3.valor = 1
-                   ),0))::numeric, 2)::real, 0)
+              THEN COALESCE(ROUND(((b.monto + COALESCE(b.adicional,0)) / NULLIF(b.asistentes,0))::numeric, 2)::real, 0)
               ELSE 0
             END
         FROM bingos b
@@ -499,17 +485,12 @@ def update_bingo(id):
             return jsonify({'error': 'La fecha ya existe en bingos'}), 409
     # si cambió monto/adicional/asistentes, actualizar distribución automática
     if 'monto' in data or 'adicional' in data or 'asistentes' in data:
-        b = db.execute("SELECT monto, adicional, asistentes, fecha FROM bingos WHERE id=?", (id,)).fetchone()
+        b = db.execute("SELECT monto, adicional, asistentes FROM bingos WHERE id=?", (id,)).fetchone()
         if b:
             total = b['monto'] + (b['adicional'] or 0)
-            # usa el conteo REAL de asistencias marcadas ese dia (valor=1)
-            # en vez de la columna 'asistentes' guardada, que puede quedar
-            # desfasada si se corrigio la asistencia despues.
-            cnt_row = db.execute("SELECT COUNT(*) c FROM asistencias WHERE fecha=? AND valor=1", (b['fecha'],)).fetchone()
-            a = (cnt_row['c'] if cnt_row and cnt_row['c'] else 0) or (b['asistentes'] or 1)
+            a = b['asistentes'] or 1
             coge = round(total / a, 2) if a > 0 else 0
             db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE AND personalizado=FALSE", (coge, id))
-            db.execute("UPDATE bingos SET asistentes=? WHERE id=?", (a, id))
     db.commit()
     return jsonify({'ok': True})
 
@@ -822,7 +803,7 @@ def get_datos_completos():
 
     bingos = [dict(r) for r in db.execute("SELECT id, fecha, monto, adicional, asistentes FROM bingos ORDER BY fecha").fetchall()]
     for b in bingos:
-        dist = db.execute("SELECT miembro_id, recibe, monto_asignado FROM bingo_distribucion WHERE bingo_id=?", (b['id'],)).fetchall()
+        dist = db.execute("SELECT miembro_id, recibe, monto_asignado, personalizado FROM bingo_distribucion WHERE bingo_id=?", (b['id'],)).fetchall()
         b['distribucion'] = [dict(d) for d in dist] if dist else []
     fechas_rifa = [str(i) for i in range(1, 19)]
 
@@ -874,10 +855,42 @@ def _calcular_estado_cuenta(db):
     for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):
         asis[r['miembro_id']] = r['s'] or 0
 
-    # Calcular bingo ganado desde bingo_distribucion (respeta recibe=FALSE y personalizado)
-    bingo_dist = {}
-    for r in db.execute("SELECT miembro_id, SUM(monto_asignado) s FROM bingo_distribucion WHERE recibe=TRUE GROUP BY miembro_id"):
-        bingo_dist[r['miembro_id']] = r['s'] or 0
+    # Calcular el reparto acumulado de bingo sin descontar dos veces una tabla
+    # pendiente. La asistencia se descuenta más abajo mediante ``bingo_debe``.
+    # Aquí todos reciben el valor automático de "coge c/u", excepto quienes
+    # fueron excluidos manualmente (personalizado=TRUE y recibe=FALSE).
+    bingos_calculo = [dict(r) for r in db.execute("""
+        SELECT b.id, b.fecha, b.monto, COALESCE(b.adicional,0) adicional,
+               b.asistentes,
+               COALESCE(SUM(a.valor),0) monto_real,
+               COUNT(a.miembro_id) registros_asistencia
+        FROM bingos b
+        LEFT JOIN asistencias a ON a.fecha=b.fecha
+        GROUP BY b.id, b.fecha, b.monto, b.adicional, b.asistentes
+        ORDER BY b.fecha
+    """).fetchall()]
+    distribuciones = {
+        (r['bingo_id'], r['miembro_id']): dict(r)
+        for r in db.execute("""
+            SELECT bingo_id, miembro_id, recibe, monto_asignado, personalizado
+            FROM bingo_distribucion
+        """).fetchall()
+    }
+    bingo_dist = {m['id']: 0 for m in miembros}
+    for b in bingos_calculo:
+        # Si la fecha tiene asistencias registradas, el monto de tablas se toma
+        # de esos pagos. Para bingos históricos sin asistencias se conserva el
+        # monto almacenado en la tabla bingos.
+        monto_tablas = b['monto_real'] if b['registros_asistencia'] else (b['monto'] or 0)
+        asistentes_bingo = b['asistentes'] or len(miembros) or 1
+        coge_automatico = round((monto_tablas + (b['adicional'] or 0)) / asistentes_bingo, 2)
+        for m in miembros:
+            dist = distribuciones.get((b['id'], m['id']))
+            if dist and dist['personalizado']:
+                valor = (dist['monto_asignado'] or 0) if dist['recibe'] else 0
+            else:
+                valor = coge_automatico
+            bingo_dist[m['id']] += valor
 
     rifa = {}
     rifa_raw = {}
@@ -976,10 +989,9 @@ def export_estado_cuenta_xlsx():
             d['ahorros']['total'], d['cumpleAportes'], d['prestamos']['pendiente'], d['prestamos']['pagado'],
             d['saldoNeto'], estado_lbl.get(d['estadoGeneral'], d['estadoGeneral'])
         ]
-        for j, val in enumerate(row, 2):
+        for j, val in enumerate(row, 1):
             c = ws.cell(row=i+1, column=j, value=val)
             c.alignment = Alignment(horizontal='center', vertical='center')
-        ws.cell(row=i+1, column=1, value=i).alignment = Alignment(horizontal='center')
     for col in ws.columns:
         ml = max((len(str(c.value or '')) for c in col), default=0)
         ws.column_dimensions[col[0].column_letter].width = min(ml + 4, 30)
