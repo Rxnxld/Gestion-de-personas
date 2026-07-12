@@ -910,7 +910,7 @@ def _calcular_estado_cuenta(db):
         # "Tablas de Bingo" que el miembro NO tenga marcada como "Sí" (ya sea
         # que la marcó "No" o que nunca la tocó) cuenta como no pagada.
         bingo_debe = max(total_fechas_tablas - as_ok, 0)
-        bingo_total = round(bingo_ganado - total_fechas_tablas, 2)
+        bingo_total = round(bingo_ganado - bingo_debe, 2)
         resultado.append({
             'id': mid, 'nombre': m['nombre'], 'apodo': m['apodo'],
             'asistencia': {'asistidas': as_ok, 'total': total_fechas_tablas, 'pct': as_pct},

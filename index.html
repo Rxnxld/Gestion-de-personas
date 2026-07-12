@@ -698,7 +698,7 @@ function computeEstadoCuenta(){
       return s;
     },0);
 const bingoDebe=Math.max(totalFechas-asOk,0);
-    const bingoTotal=Math.round((bingoGanado-totalFechas)*100)/100;
+    const bingoTotal=Math.round((bingoGanado-bingoDebe)*100)/100;
     const saldoNeto=ahorroTotal;
     const totalGeneral=Math.round((bingoTotal+ahorroTotal)*100)/100;
     let estadoGeneral='al_dia';
@@ -784,7 +784,7 @@ function renderEstadoIndividual(){
         <div class="ec-item" style="background:${bnetoBg};border-color:${bnetoColor}">
           <div class="l">Bingo Neto</div>
           <div class="v" style="color:${bnetoColor}">${d.bingo<0?'−':'+'}$${$f(Math.abs(d.bingo))}</div>
-          <div class="s">Repartido $${$f(d.bingoGanado)} − $${d.asistencia.total} tablas = $${$f(d.bingo)}${d.bingoDebe>0?` (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} sin pagar)`:''}</div>
+          <div class="s">Coge c/u total $${$f(d.bingoGanado)} − $${d.bingoDebe} (${d.bingoDebe} tabla${d.bingoDebe===1?'':'s'} debe) = $${$f(d.bingo)}</div>
         </div>
         <div class="ec-item">
           <div class="l">Ahorro Normal</div>
