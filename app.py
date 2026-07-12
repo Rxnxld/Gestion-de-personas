@@ -166,10 +166,22 @@ def init_db():
         LEFT JOIN asistencias a ON a.miembro_id = m.id AND a.fecha = b.fecha
         WHERE NOT EXISTS (SELECT 1 FROM bingo_distribucion d WHERE d.bingo_id=b.id AND d.miembro_id=m.id)
         ON CONFLICT (bingo_id, miembro_id) DO NOTHING;
+        -- mantiene la columna bingos.asistentes sincronizada con el conteo
+        -- real de asistencias marcadas (valor=1) para esa fecha, para que
+        -- no quede un numero "congelado" desactualizado.
+        UPDATE bingos b
+        SET asistentes = (
+              SELECT COUNT(*) FROM asistencias a WHERE a.fecha = b.fecha AND a.valor = 1
+            )
+        WHERE EXISTS (SELECT 1 FROM asistencias a2 WHERE a2.fecha = b.fecha);
         -- re-sincroniza recibe/monto en cada arranque para bingos cuya fecha
         -- ya tenga asistencia registrada (por si se marco/edito asistencia
         -- despues de crear el bingo, lo cual antes dejaba el reparto
         -- desactualizado). No toca reparto personalizado.
+        -- IMPORTANTE: el divisor se calcula EN VIVO (conteo real de
+        -- asistencias valor=1 ese dia) en vez de usar b.asistentes, que
+        -- puede quedar desfasado si se corrige la asistencia despues de
+        -- crear el bingo y por eso el reparto salia mal para todos.
         UPDATE bingo_distribucion d
         SET recibe = (
               SELECT COALESCE(a.valor, 0) = 1
@@ -181,7 +193,9 @@ def init_db():
                 FROM asistencias a
                 WHERE a.miembro_id = d.miembro_id AND a.fecha = b.fecha
               )
-              THEN COALESCE(ROUND(((b.monto + COALESCE(b.adicional,0)) / NULLIF(b.asistentes,0))::numeric, 2)::real, 0)
+              THEN COALESCE(ROUND(((b.monto + COALESCE(b.adicional,0)) / NULLIF((
+                     SELECT COUNT(*) FROM asistencias a3 WHERE a3.fecha = b.fecha AND a3.valor = 1
+                   ),0))::numeric, 2)::real, 0)
               ELSE 0
             END
         FROM bingos b
@@ -403,15 +417,10 @@ def set_asistencia():
         a = len(attendees) or (bingo['asistentes'] or 0) or 1
         total = (bingo['monto'] or 0) + (bingo['adicional'] or 0)
         coge = round(total / a, 2) if a > 0 else 0
-        if db.execute(
+        db.execute(
             "UPDATE bingo_distribucion SET recibe=?, monto_asignado=? "
             "WHERE bingo_id=? AND miembro_id=? AND personalizado=FALSE",
-            (recibe, coge if recibe else 0, bingo['id'], miembro['id'])
-        ).rowcount == 0:
-            db.execute(
-                "INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado, personalizado) "
-                "VALUES (?, ?, ?, ?, FALSE) ON CONFLICT (bingo_id, miembro_id) DO NOTHING",
-                (bingo['id'], miembro['id'], recibe, coge if recibe else 0))
+            (recibe, coge if recibe else 0, bingo['id'], miembro['id']))
     db.commit()
     return jsonify({'ok': True})
 
@@ -455,15 +464,13 @@ def add_bingo():
         asistentes = int(data.get('asistentes', 0))
     total = monto + adicional
     coge = round(total / asistentes, 2) if asistentes > 0 else 0
-    # Elimina registros auto-actualizables para no pisar exclusiones manuales
-    db.execute("DELETE FROM bingo_distribucion WHERE bingo_id=? AND personalizado=FALSE", (bingo_id,))
     todos = db.execute("SELECT id FROM miembros").fetchall()
     for m in todos:
         recibe = m['id'] in attendees if attendees else True
         db.execute(
-            "INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado, personalizado) "
-            "VALUES (?, ?, ?, ?, FALSE) ON CONFLICT (bingo_id, miembro_id) DO NOTHING",
-            (bingo_id, m['id'], recibe, coge if recibe else 0))
+            "INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado) "
+            "VALUES (?, ?, ?, ?) ON CONFLICT (bingo_id, miembro_id) DO UPDATE SET recibe=?, monto_asignado=?",
+            (bingo_id, m['id'], recibe, coge if recibe else 0, recibe, coge if recibe else 0))
     try:
         db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (fecha,))
     except psycopg2.IntegrityError:
@@ -492,12 +499,17 @@ def update_bingo(id):
             return jsonify({'error': 'La fecha ya existe en bingos'}), 409
     # si cambió monto/adicional/asistentes, actualizar distribución automática
     if 'monto' in data or 'adicional' in data or 'asistentes' in data:
-        b = db.execute("SELECT monto, adicional, asistentes FROM bingos WHERE id=?", (id,)).fetchone()
+        b = db.execute("SELECT monto, adicional, asistentes, fecha FROM bingos WHERE id=?", (id,)).fetchone()
         if b:
             total = b['monto'] + (b['adicional'] or 0)
-            a = b['asistentes'] or 1
+            # usa el conteo REAL de asistencias marcadas ese dia (valor=1)
+            # en vez de la columna 'asistentes' guardada, que puede quedar
+            # desfasada si se corrigio la asistencia despues.
+            cnt_row = db.execute("SELECT COUNT(*) c FROM asistencias WHERE fecha=? AND valor=1", (b['fecha'],)).fetchone()
+            a = (cnt_row['c'] if cnt_row and cnt_row['c'] else 0) or (b['asistentes'] or 1)
             coge = round(total / a, 2) if a > 0 else 0
             db.execute("UPDATE bingo_distribucion SET monto_asignado=? WHERE bingo_id=? AND recibe=TRUE AND personalizado=FALSE", (coge, id))
+            db.execute("UPDATE bingos SET asistentes=? WHERE id=?", (a, id))
     db.commit()
     return jsonify({'ok': True})
 
