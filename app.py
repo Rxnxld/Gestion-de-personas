@@ -857,24 +857,10 @@ def _calcular_estado_cuenta(db):
     for r in db.execute("SELECT miembro_id, SUM(valor) s, COUNT(*) n FROM asistencias WHERE valor=1 GROUP BY miembro_id"):
         asis[r['miembro_id']] = r['s'] or 0
 
-    # Calcular bingo ganado desde asistencias en vivo
-    bingos = db.execute("SELECT id, fecha, monto, adicional, asistentes FROM bingos").fetchall()
-    bingo_asistencias = {}
-    for r in db.execute("SELECT fecha, miembro_id FROM asistencias WHERE valor=1"):
-        if r['fecha'] not in bingo_asistencias:
-            bingo_asistencias[r['fecha']] = set()
-        bingo_asistencias[r['fecha']].add(r['miembro_id'])
+    # Calcular bingo ganado desde bingo_distribucion (respeta recibe=FALSE y personalizado)
     bingo_dist = {}
-    for b in bingos:
-        att = bingo_asistencias.get(b['fecha'], set())
-        monto_real = len(att)
-        if monto_real == 0:
-            continue
-        total = monto_real + (b['adicional'] or 0)
-        asistentes = monto_real or (b['asistentes'] or 1)
-        coge = total / asistentes
-        for mid in att:
-            bingo_dist[mid] = bingo_dist.get(mid, 0) + coge
+    for r in db.execute("SELECT miembro_id, SUM(monto_asignado) s FROM bingo_distribucion WHERE recibe=TRUE GROUP BY miembro_id"):
+        bingo_dist[r['miembro_id']] = r['s'] or 0
 
     rifa = {}
     rifa_raw = {}
