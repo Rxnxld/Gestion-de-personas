@@ -439,6 +439,7 @@ tbody tr:nth-child(even){background:#f8fafc}
       <div id="tb-tablas" class="tb">
         <div class="page-h"><h3>Tablas de Bingo</h3><button class="btn btn-p btn-sm" onclick="modalAsistencia()"><i data-lucide="plus" style="width:13px;height:13px;vertical-align:-2px;"></i> Nueva Fecha</button><button class="btn btn-g btn-sm" onclick="window.open('/api/export/xlsx/asistencias')"><i data-lucide="download" style="width:13px;height:13px;vertical-align:-2px;"></i> Excel</button></div>
         <div class="card"><div class="card-t">Historial de Pagos</div><div class="card-b" style="padding:0"><div class="tw"><table><thead id="tablasHead"></thead><tbody id="tablasBody"></tbody></table></div></div></div>
+        <div class="card"><div class="card-t">Resumen por Miembro</div><div class="card-b" style="padding:0"><div class="tw"><table><thead><tr><th>#</th><th class="tl">Nombre</th><th class="tr">Pagadas</th><th class="tr">Total</th><th class="tr">%</th></tr></thead><tbody id="tablasResumenBody"></tbody></table></div></div></div>
       </div>
 
       <!-- BINGO -->
@@ -961,6 +962,12 @@ function renderTablas(){
     }).join('')+'<td></td></tr>';
     document.getElementById('tablasBody').insertAdjacentHTML('beforeend', footer);
   }
+  const totalF=S.fechasTablas.length;
+  document.getElementById('tablasResumenBody').innerHTML=S.miembros.map((m,i)=>{
+    const pagadas=S.fechasTablas.reduce((s,f)=>s+((S.asistencias[m.nombre]?.[f])||0),0);
+    const pct=totalF?Math.round(pagadas/totalF*100):0;
+    return `<tr><td>${i+1}</td><td class="tl fw6">${esc(m.nombre)}</td><td class="tr fw6" style="color:#059669">${pagadas}</td><td class="tr" style="color:var(--text2)">${totalF}</td><td class="tr"><span class="bdg ${pct>=70?'bdg-g':pct>=40?'bdg-w':'bdg-r'}">${pct}%</span></td></tr>`
+  }).join('')||'<tr><td colspan="5" class="emp">Sin miembros</td></tr>';
 }
 
 async function toggleTabla(miembroId, fecha, valActual){
