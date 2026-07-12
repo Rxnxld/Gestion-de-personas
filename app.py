@@ -403,10 +403,15 @@ def set_asistencia():
         a = len(attendees) or (bingo['asistentes'] or 0) or 1
         total = (bingo['monto'] or 0) + (bingo['adicional'] or 0)
         coge = round(total / a, 2) if a > 0 else 0
-        db.execute(
+        if db.execute(
             "UPDATE bingo_distribucion SET recibe=?, monto_asignado=? "
             "WHERE bingo_id=? AND miembro_id=? AND personalizado=FALSE",
-            (recibe, coge if recibe else 0, bingo['id'], miembro['id']))
+            (recibe, coge if recibe else 0, bingo['id'], miembro['id'])
+        ).rowcount == 0:
+            db.execute(
+                "INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado, personalizado) "
+                "VALUES (?, ?, ?, ?, FALSE) ON CONFLICT (bingo_id, miembro_id) DO NOTHING",
+                (bingo['id'], miembro['id'], recibe, coge if recibe else 0))
     db.commit()
     return jsonify({'ok': True})
 
@@ -450,13 +455,15 @@ def add_bingo():
         asistentes = int(data.get('asistentes', 0))
     total = monto + adicional
     coge = round(total / asistentes, 2) if asistentes > 0 else 0
+    # Elimina registros auto-actualizables para no pisar exclusiones manuales
+    db.execute("DELETE FROM bingo_distribucion WHERE bingo_id=? AND personalizado=FALSE", (bingo_id,))
     todos = db.execute("SELECT id FROM miembros").fetchall()
     for m in todos:
         recibe = m['id'] in attendees if attendees else True
         db.execute(
-            "INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado) "
-            "VALUES (?, ?, ?, ?) ON CONFLICT (bingo_id, miembro_id) DO UPDATE SET recibe=?, monto_asignado=?",
-            (bingo_id, m['id'], recibe, coge if recibe else 0, recibe, coge if recibe else 0))
+            "INSERT INTO bingo_distribucion (bingo_id, miembro_id, recibe, monto_asignado, personalizado) "
+            "VALUES (?, ?, ?, ?, FALSE) ON CONFLICT (bingo_id, miembro_id) DO NOTHING",
+            (bingo_id, m['id'], recibe, coge if recibe else 0))
     try:
         db.execute("INSERT INTO fechas_tablas (fecha) VALUES (?)", (fecha,))
     except psycopg2.IntegrityError:
